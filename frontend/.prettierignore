@@ -1,0 +1,18 @@
+# 포맷팅에서 제외할 파일들
+node_modules
+.next
+out
+dist
+build
+coverage
+.nyc_output
+*.lock
+*.log
+package-lock.json
+yarn.lock
+.env*
+.git
+.gitignore
+.prettierignore
+.eslintignore
+public

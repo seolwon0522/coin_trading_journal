@@ -1,0 +1,1319 @@
+openapi: 3.0.3
+info:
+  title: CryptoTradeManager Authentication API
+  description: |
+    CryptoTradeManager 암호화폐 거래 플랫폼을 위한 인증 시스템 API
+    
+    **주요 기능:**
+    - JWT 토큰 기반 인증 (Access + Refresh Token)
+    - OAuth2.0 소셜 로그인 (Google, Apple)
+    - 2단계 인증 (2FA) 지원
+    - Role 기반 접근 제어 (RBAC)
+    - 거래소 API 키 관리
+    - WebSocket 인증
+    - Rate Limiting
+  version: 1.0.0
+  contact:
+    name: CryptoTradeManager Team
+    email: api@cryptotrademanager.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.cryptotrademanager.com/v1
+    description: Production server
+  - url: https://staging-api.cryptotrademanager.com/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # 기본 인증
+  /auth/signup:
+    post:
+      tags: [Authentication]
+      summary: 사용자 회원가입
+      operationId: signup
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+
+  /auth/signin:
+    post:
+      tags: [Authentication]
+      summary: 사용자 로그인
+      operationId: signin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigninRequest'
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimit'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Access Token 갱신
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: 토큰 갱신 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/signout:
+    post:
+      tags: [Authentication]
+      summary: 로그아웃
+      operationId: signout
+      responses:
+        '200':
+          description: 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/signout-all:
+    post:
+      tags: [Authentication]
+      summary: 모든 세션 로그아웃
+      operationId: signoutAll
+      responses:
+        '200':
+          description: 모든 세션 로그아웃 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # OAuth2.0 소셜 로그인
+  /auth/oauth2/google:
+    get:
+      tags: [OAuth2]
+      summary: Google OAuth2 로그인 시작
+      operationId: googleOAuth2
+      security: []
+      parameters:
+        - name: redirect_uri
+          in: query
+          schema:
+            type: string
+            format: uri
+          description: 로그인 완료 후 리다이렉트될 URI
+      responses:
+        '302':
+          description: Google OAuth2 서버로 리다이렉트
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/oauth2/apple:
+    get:
+      tags: [OAuth2]
+      summary: Apple OAuth2 로그인 시작
+      operationId: appleOAuth2
+      security: []
+      parameters:
+        - name: redirect_uri
+          in: query
+          schema:
+            type: string
+            format: uri
+          description: 로그인 완료 후 리다이렉트될 URI
+      responses:
+        '302':
+          description: Apple OAuth2 서버로 리다이렉트
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/oauth2/callback:
+    get:
+      tags: [OAuth2]
+      summary: OAuth2 콜백 처리
+      operationId: oAuth2Callback
+      security: []
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: OAuth2 인증 코드
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: CSRF 방지를 위한 state 파라미터
+        - name: provider
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [google, apple]
+          description: OAuth2 프로바이더
+      responses:
+        '200':
+          description: OAuth2 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # 2단계 인증 (2FA)
+  /auth/2fa/setup:
+    post:
+      tags: [Two-Factor Authentication]
+      summary: 2FA 설정 시작
+      operationId: setup2FA
+      responses:
+        '200':
+          description: 2FA 설정 정보 반환
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupResponse'
+
+  /auth/2fa/verify:
+    post:
+      tags: [Two-Factor Authentication]
+      summary: 2FA 인증 코드 확인
+      operationId: verify2FA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorVerifyRequest'
+      responses:
+        '200':
+          description: 2FA 인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/2fa/enable:
+    post:
+      tags: [Two-Factor Authentication]
+      summary: 2FA 활성화
+      operationId: enable2FA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorEnableRequest'
+      responses:
+        '200':
+          description: 2FA 활성화 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/2fa/disable:
+    post:
+      tags: [Two-Factor Authentication]
+      summary: 2FA 비활성화
+      operationId: disable2FA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisableRequest'
+      responses:
+        '200':
+          description: 2FA 비활성화 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # 사용자 관리
+  /auth/user/profile:
+    get:
+      tags: [User Management]
+      summary: 사용자 프로필 조회
+      operationId: getUserProfile
+      responses:
+        '200':
+          description: 사용자 프로필 정보
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+    put:
+      tags: [User Management]
+      summary: 사용자 프로필 수정
+      operationId: updateUserProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 프로필 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /auth/user/password:
+    put:
+      tags: [User Management]
+      summary: 비밀번호 변경
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: 비밀번호 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/user/email/verify:
+    post:
+      tags: [User Management]
+      summary: 이메일 인증 코드 전송
+      operationId: sendEmailVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+      responses:
+        '200':
+          description: 인증 코드 전송 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/user/email/confirm:
+    post:
+      tags: [User Management]
+      summary: 이메일 인증 확인
+      operationId: confirmEmailVerification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailConfirmRequest'
+      responses:
+        '200':
+          description: 이메일 인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/user/password/reset:
+    post:
+      tags: [User Management]
+      summary: 비밀번호 재설정 요청
+      operationId: requestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: 비밀번호 재설정 이메일 전송
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/user/password/reset/confirm:
+    post:
+      tags: [User Management]
+      summary: 비밀번호 재설정 확인
+      operationId: confirmPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+      responses:
+        '200':
+          description: 비밀번호 재설정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # 거래소 API 키 관리
+  /auth/exchange-keys:
+    get:
+      tags: [Exchange API Keys]
+      summary: 거래소 API 키 목록 조회
+      operationId: getExchangeKeys
+      responses:
+        '200':
+          description: 거래소 API 키 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExchangeKey'
+
+    post:
+      tags: [Exchange API Keys]
+      summary: 거래소 API 키 등록
+      operationId: addExchangeKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddExchangeKeyRequest'
+      responses:
+        '201':
+          description: API 키 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeKey'
+
+  /auth/exchange-keys/{keyId}:
+    put:
+      tags: [Exchange API Keys]
+      summary: 거래소 API 키 수정
+      operationId: updateExchangeKey
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExchangeKeyRequest'
+      responses:
+        '200':
+          description: API 키 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeKey'
+
+    delete:
+      tags: [Exchange API Keys]
+      summary: 거래소 API 키 삭제
+      operationId: deleteExchangeKey
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API 키 삭제 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # WebSocket 인증
+  /auth/websocket/token:
+    post:
+      tags: [WebSocket]
+      summary: WebSocket 인증 토큰 발급
+      operationId: getWebSocketToken
+      responses:
+        '200':
+          description: WebSocket 토큰 발급 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebSocketTokenResponse'
+
+  # 세션 관리
+  /auth/sessions:
+    get:
+      tags: [Session Management]
+      summary: 활성 세션 목록 조회
+      operationId: getActiveSessions
+      responses:
+        '200':
+          description: 활성 세션 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionInfo'
+
+  /auth/sessions/{sessionId}:
+    delete:
+      tags: [Session Management]
+      summary: 특정 세션 종료
+      operationId: terminateSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 세션 종료 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # 관리자 기능
+  /auth/admin/users:
+    get:
+      tags: [Admin]
+      summary: 사용자 목록 조회 (관리자 전용)
+      operationId: getUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: createdAt,desc
+      responses:
+        '200':
+          description: 사용자 목록
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /auth/admin/users/{userId}/roles:
+    put:
+      tags: [Admin]
+      summary: 사용자 권한 수정 (관리자 전용)
+      operationId: updateUserRoles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRolesRequest'
+      responses:
+        '200':
+          description: 권한 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+components:
+  schemas:
+    # 요청 스키마
+    SignupRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+'
+          example: Password123!
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: John
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: Doe
+        phoneNumber:
+          type: string
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: +821012345678
+        agreedToTerms:
+          type: boolean
+          example: true
+        agreedToPrivacy:
+          type: boolean
+          example: true
+
+    SigninRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          example: Password123!
+        rememberMe:
+          type: boolean
+          default: false
+          example: false
+        twoFactorCode:
+          type: string
+          pattern: '^\d{6}$'
+          example: 123456
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
+
+    TwoFactorSetupResponse:
+      type: object
+      properties:
+        qrCodeUrl:
+          type: string
+          format: uri
+          example: data:image/png;base64,iVBORw0KGgoAAAANSU...
+        secretKey:
+          type: string
+          example: JBSWY3DPEHPK3PXP
+        backupCodes:
+          type: array
+          items:
+            type: string
+          example: [12345678, 87654321, 11223344]
+
+    TwoFactorVerifyRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          example: 123456
+
+    TwoFactorEnableRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          example: 123456
+
+    TwoFactorDisableRequest:
+      type: object
+      required: [password, code]
+      properties:
+        password:
+          type: string
+          example: Password123!
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          example: 123456
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: John
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: Doe
+        phoneNumber:
+          type: string
+          pattern: '^\+?[1-9]\d{1,14}$'
+          example: +821012345678
+        timezone:
+          type: string
+          example: Asia/Seoul
+        language:
+          type: string
+          enum: [ko, en, ja, zh]
+          example: ko
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          example: OldPassword123!
+        newPassword:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+'
+          example: NewPassword123!
+
+    EmailVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    EmailConfirmRequest:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        code:
+          type: string
+          pattern: '^\d{6}$'
+          example: 123456
+
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    PasswordResetConfirmRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
+        newPassword:
+          type: string
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+'
+          example: NewPassword123!
+
+    AddExchangeKeyRequest:
+      type: object
+      required: [exchange, apiKey, secretKey]
+      properties:
+        exchange:
+          type: string
+          enum: [binance, upbit, bithumb, coinone]
+          example: binance
+        apiKey:
+          type: string
+          example: your-api-key
+        secretKey:
+          type: string
+          example: your-secret-key
+        passphrase:
+          type: string
+          example: your-passphrase
+        nickname:
+          type: string
+          maxLength: 50
+          example: Main Trading Account
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, trade, withdraw]
+          example: [read, trade]
+
+    UpdateExchangeKeyRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+          maxLength: 50
+          example: Updated Trading Account
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, trade, withdraw]
+          example: [read, trade]
+
+    UpdateUserRolesRequest:
+      type: object
+      required: [roles]
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [USER, PREMIUM_USER, VIP_USER, ADMIN]
+          example: [USER, PREMIUM_USER]
+
+    # 응답 스키마
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        tokens:
+          $ref: '#/components/schemas/TokenResponse'
+        requires2FA:
+          type: boolean
+          example: false
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9...
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 3600
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        phoneNumber:
+          type: string
+          example: +821012345678
+        emailVerified:
+          type: boolean
+          example: true
+        twoFactorEnabled:
+          type: boolean
+          example: false
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [USER, PREMIUM_USER, VIP_USER, ADMIN]
+          example: [USER]
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00Z
+        lastLoginAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+        timezone:
+          type: string
+          example: Asia/Seoul
+        language:
+          type: string
+          example: ko
+
+    ExchangeKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        exchange:
+          type: string
+          enum: [binance, upbit, bithumb, coinone]
+          example: binance
+        nickname:
+          type: string
+          example: Main Trading Account
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, trade, withdraw]
+          example: [read, trade]
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00Z
+        lastUsedAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+
+    WebSocketTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: ws_token_123456789
+        expiresIn:
+          type: integer
+          example: 3600
+
+    SessionInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        device:
+          type: string
+          example: Chrome on Windows
+        ipAddress:
+          type: string
+          format: ipv4
+          example: 192.168.1.1
+        location:
+          type: string
+          example: Seoul, South Korea
+        isCurrent:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+        lastActiveAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+
+    UserListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfile'
+        pageable:
+          $ref: '#/components/schemas/Pageable'
+        totalElements:
+          type: integer
+          example: 1000
+        totalPages:
+          type: integer
+          example: 50
+        last:
+          type: boolean
+          example: false
+        first:
+          type: boolean
+          example: true
+
+    Pageable:
+      type: object
+      properties:
+        sort:
+          $ref: '#/components/schemas/Sort'
+        pageNumber:
+          type: integer
+          example: 0
+        pageSize:
+          type: integer
+          example: 20
+        offset:
+          type: integer
+          example: 0
+        paged:
+          type: boolean
+          example: true
+        unpaged:
+          type: boolean
+          example: false
+
+    Sort:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+          example: true
+        unsorted:
+          type: boolean
+          example: false
+        empty:
+          type: boolean
+          example: false
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: 작업이 성공적으로 완료되었습니다.
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: 요청이 유효하지 않습니다.
+        details:
+          type: object
+          additionalProperties:
+            type: string
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+        path:
+          type: string
+          example: /v1/auth/signin
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: VALIDATION_FAILED
+        message:
+          type: string
+          example: 입력 데이터 검증에 실패했습니다.
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-01-01T12:00:00Z
+        path:
+          type: string
+          example: /v1/auth/signup
+
+    FieldError:
+      type: object
+      properties:
+        field:
+          type: string
+          example: email
+        rejectedValue:
+          type: string
+          example: invalid-email
+        message:
+          type: string
+          example: 유효한 이메일 주소를 입력하세요.
+
+  responses:
+    BadRequest:
+      description: 잘못된 요청
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+
+    Unauthorized:
+      description: 인증 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: UNAUTHORIZED
+            message: 인증이 필요합니다.
+            timestamp: 2024-01-01T12:00:00Z
+            path: /v1/auth/user/profile
+
+    Forbidden:
+      description: 권한 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: FORBIDDEN
+            message: 접근 권한이 없습니다.
+            timestamp: 2024-01-01T12:00:00Z
+            path: /v1/auth/admin/users
+
+    NotFound:
+      description: 리소스를 찾을 수 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: NOT_FOUND
+            message: 요청한 리소스를 찾을 수 없습니다.
+            timestamp: 2024-01-01T12:00:00Z
+
+    Conflict:
+      description: 리소스 충돌
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: EMAIL_ALREADY_EXISTS
+            message: 이미 사용 중인 이메일입니다.
+            timestamp: 2024-01-01T12:00:00Z
+            path: /v1/auth/signup
+
+    RateLimit:
+      description: 요청 한도 초과
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: 시간당 요청 한도
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: 남은 요청 횟수
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: 한도 재설정 시간 (Unix timestamp)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: RATE_LIMIT_EXCEEDED
+            message: 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.
+            timestamp: 2024-01-01T12:00:00Z
+
+    InternalServerError:
+      description: 서버 내부 오류
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: INTERNAL_SERVER_ERROR
+            message: 서버에서 오류가 발생했습니다.
+            timestamp: 2024-01-01T12:00:00Z
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT 토큰을 사용한 인증. 
+        Authorization 헤더에 "Bearer {token}" 형식으로 전송합니다.
+        
+        **토큰 구조:**
+        - Header: {"alg": "HS256", "typ": "JWT"}
+        - Payload: {"sub": "user_id", "iat": timestamp, "exp": timestamp, "roles": ["USER"]}
+        - Signature: HMACSHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret)
+
+  headers:
+    X-Request-ID:
+      description: 요청 추적을 위한 고유 ID
+      schema:
+        type: string
+        format: uuid
+
+    X-Rate-Limit:
+      description: API 요청 제한 정보
+      schema:
+        type: object
+        properties:
+          limit:
+            type: integer
+            description: 시간당 요청 한도
+          remaining:
+            type: integer
+            description: 남은 요청 횟수
+          reset:
+            type: integer
+            description: 한도 재설정 시간 (Unix timestamp)
+
+tags:
+  - name: Authentication
+    description: 기본 인증 (회원가입, 로그인, 로그아웃)
+  - name: OAuth2
+    description: OAuth2.0 소셜 로그인
+  - name: Two-Factor Authentication
+    description: 2단계 인증 (2FA)
+  - name: User Management
+    description: 사용자 관리 (프로필, 비밀번호, 이메일 인증)
+  - name: Exchange API Keys
+    description: 거래소 API 키 관리
+  - name: WebSocket
+    description: WebSocket 연결을 위한 인증
+  - name: Session Management
+    description: 세션 관리
+  - name: Admin
+    description: 관리자 전용 기능
+
+x-rate-limiting:
+  authentication:
+    signup: 5/hour
+    signin: 10/minute
+    refresh: 100/hour
+    password_reset: 3/hour
+  
+  two_factor:
+    setup: 5/hour
+    verify: 10/minute
+    enable: 5/hour
+    disable: 5/hour
+  
+  user_management:
+    profile_update: 10/hour
+    password_change: 5/hour
+    email_verification: 10/hour
+  
+  exchange_keys:
+    create: 10/hour
+    update: 20/hour
+    delete: 10/hour
+  
+  websocket:
+    token_generation: 100/hour
+
+x-security-considerations:
+  authentication:
+    - JWT 토큰은 짧은 만료 시간 설정 (15분)
+    - Refresh 토큰은 긴 만료 시간 설정 (7일)
+    - 토큰은 Redis에 저장하여 즉시 무효화 가능
+    - 비밀번호는 BCrypt로 해싱
+  
+  rate_limiting:
+    - IP 기반 rate limiting 적용
+    - 사용자 기반 rate limiting 적용
+    - Redis를 이용한 분산 rate limiting
+  
+  two_factor:
+    - TOTP 기반 2FA 구현
+    - 백업 코드 제공 (일회용)
+    - QR 코드를 통한 간편 설정
+  
+  api_keys:
+    - 거래소 API 키는 AES-256으로 암호화 저장
+    - 키 사용 시에만 복호화
+    - 키 사용 로그 기록
+  
+  session_management:
+    - 세션 정보는 Redis에 저장
+    - 세션 하이재킹 방지를 위한 IP/User-Agent 검증
+    - 의심스러운 로그인 시 알림 발송
