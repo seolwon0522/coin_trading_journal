@@ -1,0 +1,72 @@
+version: '3.8'
+
+# 개발 환경용 설정 오버라이드
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/build:/app/build
+    command: ["./gradlew", "bootRun", "--args='--spring.profiles.active=dev'"]
+
+  trading-engine:
+    build:
+      context: ./trading-engine
+      dockerfile: Dockerfile.dev
+    environment:
+      - PYTHONPATH=/app
+      - FASTAPI_ENV=development
+      - DEBUG=true
+    volumes:
+      - ./trading-engine:/app
+    command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_TRADING_ENGINE_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: ["npm", "run", "dev"]
+
+  # 개발용 PostgreSQL (데이터 지속성 없음)
+  postgres:
+    environment:
+      - POSTGRES_LOG_STATEMENT=all
+    volumes:
+      - ./backend/init-dev.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # 개발용 도구들
+  adminer:
+    image: adminer
+    container_name: coin-trading-adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - trading-network
+    depends_on:
+      - postgres
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: coin-trading-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8082:8081"
+    networks:
+      - trading-network
+    depends_on:
+      - redis
+
