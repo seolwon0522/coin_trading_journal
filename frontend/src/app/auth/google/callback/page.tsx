@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/providers/auth-provider';
 import { authStorage } from '@/lib/auth-storage';
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const { oauth2Login } = useAuth();
 
   useEffect(() => {
     const code = params.get('code');
@@ -49,7 +47,7 @@ export default function GoogleCallbackPage() {
         router.replace('/login');
       }
     })();
-  }, [params, router, oauth2Login]);
+  }, [params, router]);
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
@@ -57,6 +55,14 @@ export default function GoogleCallbackPage() {
         구글 로그인 처리 중...
       </div>
     </div>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense>
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }
 

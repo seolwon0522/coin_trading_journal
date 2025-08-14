@@ -47,7 +47,7 @@ function setupAxiosInterceptors() {
           original.headers = original.headers ?? {};
           original.headers.Authorization = `Bearer ${tokens.accessToken}`;
           return apiClient(original);
-        } catch (e) {
+        } catch {
           authStorage.clear();
         }
       }
