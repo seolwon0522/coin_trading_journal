@@ -43,10 +43,15 @@ public class OAuth2Service {
                 throw OAuth2AuthenticationException.tokenVerificationFailed("Google");
             }
 
-            String googleClientId = oauth2Properties.getGoogle().getClientId();
-            if (!googleClientId.equals(tokenInfo.getAud())) {
-                log.warn("클라이언트 ID 불일치: 예상={}, 실제={}", googleClientId, tokenInfo.getAud());
-                // 경고만 하고 진행 (개발 환경에서는 유연하게 처리)
+            // 클라이언트 ID 검증 (보안상 중요!)
+            String expectedClientId = oauth2Properties.getGoogle().getClientId();
+            String actualClientId = tokenInfo.getAud();
+            
+            if (!expectedClientId.equals(actualClientId)) {
+                log.error("클라이언트 ID 불일치 - 보안 위반: 예상={}, 실제={}", 
+                         expectedClientId, actualClientId);
+                throw OAuth2AuthenticationException.tokenVerificationFailed(
+                    "Invalid client ID: Token is not for this application");
             }
 
             return OAuth2UserInfo.builder()

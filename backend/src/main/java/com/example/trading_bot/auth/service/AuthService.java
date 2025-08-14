@@ -9,11 +9,11 @@ import com.example.trading_bot.auth.exception.AuthException;
 import com.example.trading_bot.auth.exception.UserAlreadyExistsException;
 import com.example.trading_bot.auth.jwt.JwtTokenProvider;
 import com.example.trading_bot.auth.repository.UserRepository;
+import com.example.trading_bot.auth.util.TokenExtractor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
@@ -24,6 +24,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenExtractor tokenExtractor;
 
     /**
      * 일반 회원가입
@@ -66,7 +67,7 @@ public class AuthService {
      */
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
-        String refreshToken = extractTokenFromHeader(authHeader);
+        String refreshToken = tokenExtractor.extractBearerToken(authHeader);
 
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw AuthException.invalidToken();
@@ -89,7 +90,7 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public User getCurrentUserFromToken(String authHeader) {
-        String token = extractTokenFromHeader(authHeader);
+        String token = tokenExtractor.extractBearerToken(authHeader);
 
         if (!jwtTokenProvider.validateToken(token)) {
             throw AuthException.invalidToken();
@@ -105,7 +106,7 @@ public class AuthService {
      */
     @Transactional
     public void logoutFromToken(String authHeader) {
-        String token = extractTokenFromHeader(authHeader);
+        String token = tokenExtractor.extractBearerToken(authHeader);
 
         if (!jwtTokenProvider.validateToken(token)) {
             throw AuthException.invalidToken();
@@ -115,7 +116,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(AuthException::userNotFound);
 
-        user.setRefreshToken(null);
+        user.clearRefreshToken();
         userRepository.save(user);
     }
 
@@ -149,17 +150,22 @@ public class AuthService {
     }
 
     // Private 헬퍼 메서드들
-
-    private String extractTokenFromHeader(String authHeader) {
-        if (!StringUtils.hasText(authHeader)) {
-            throw AuthException.tokenNotFound();
+    
+    /**
+     * 토큰 검증 및 사용자 조회 통합 메서드
+     * 
+     * @param token JWT 토큰
+     * @return 검증된 사용자
+     * @throws AuthException 토큰이 유효하지 않거나 사용자를 찾을 수 없는 경우
+     */
+    private User validateTokenAndGetUser(String token) {
+        if (!jwtTokenProvider.validateToken(token)) {
+            throw AuthException.invalidToken();
         }
-
-        if (!authHeader.startsWith("Bearer ")) {
-            throw AuthException.invalidTokenFormat();
-        }
-
-        return authHeader.substring(7);
+        
+        Long userId = jwtTokenProvider.getUserIdFromToken(token);
+        return userRepository.findById(userId)
+                .orElseThrow(AuthException::userNotFound);
     }
 
     @Transactional
@@ -190,7 +196,7 @@ public class AuthService {
                 user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-        user.setRefreshToken(refreshToken);
+        user.updateRefreshToken(refreshToken);
         userRepository.save(user);
 
         return LoginResponse.builder()
