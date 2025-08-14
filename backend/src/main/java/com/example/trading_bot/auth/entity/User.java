@@ -94,13 +94,4 @@ public class User extends BaseTimeEntity {
             this.profileImageUrl = profileImageUrl;
         }
     }
-    
-    /**
-     * 계정 활성화 상태 변경
-     * 
-     * @param isActive 활성화 여부
-     */
-    public void changeActiveStatus(boolean isActive) {
-        this.isActive = isActive;
-    }
 }
