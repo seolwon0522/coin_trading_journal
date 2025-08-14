@@ -63,15 +63,21 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰에서 사용자 ID 추출
+     * 토큰에서 Claims 추출 (공통 메서드)
      */
-    public Long getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
+    private Claims getClaimsFromToken(String token) {
+        return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
 
+    /**
+     * 토큰에서 사용자 ID 추출
+     */
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
         return Long.valueOf(claims.getSubject());
     }
 
@@ -79,12 +85,7 @@ public class JwtTokenProvider {
      * 토큰에서 이메일 추출
      */
     public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
+        Claims claims = getClaimsFromToken(token);
         return claims.get("email", String.class);
     }
 
@@ -92,12 +93,7 @@ public class JwtTokenProvider {
      * 토큰에서 역할 추출
      */
     public String getRoleFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
+        Claims claims = getClaimsFromToken(token);
         return claims.get("role", String.class);
     }
 
@@ -121,12 +117,7 @@ public class JwtTokenProvider {
      * 토큰 만료 시간 확인
      */
     public Date getExpirationDateFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
+        Claims claims = getClaimsFromToken(token);
         return claims.getExpiration();
     }
 
