@@ -59,10 +59,33 @@ public class User extends BaseTimeEntity {
         this.isActive = isActive;
     }
 
-    public void setRefreshToken(String refreshToken) {
+    /**
+     * Refresh Token 업데이트 (보안 검증 포함)
+     * 
+     * @param refreshToken 새로운 refresh token
+     * @throws IllegalArgumentException 토큰이 null이거나 빈 문자열인 경우
+     */
+    public void updateRefreshToken(String refreshToken) {
+        // null이 들어올 수 있음 (로그아웃 시)
+        if (refreshToken != null && refreshToken.trim().isEmpty()) {
+            throw new IllegalArgumentException("Refresh token cannot be empty");
+        }
         this.refreshToken = refreshToken;
     }
 
+    /**
+     * Refresh Token 제거 (로그아웃 시 사용)
+     */
+    public void clearRefreshToken() {
+        this.refreshToken = null;
+    }
+
+    /**
+     * 프로필 정보 업데이트
+     * 
+     * @param name 새로운 이름
+     * @param profileImageUrl 새로운 프로필 이미지 URL
+     */
     public void updateProfile(String name, String profileImageUrl) {
         if (name != null && !name.equals(this.name)) {
             this.name = name;
@@ -70,5 +93,14 @@ public class User extends BaseTimeEntity {
         if (profileImageUrl != null && !profileImageUrl.equals(this.profileImageUrl)) {
             this.profileImageUrl = profileImageUrl;
         }
+    }
+    
+    /**
+     * 계정 활성화 상태 변경
+     * 
+     * @param isActive 활성화 여부
+     */
+    public void changeActiveStatus(boolean isActive) {
+        this.isActive = isActive;
     }
 }
