@@ -3,6 +3,7 @@ package com.example.trading_bot.auth.jwt;
 import com.example.trading_bot.auth.exception.AuthException;
 import com.example.trading_bot.auth.security.UserPrincipal;
 import com.example.trading_bot.auth.service.CustomUserDetailsService;
+import com.example.trading_bot.auth.util.TokenValidator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +29,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider jwtTokenProvider;
+    private final TokenValidator tokenValidator;
     private final CustomUserDetailsService userDetailsService;
 
     @Override
@@ -38,9 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = extractTokenFromRequest(request);
             
-            if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+            if (StringUtils.hasText(token) && tokenValidator.isValidToken(token)) {
                 // 토큰에서 사용자 ID 추출
-                Long userId = jwtTokenProvider.getUserIdFromToken(token);
+                Long userId = tokenValidator.extractUserIdFromToken(token);
                 
                 // 사용자 정보 로드
                 UserDetails userDetails = userDetailsService.loadUserById(userId);
