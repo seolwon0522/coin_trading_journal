@@ -5,6 +5,8 @@ import com.example.trading_bot.auth.dto.TokenResponse;
 import com.example.trading_bot.auth.entity.ProviderType;
 import com.example.trading_bot.auth.entity.Role;
 import com.example.trading_bot.auth.entity.User;
+import com.example.trading_bot.auth.exception.AuthException;
+import com.example.trading_bot.auth.exception.UserAlreadyExistsException;
 import com.example.trading_bot.auth.jwt.JwtTokenProvider;
 import com.example.trading_bot.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +19,6 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -27,9 +28,10 @@ public class AuthService {
     /**
      * 일반 회원가입
      */
+    @Transactional
     public User registerLocalUser(String email, String password, String name) {
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            throw new UserAlreadyExistsException(email);
         }
 
         User user = User.builder()
@@ -47,12 +49,13 @@ public class AuthService {
     /**
      * 일반 로그인
      */
+    @Transactional
     public LoginResponse loginLocal(String email, String password) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(AuthException::userNotFound);
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw AuthException.invalidCredentials();
         }
 
         return generateTokenResponse(user);
@@ -61,15 +64,16 @@ public class AuthService {
     /**
      * 토큰 갱신
      */
+    @Transactional
     public TokenResponse refreshToken(String authHeader) {
         String refreshToken = extractTokenFromHeader(authHeader);
 
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new IllegalArgumentException("유효하지 않은 Refresh Token입니다.");
+            throw AuthException.invalidToken();
         }
 
         User user = userRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("Refresh Token을 찾을 수 없습니다."));
+                .orElseThrow(AuthException::refreshTokenNotFound);
 
         String newAccessToken = jwtTokenProvider.createAccessToken(
                 user.getId(), user.getEmail(), user.getRole().name());
@@ -88,27 +92,28 @@ public class AuthService {
         String token = extractTokenFromHeader(authHeader);
 
         if (!jwtTokenProvider.validateToken(token)) {
-            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+            throw AuthException.invalidToken();
         }
 
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(AuthException::userNotFound);
     }
 
     /**
      * 토큰으로부터 로그아웃
      */
+    @Transactional
     public void logoutFromToken(String authHeader) {
         String token = extractTokenFromHeader(authHeader);
 
         if (!jwtTokenProvider.validateToken(token)) {
-            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+            throw AuthException.invalidToken();
         }
 
         Long userId = jwtTokenProvider.getUserIdFromToken(token);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(AuthException::userNotFound);
 
         user.setRefreshToken(null);
         userRepository.save(user);
@@ -117,6 +122,7 @@ public class AuthService {
     /**
      * OAuth2 사용자 처리
      */
+    @Transactional
     public LoginResponse processOAuth2User(String email, String name, String profileImageUrl,
                                            ProviderType providerType, String providerId) {
 
@@ -139,24 +145,25 @@ public class AuthService {
     @Transactional(readOnly = true)
     public User findById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(AuthException::userNotFound);
     }
 
     // Private 헬퍼 메서드들
 
     private String extractTokenFromHeader(String authHeader) {
         if (!StringUtils.hasText(authHeader)) {
-            throw new IllegalArgumentException("인증 토큰이 필요합니다.");
+            throw AuthException.tokenNotFound();
         }
 
         if (!authHeader.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Bearer 토큰 형식이 아닙니다.");
+            throw AuthException.invalidTokenFormat();
         }
 
         return authHeader.substring(7);
     }
 
-    private User createOAuth2User(String email, String name, String profileImageUrl,
+    @Transactional
+    protected User createOAuth2User(String email, String name, String profileImageUrl,
                                   ProviderType providerType, String providerId) {
         User user = User.builder()
                 .email(email)
@@ -177,7 +184,8 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    private LoginResponse generateTokenResponse(User user) {
+    @Transactional
+    protected LoginResponse generateTokenResponse(User user) {
         String accessToken = jwtTokenProvider.createAccessToken(
                 user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
