@@ -81,17 +81,16 @@ public class User extends BaseTimeEntity {
     }
 
     /**
-     * 프로필 정보 업데이트
-     * 
-     * @param name 새로운 이름
-     * @param profileImageUrl 새로운 프로필 이미지 URL
+     * 이름 업데이트
      */
-    public void updateProfile(String name, String profileImageUrl) {
-        if (name != null && !name.equals(this.name)) {
-            this.name = name;
-        }
-        if (profileImageUrl != null && !profileImageUrl.equals(this.profileImageUrl)) {
-            this.profileImageUrl = profileImageUrl;
-        }
+    public void updateName(String name) {
+        this.name = name;
+    }
+    
+    /**
+     * 프로필 이미지 URL 업데이트
+     */
+    public void updateProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 }

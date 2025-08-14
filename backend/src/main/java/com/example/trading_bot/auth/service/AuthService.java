@@ -9,7 +9,7 @@ import com.example.trading_bot.auth.exception.AuthException;
 import com.example.trading_bot.auth.exception.UserAlreadyExistsException;
 import com.example.trading_bot.auth.jwt.JwtTokenProvider;
 import com.example.trading_bot.auth.repository.UserRepository;
-import com.example.trading_bot.auth.util.TokenExtractor;
+import com.example.trading_bot.auth.util.TokenValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final TokenExtractor tokenExtractor;
+    private final TokenValidator tokenValidator;
 
     /**
      * 일반 회원가입
@@ -67,14 +67,8 @@ public class AuthService {
      */
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
-        String refreshToken = tokenExtractor.extractBearerToken(authHeader);
-
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw AuthException.invalidToken();
-        }
-
-        User user = userRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(AuthException::refreshTokenNotFound);
+        String refreshToken = tokenValidator.extractBearerToken(authHeader);
+        User user = tokenValidator.validateRefreshTokenAndGetUser(refreshToken);
 
         String newAccessToken = jwtTokenProvider.createAccessToken(
                 user.getId(), user.getEmail(), user.getRole().name());
@@ -90,15 +84,7 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public User getCurrentUserFromToken(String authHeader) {
-        String token = tokenExtractor.extractBearerToken(authHeader);
-
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw AuthException.invalidToken();
-        }
-
-        Long userId = jwtTokenProvider.getUserIdFromToken(token);
-        return userRepository.findById(userId)
-                .orElseThrow(AuthException::userNotFound);
+        return tokenValidator.validateTokenAndGetUser(authHeader);
     }
 
     /**
@@ -106,37 +92,29 @@ public class AuthService {
      */
     @Transactional
     public void logoutFromToken(String authHeader) {
-        String token = tokenExtractor.extractBearerToken(authHeader);
-
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw AuthException.invalidToken();
-        }
-
-        Long userId = jwtTokenProvider.getUserIdFromToken(token);
-        User user = userRepository.findById(userId)
-                .orElseThrow(AuthException::userNotFound);
-
+        User user = tokenValidator.validateTokenAndGetUser(authHeader);
+        
         user.clearRefreshToken();
         userRepository.save(user);
     }
 
     /**
      * OAuth2 사용자 처리
+     * - 기존 사용자: 프로필 업데이트
+     * - 신규 사용자: 새로 생성
      */
     @Transactional
     public LoginResponse processOAuth2User(String email, String name, String profileImageUrl,
                                            ProviderType providerType, String providerId) {
-
-        Optional<User> existingUser = userRepository.findByProviderTypeAndProviderId(providerType, providerId);
-
-        User user;
-        if (existingUser.isPresent()) {
-            user = existingUser.get();
-            updateOAuth2UserProfile(user, name, profileImageUrl);
-        } else {
-            user = createOAuth2User(email, name, profileImageUrl, providerType, providerId);
+        // 1. 사용자 찾기 또는 생성
+        User user = findOrCreateOAuth2User(email, name, profileImageUrl, providerType, providerId);
+        
+        // 2. 기존 사용자인 경우 프로필 업데이트 확인
+        if (isExistingUser(user, providerId)) {
+            updateUserProfileIfNeeded(user, name, profileImageUrl);
         }
-
+        
+        // 3. 토큰 생성 및 반환
         return generateTokenResponse(user);
     }
 
@@ -151,24 +129,7 @@ public class AuthService {
 
     // Private 헬퍼 메서드들
     
-    /**
-     * 토큰 검증 및 사용자 조회 통합 메서드
-     * 
-     * @param token JWT 토큰
-     * @return 검증된 사용자
-     * @throws AuthException 토큰이 유효하지 않거나 사용자를 찾을 수 없는 경우
-     */
-    private User validateTokenAndGetUser(String token) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            throw AuthException.invalidToken();
-        }
-        
-        Long userId = jwtTokenProvider.getUserIdFromToken(token);
-        return userRepository.findById(userId)
-                .orElseThrow(AuthException::userNotFound);
-    }
 
-    @Transactional
     protected User createOAuth2User(String email, String name, String profileImageUrl,
                                   ProviderType providerType, String providerId) {
         User user = User.builder()
@@ -184,13 +145,61 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    @Transactional
-    public void updateOAuth2UserProfile(User user, String name, String profileImageUrl) {
-        user.updateProfile(name, profileImageUrl);
-        userRepository.save(user);
+    /**
+     * OAuth2 사용자 찾기 또는 생성
+     */
+    private User findOrCreateOAuth2User(String email, String name, String profileImageUrl,
+                                        ProviderType providerType, String providerId) {
+        return userRepository.findByProviderTypeAndProviderId(providerType, providerId)
+                .orElseGet(() -> createOAuth2User(email, name, profileImageUrl, providerType, providerId));
+    }
+    
+    /**
+     * 사용자 프로필 업데이트 (변경사항이 있을 때만)
+     * 상위 메서드에서 이미 트랜잭션이 시작되므로 @Transactional 제거
+     */
+    public void updateUserProfileIfNeeded(User user, String name, String profileImageUrl) {
+        boolean needsUpdate = false;
+        
+        // 이름 변경 확인
+        if (shouldUpdateName(user.getName(), name)) {
+            user.updateName(name);
+            needsUpdate = true;
+        }
+        
+        // 프로필 이미지 변경 확인
+        if (shouldUpdateProfileImage(user.getProfileImageUrl(), profileImageUrl)) {
+            user.updateProfileImageUrl(profileImageUrl);
+            needsUpdate = true;
+        }
+        
+        // 실제 변경사항이 있을 때만 DB 저장
+        if (needsUpdate) {
+            userRepository.save(user);
+        }
+    }
+    
+    /**
+     * 이름 업데이트 필요 여부 확인
+     */
+    private boolean shouldUpdateName(String currentName, String newName) {
+        return newName != null && !newName.equals(currentName);
+    }
+    
+    /**
+     * 프로필 이미지 업데이트 필요 여부 확인
+     */
+    private boolean shouldUpdateProfileImage(String currentImageUrl, String newImageUrl) {
+        return newImageUrl != null && !newImageUrl.equals(currentImageUrl);
+    }
+    
+    /**
+     * 기존 사용자 여부 확인
+     */
+    private boolean isExistingUser(User user, String providerId) {
+        return user.getProviderId() != null && user.getProviderId().equals(providerId);
     }
 
-    @Transactional
     protected LoginResponse generateTokenResponse(User user) {
         String accessToken = jwtTokenProvider.createAccessToken(
                 user.getId(), user.getEmail(), user.getRole().name());
