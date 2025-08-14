@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import type { AxiosError, AxiosRequestConfig, AxiosHeaders } from 'axios';
 import { authApi, type AuthUser, type LoginRequest, type LoginResponse } from '@/lib/api/auth-api';
 import { authStorage } from '@/lib/auth-storage';
 import { apiClient } from '@/lib/axios';
@@ -19,36 +20,71 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 // Axios 요청/응답 인터셉터에 토큰 주입 및 자동 갱신 설정
+// 한글 주석: refresh 동시 실행을 방지하기 위한 공유 상태
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
 function setupAxiosInterceptors() {
+  // 한글 주석: Authorization 헤더를 설정(변경)하는 안전한 헬퍼
+  const setAuthHeaderOnConfig = (config: AxiosRequestConfig, token: string): void => {
+    const h = (config.headers ?? {}) as unknown;
+    if (h && typeof (h as AxiosHeaders).set === 'function') {
+      (h as AxiosHeaders).set('Authorization', `Bearer ${token}`);
+      config.headers = h as AxiosHeaders;
+      return;
+    }
+    // 일반 객체인 경우
+    config.headers = { ...(config.headers as any), Authorization: `Bearer ${token}` } as any;
+  };
+
   // 요청 시 AccessToken 주입
   apiClient.interceptors.request.use((config) => {
     const token = authStorage.getAccessToken();
     if (token) {
-      config.headers = config.headers ?? {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
+      setAuthHeaderOnConfig(config, token);
     }
     return config;
   });
 
-  // 401 발생 시 RefreshToken으로 재시도
+  // 한글 주석: 401 발생 시 RefreshToken으로 재시도 (동시성 제어 포함)
   apiClient.interceptors.response.use(
     (res) => res,
-    async (error) => {
-      const original = error.config;
-      const status = error.response?.status;
+    async (error: unknown) => {
+      const axiosError = error as AxiosError;
+      const original = axiosError.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined;
+      const status = axiosError.response?.status;
       if (status === 401 && !original?._retry) {
+        if (!original) return Promise.reject(error);
         original._retry = true;
         try {
           const refreshToken = authStorage.getRefreshToken();
           if (!refreshToken) throw new Error('리프레시 토큰이 없습니다');
-          const tokens = await authApi.refresh(refreshToken);
-          authStorage.save(tokens);
+
+          if (!isRefreshing) {
+            isRefreshing = true;
+            refreshPromise = (async () => {
+              try {
+                const tokens = await authApi.refresh(refreshToken);
+                authStorage.save(tokens);
+              } finally {
+                isRefreshing = false;
+              }
+            })();
+          }
+
+          await refreshPromise;
           // 갱신 토큰으로 헤더 갱신 후 재요청
-          original.headers = original.headers ?? {};
-          original.headers.Authorization = `Bearer ${tokens.accessToken}`;
-          return apiClient(original);
-        } catch (e) {
+          const newAccessToken = authStorage.getAccessToken();
+          if (!newAccessToken) throw new Error('액세스 토큰 갱신 실패');
+          setAuthHeaderOnConfig(original, newAccessToken);
+          return apiClient.request(original);
+        } catch {
           authStorage.clear();
+          // 한글 주석: 갱신 실패 시 로그인 페이지로 이동
+          if (typeof window !== 'undefined') {
+            toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+            window.location.href = '/login';
+          }
         }
       }
       return Promise.reject(error);

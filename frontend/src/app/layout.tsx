@@ -5,6 +5,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { MainLayout } from '@/components/layout/main-layout';
+import { AuthProvider } from '@/components/providers/auth-provider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,8 +37,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <MainLayout>{children}</MainLayout>
-            <ToastProvider />
+            <AuthProvider>
+              <MainLayout>{children}</MainLayout>
+              <ToastProvider />
+            </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

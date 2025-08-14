@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/axios';
+import type { AxiosError } from 'axios';
 
 // 공통 API 응답 타입
 export interface ApiResponse<T> {
@@ -59,8 +60,9 @@ export const authApi = {
       }
       return res.data.data;
     } catch (error) {
-      // 한글 메시지 우선 처리
-      const message = (error as any)?.response?.data?.message || (error as Error).message;
+      // 한글 주석: Axios/일반 오류 모두에서 안전하게 메시지 추출
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
+      const message = axiosError.response?.data?.message || (error instanceof Error ? error.message : '');
       throw new Error(message || '로그인에 실패했습니다');
     }
   },
@@ -74,7 +76,8 @@ export const authApi = {
       }
       return res.data.data;
     } catch (error) {
-      const message = (error as any)?.response?.data?.message || (error as Error).message;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
+      const message = axiosError.response?.data?.message || (error instanceof Error ? error.message : '');
       throw new Error(message || '소셜 로그인에 실패했습니다');
     }
   },
@@ -88,7 +91,8 @@ export const authApi = {
       }
       return res.data.data;
     } catch (error) {
-      const message = (error as any)?.response?.data?.message || (error as Error).message;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
+      const message = axiosError.response?.data?.message || (error instanceof Error ? error.message : '');
       throw new Error(message || '회원가입에 실패했습니다');
     }
   },
@@ -102,7 +106,8 @@ export const authApi = {
       }
       return res.data.data;
     } catch (error) {
-      const message = (error as any)?.response?.data?.message || (error as Error).message;
+      const axiosError = error as AxiosError<ApiResponse<unknown>>;
+      const message = axiosError.response?.data?.message || (error instanceof Error ? error.message : '');
       throw new Error(message || '사용자 정보를 불러오지 못했습니다');
     }
   },
