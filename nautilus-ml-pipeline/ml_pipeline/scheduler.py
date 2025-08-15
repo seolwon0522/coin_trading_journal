@@ -13,6 +13,8 @@ import yaml
 import pandas as pd
 from pathlib import Path
 
+from .performance_monitor import PerformanceMonitor
+
 logger = logging.getLogger(__name__)
 
 class MLScheduler:
@@ -162,9 +164,31 @@ class MLScheduler:
     
     async def _check_and_schedule(self):
         """상태 체크 및 스케줄링"""
-        # 한글 주석: 현재 상태 확인 로직
-        # 실제 구현에서는 데이터베이스나 파일에서 상태 읽어옴
-        pass
+        try:
+            performance_monitor = PerformanceMonitor()
+
+            trade_count = 0
+            current_performance = {}
+
+            if performance_monitor.performance_history:
+                latest = performance_monitor.performance_history[-1]
+                current_performance = {
+                    'r2_score': latest.get('r2_score', 0),
+                    'rmse': latest.get('rmse', 0),
+                    'overfit_ratio': latest.get('overfit_ratio', 0)
+                }
+                trade_count = latest.get('training_size', 0) + latest.get('test_size', 0)
+
+            if self.should_retrain(trade_count, current_performance):
+                trigger = Path("data/retrain.trigger")
+                trigger.parent.mkdir(parents=True, exist_ok=True)
+                trigger.write_text(datetime.now().isoformat(), encoding='utf-8')
+                logger.info(f"재훈련 트리거 생성: {trigger}")
+            else:
+                logger.info("재훈련 조건 미충족 - 스케줄 유지")
+
+        except Exception as e:
+            logger.error(f"상태 체크 실패: {e}")
 
 def create_scheduler() -> MLScheduler:
     """스케줄러 인스턴스 생성"""
