@@ -32,10 +32,13 @@
     "clean": "npm run clean --workspace=frontend && cd backend && ./gradlew clean"
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "prettier": "^3.6.2"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "openai": "^5.12.2"
   }
 }
