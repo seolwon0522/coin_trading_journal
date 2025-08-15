@@ -269,6 +269,43 @@ endblock %} {% block content %}
     </div>
   </div>
 </div>
+
+<!-- 학습 개선점 추적 -->
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-brain me-2"></i>학습 개선점 추적
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="learningChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 피처 중요도 변화 트렌드 -->
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-weight me-2"></i>피처 중요도 변화 트렌드
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="featureChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 성능 요약 정보 -->
 {% if data.performance_summary and data.performance_summary.performance_metrics
 %}
@@ -534,6 +571,151 @@ endblock %} {% block content %}
       .catch((err) => console.error("PnL 차트 갱신 실패:", err));
   }
 
+  // 학습 개선점 차트 초기화
+  function initLearningChart() {
+    const ctx = document.getElementById("learningChart").getContext("2d");
+    window.learningChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "R² Score",
+            data: [],
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            tension: 0.1,
+          },
+          {
+            label: "승률 (%)",
+            data: [],
+            borderColor: "rgba(255, 99, 132, 1)",
+            backgroundColor: "rgba(255, 99, 132, 0.2)",
+            tension: 0.1,
+            yAxisID: "y1",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: "학습 사이클" } },
+          y: {
+            title: { display: true, text: "R² Score" },
+            min: 0.99,
+            max: 1.0,
+          },
+          y1: {
+            type: "linear",
+            display: true,
+            position: "right",
+            title: { display: true, text: "승률 (%)" },
+            grid: { drawOnChartArea: false },
+          },
+        },
+        plugins: {
+          title: { display: true, text: "학습 사이클별 성능 개선" },
+        },
+      },
+    });
+  }
+
+  // 피처 중요도 차트 초기화
+  function initFeatureChart() {
+    const ctx = document.getElementById("featureChart").getContext("2d");
+    window.featureChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "PnL Ratio",
+            data: [],
+            borderColor: "rgba(255, 206, 86, 1)",
+            backgroundColor: "rgba(255, 206, 86, 0.2)",
+            tension: 0.1,
+          },
+          {
+            label: "Market Condition",
+            data: [],
+            borderColor: "rgba(54, 162, 235, 1)",
+            backgroundColor: "rgba(54, 162, 235, 0.2)",
+            tension: 0.1,
+          },
+          {
+            label: "Volatility",
+            data: [],
+            borderColor: "rgba(153, 102, 255, 1)",
+            backgroundColor: "rgba(153, 102, 255, 0.2)",
+            tension: 0.1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: "학습 사이클" } },
+          y: {
+            title: { display: true, text: "피처 중요도" },
+            min: 0,
+            max: 0.5,
+          },
+        },
+        plugins: {
+          title: { display: true, text: "주요 피처 중요도 변화" },
+        },
+      },
+    });
+  }
+
+  // 학습 개선점 데이터 업데이트
+  function updateLearningChart() {
+    fetch("/api/learning_improvements")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const labels = data.map((cycle) => `사이클 ${cycle.cycle}`);
+          const r2_scores = data.map(
+            (cycle) => cycle.model_metrics?.test_r2 || 0
+          );
+          const win_rates = data.map(
+            (cycle) => cycle.backtest_summary?.win_rate || 0
+          );
+
+          learningChart.data.labels = labels;
+          learningChart.data.datasets[0].data = r2_scores;
+          learningChart.data.datasets[1].data = win_rates;
+          learningChart.update();
+        }
+      })
+      .catch((err) => console.error("학습 차트 갱신 실패:", err));
+  }
+
+  // 피처 중요도 데이터 업데이트
+  function updateFeatureChart() {
+    fetch("/api/feature_importance_trend")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const labels = data.map((cycle) => `사이클 ${cycle.cycle}`);
+          const pnl_ratios = data.map((cycle) => cycle.pnl_ratio || 0);
+          const market_conditions = data.map(
+            (cycle) => cycle.market_condition || 0
+          );
+          const volatilities = data.map((cycle) => cycle.volatility || 0);
+
+          featureChart.data.labels = labels;
+          featureChart.data.datasets[0].data = pnl_ratios;
+          featureChart.data.datasets[1].data = market_conditions;
+          featureChart.data.datasets[2].data = volatilities;
+          featureChart.update();
+        }
+      })
+      .catch((err) => console.error("피처 차트 갱신 실패:", err));
+  }
+
   function updateChart() {
     const period = document.getElementById("chart-period").value;
 
@@ -572,6 +754,12 @@ endblock %} {% block content %}
   document.addEventListener("DOMContentLoaded", function () {
     initChart();
     initPnlChart();
+    initLearningChart();
+    initFeatureChart();
+
+    // 학습 개선점 차트 업데이트
+    updateLearningChart();
+    updateFeatureChart();
   });
 </script>
 {% endblock %}

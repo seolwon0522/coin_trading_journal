@@ -26,6 +26,8 @@ class StrategySignal:
     score: float
     confidence: float
     risk_level: str
+    # 한글 주석: 신호 생성 시점의 특징값들을 함께 저장 (ML 스코어링 용)
+    features: Dict[str, float] | None = None
 
 class StrategyFilter:
     """전략 점수 기반 필터링"""
@@ -42,6 +44,9 @@ class StrategyFilter:
         self.rolling_window = rolling_window
         self.score_history = []
         self.dynamic_threshold = True
+        # 한글 주석: 적응형 정책 파라미터 (자동 조정 대상)
+        self.min_confidence: float = 0.4
+        self.allow_high_risk: bool = True
         
     def should_execute_strategy(self, signal: StrategySignal) -> Tuple[bool, str]:
         """
@@ -68,8 +73,8 @@ class StrategyFilter:
             return False, f"리스크 레벨 초과: {signal.risk_level}"
         
         # 한글 주석: 신뢰도 체크 (완화: 0.4)
-        if signal.confidence < 0.4:
-            return False, f"신뢰도 부족: {signal.confidence:.2f} < 0.40"
+        if signal.confidence < self.min_confidence:
+            return False, f"신뢰도 부족: {signal.confidence:.2f} < {self.min_confidence:.2f}"
         
         # 한글 주석: 모든 조건 통과
         self._update_score_history(signal.score)
@@ -96,7 +101,7 @@ class StrategyFilter:
         risk_limits = {
             "low": True,      # 항상 허용
             "medium": True,   # 허용
-            "high": True,     # 고위험 허용 (백테스트 수익성 검증용)
+            "high": self.allow_high_risk,     # 고위험: 정책에 따라 허용/거부
             "extreme": False  # 극고위험 거부
         }
         
@@ -123,7 +128,52 @@ class StrategyFilter:
             "recent_avg_score": np.mean(recent_scores),
             "recent_std_score": np.std(recent_scores),
             "total_signals": len(self.score_history),
-            "recent_signals": len(recent_scores)
+            "recent_signals": len(recent_scores),
+            "min_confidence": self.min_confidence,
+            "allow_high_risk": self.allow_high_risk
+        }
+
+    # ===== 적응형 정책 =====
+    def adapt_thresholds(self, executed_trades: List[Dict]) -> Dict:
+        """실행된 거래 성과 기반으로 필터 정책 자동 조정
+        - 성과 양호(승률>60% & PF>1.2): 완화
+        - 성과 저조(승률<45% 또는 PF<1.0): 강화
+        """
+        if not executed_trades:
+            # 데이터가 없으면 미세 완화로 더 많은 샘플을 유도
+            self.min_score = max(70.0, self.min_score - 1.0)
+            self.min_confidence = max(0.3, self.min_confidence - 0.02)
+            return self._current_policy()
+
+        import pandas as pd
+        df = pd.DataFrame(executed_trades)
+        win_rate = (df['pnl'] > 0).mean() * 100.0
+        gross_profit = float(df.loc[df['pnl']>0, 'pnl'].sum())
+        gross_loss = float(df.loc[df['pnl']<0, 'pnl'].sum())
+        profit_factor = (gross_profit / abs(gross_loss)) if gross_loss < 0 else 2.0
+
+        # 조정 로직
+        if win_rate > 60.0 and profit_factor > 1.2:
+            # 완화
+            self.min_score = max(70.0, self.min_score - 2.0)
+            self.min_confidence = max(0.3, self.min_confidence - 0.05)
+            self.allow_high_risk = True
+        elif win_rate < 45.0 or profit_factor < 1.0:
+            # 강화
+            self.min_score = min(95.0, self.min_score + 2.0)
+            self.min_confidence = min(0.8, self.min_confidence + 0.05)
+            self.allow_high_risk = False
+        else:
+            # 미세 조정 없음
+            pass
+
+        return self._current_policy()
+
+    def _current_policy(self) -> Dict:
+        return {
+            'min_score': round(self.min_score, 2),
+            'min_confidence': round(self.min_confidence, 2),
+            'allow_high_risk': self.allow_high_risk
         }
 
 class BacktestingDataCollector:

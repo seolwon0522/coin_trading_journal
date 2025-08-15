@@ -1,0 +1,3 @@
+mode,trades,total_pnl,win_rate
+baseline,14841,42263.589758625145,57.408530422478265
+ml,2,40.0,100.0

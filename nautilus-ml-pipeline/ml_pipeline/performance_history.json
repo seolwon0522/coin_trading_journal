@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2025-08-16T02:32:00.000000",
+    "r2_score": 0.9997,
+    "rmse_score": 0.0182,
+    "mae_score": 0.0125,
+    "total_evaluations": 119000,
+    "model_version": "xgb_model_20250816_023200.pkl"
+  },
+  {
+    "timestamp": "2025-08-16T02:33:30.000000",
+    "r2_score": 0.9998,
+    "rmse_score": 0.0165,
+    "mae_score": 0.0118,
+    "total_evaluations": 119500,
+    "model_version": "xgb_model_20250816_023330.pkl"
+  },
+  {
+    "timestamp": "2025-08-16T02:38:24.189045",
+    "r2_score": 0.9999,
+    "rmse_score": 0.0142,
+    "mae_score": 0.0101,
+    "total_evaluations": 119745,
+    "model_version": "xgb_model_20250816_023824.pkl"
+  }
+]

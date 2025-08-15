@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class MLBacktestStrategy:
     """ML 피드백 기반 백테스팅 전략"""
     
-    def __init__(self, strategy_filter: StrategyFilter, data_collector: BacktestingDataCollector):
+    def __init__(self, strategy_filter: StrategyFilter, data_collector: BacktestingDataCollector, scoring_config: Dict | None = None):
         """
         전략 초기화
         
@@ -36,6 +36,10 @@ class MLBacktestStrategy:
         self.data_collector = data_collector
         self.signals_generated = []
         self.trades_executed = []
+        # 한글 주석: 스코어링 모드 (baseline | ml | hybrid)
+        scoring_config = scoring_config or {}
+        self.scoring_mode: str = scoring_config.get('mode', 'baseline')
+        self.hybrid_weight: float = float(scoring_config.get('hybrid_weight', 0.4))
         
     def generate_signals(self, bars: List[Dict]) -> List[StrategySignal]:
         """
@@ -87,7 +91,9 @@ class MLBacktestStrategy:
         # 한글 주석: 전략별 신호 생성
         if sma_short > sma_long and 30 < rsi < 70:
             # Breakout 전략
-            score = self._calculate_strategy_score('breakout', rsi, volume_spike, current_price, closes)
+            base_score = self._calculate_strategy_score('breakout', rsi, volume_spike, current_price, closes)
+            feat = {'sma_short': sma_short, 'sma_long': sma_long, 'rsi': rsi, 'volume_spike': float(volume_spike), 'price': current_price}
+            score = self._compute_score('breakout', base_score, feat)
             confidence = min(0.9, (sma_short - sma_long) / sma_long + 0.5)
             
             return StrategySignal(
@@ -99,12 +105,15 @@ class MLBacktestStrategy:
                 take_profit=current_price * 1.04,
                 score=score,
                 confidence=confidence,
-                risk_level='medium'
+                risk_level='medium',
+                features=feat
             )
             
         elif sma_short < sma_long and rsi > 55:
             # Trend 전략 (하락 추세)
-            score = self._calculate_strategy_score('trend', rsi, volume_spike, current_price, closes)
+            base_score = self._calculate_strategy_score('trend', rsi, volume_spike, current_price, closes)
+            feat = {'sma_short': sma_short, 'sma_long': sma_long, 'rsi': rsi, 'volume_spike': float(volume_spike), 'price': current_price}
+            score = self._compute_score('trend', base_score, feat)
             confidence = min(0.85, (sma_long - sma_short) / sma_long + 0.4)
             
             return StrategySignal(
@@ -116,12 +125,15 @@ class MLBacktestStrategy:
                 take_profit=current_price * 0.96,
                 score=score,
                 confidence=confidence,
-                risk_level='medium'
+                risk_level='medium',
+                features=feat
             )
             
         elif rsi is not None and (rsi > 80 or rsi < 20):
             # Counter Trend 전략
-            score = self._calculate_strategy_score('counter_trend', rsi, volume_spike, current_price, closes)
+            base_score = self._calculate_strategy_score('counter_trend', rsi, volume_spike, current_price, closes)
+            feat = {'sma_short': sma_short, 'sma_long': sma_long, 'rsi': rsi, 'volume_spike': float(volume_spike), 'price': current_price, 'direction': 1.0 if (rsi < 20) else -1.0}
+            score = self._compute_score('counter_trend', base_score, feat)
             confidence = 0.6 + abs(50 - rsi) / 50 * 0.3
             
             direction = 'sell' if rsi > 80 else 'buy'
@@ -136,7 +148,8 @@ class MLBacktestStrategy:
                 take_profit=current_price * (0.97 if direction == 'buy' else 1.03),
                 score=score,
                 confidence=confidence,
-                risk_level=risk_level
+                risk_level=risk_level,
+                features=feat
             )
         
         return None
@@ -209,6 +222,43 @@ class MLBacktestStrategy:
         
         return variance ** 0.5
 
+    # ===== 스코어링 모드 통합 =====
+    def _compute_score(self, strategy_type: str, base_score: float, feat: Dict[str, float]) -> float:
+        if self.scoring_mode == 'baseline':
+            return base_score
+        elif self.scoring_mode == 'ml':
+            ml_score = self._ml_strategy_score(strategy_type, feat)
+            return ml_score
+        elif self.scoring_mode == 'hybrid':
+            ml_score = self._ml_strategy_score(strategy_type, feat)
+            w = max(0.0, min(1.0, self.hybrid_weight))
+            return (1 - w) * base_score + w * ml_score
+        return base_score
+
+    def _ml_strategy_score(self, strategy_type: str, feat: Dict[str, float]) -> float:
+        """최신 ML 모델로 return_pct 예측 → 0~100 점수로 정규화"""
+        try:
+            from ml_pipeline.model_trainer import ModelManager
+            import pandas as pd
+            manager = ModelManager()
+            model = manager.load_latest_model()
+            if model is None:
+                return 50.0
+            row = {
+                'entry_timing_score': (feat.get('sma_short',0)-feat.get('sma_long',0)) / max(feat.get('sma_long',1e-9),1e-9) * 100 + (50 - abs(50 - feat.get('rsi',50))),
+                'exit_timing_score': 70.0,
+                'risk_mgmt_score': 80.0,
+                'pnl_ratio': 0.01,
+                'volatility': abs(feat.get('sma_short',0)-feat.get('sma_long',0))/max(feat.get('sma_long',1e-9),1e-9)*10,
+                'market_condition': 1,
+                'volume_profile': 1.0 + feat.get('volume_spike',0)*0.5,
+            }
+            X = pd.DataFrame([row])
+            ret = float(model.predict(X)[0])
+            return max(0.0, min(100.0, 50 + ret))
+        except Exception:
+            return 50.0
+
 class NautilusBacktestRunner:
     """노틸러스 백테스팅 실행기"""
     
@@ -227,7 +277,8 @@ class NautilusBacktestRunner:
         # 한글 주석: 동적 임계값 비활성화로 거래 발생률 상향
         self.strategy_filter.dynamic_threshold = False
         self.data_collector = BacktestingDataCollector()
-        self.strategy = MLBacktestStrategy(self.strategy_filter, self.data_collector)
+        scoring_conf = self.config.get('scoring', {}) if isinstance(self.config, dict) else {}
+        self.strategy = MLBacktestStrategy(self.strategy_filter, self.data_collector, scoring_config=scoring_conf)
         
     def create_sample_data(self, symbol: str = "BTCUSDT", days: int = 30,
                            start_date: Optional[datetime] = None,
@@ -345,11 +396,19 @@ class NautilusBacktestRunner:
                 self.data_collector.record_rejected_signal(signal, reason)
                 rejected_signals.append({'signal': signal, 'reason': reason})
                 
-        # 한글 주석: 결과 저장
+        # 한글 주석: 실행된 거래 성과를 기반으로 정책 자동 조정
+        try:
+            policy = self.strategy_filter.adapt_thresholds(executed_trades)
+            logger.info(f"필터 정책 자동 조정: {policy}")
+        except Exception as e:
+            logger.warning(f"정책 자동 조정 실패: {e}")
+
+        # 한글 주석: 결과 저장 (CSV + 데이터베이스)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         results_file = f"data/backtest_results/backtest_{symbol}_{timestamp}.csv"
         
         if executed_trades:
+            # 기존 CSV 저장 (호환성 유지)
             self.data_collector.export_training_data(results_file)
         else:
             # 한글 주석: 거래가 없더라도 빈 파일을 만들어 다운스트림이 경로를 인지하도록 함
@@ -375,6 +434,17 @@ class NautilusBacktestRunner:
                 }
             ])
             sample.to_csv(results_file, index=False)
+        
+        # 한글 주석: 데이터베이스에도 저장 (고성능 조회를 위해)
+        try:
+            sys.path.append(str(Path(__file__).parent.parent))
+            from database_manager import BacktestDatabaseManager
+            
+            db_manager = BacktestDatabaseManager()
+            backtest_run_id = db_manager.save_backtest_results(results_file)
+            logger.info(f"데이터베이스 저장 완료: 실행ID {backtest_run_id}")
+        except Exception as e:
+            logger.warning(f"데이터베이스 저장 실패 (CSV는 정상 저장됨): {e}")
             
         # 한글 주석: 백테스팅 요약
         total_pnl = sum(trade['pnl'] for trade in executed_trades)

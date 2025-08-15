@@ -1,0 +1,340 @@
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5002
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [16/Aug/2025 03:33:28] "[32mGET / HTTP/1.1[0m" 302 -
+127.0.0.1 - - [16/Aug/2025 03:33:28] "GET /login?next=/ HTTP/1.1" 200 -
+[2025-08-16 03:33:28,274] ERROR in app: Exception on /favicon.ico [GET]
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 841, in dispatch_request
+    self.raise_routing_exception(req)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 450, in raise_routing_exception
+    raise request.routing_exception  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/ctx.py", line 353, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/routing/map.py", line 624, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 752, in handle_user_exception
+    return self.handle_http_exception(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 727, in handle_http_exception
+    return self.ensure_sync(handler)(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/app.py", line 458, in not_found_error
+    return render_template('error.html',
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+                         error_code=404,
+                         ^^^^^^^^^^^^^^^
+                         error_message='페이지를 찾을 수 없습니다.'), 404
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 152, in render_template
+    return _render(app, template, context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 133, in _render
+    rv = template.render(context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 1, in top-level template code
+    {% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/base.html", line 212, in top-level template code
+    {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+    ^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 57, in block 'content'
+    오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+    ^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/utils.py", line 83, in from_obj
+    if hasattr(obj, "jinja_pass_arg"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'moment' is undefined
+127.0.0.1 - - [16/Aug/2025 03:33:28] "[35m[1mGET /favicon.ico HTTP/1.1[0m" 500 -
+Error on request:
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 841, in dispatch_request
+    self.raise_routing_exception(req)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 450, in raise_routing_exception
+    raise request.routing_exception  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/ctx.py", line 353, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/routing/map.py", line 624, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 752, in handle_user_exception
+    return self.handle_http_exception(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 727, in handle_http_exception
+    return self.ensure_sync(handler)(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/app.py", line 458, in not_found_error
+    return render_template('error.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 152, in render_template
+    return _render(app, template, context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 133, in _render
+    rv = template.render(context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 1, in top-level template code
+    {% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/base.html", line 212, in top-level template code
+    {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+    ^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 57, in block 'content'
+    오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+    ^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/utils.py", line 83, in from_obj
+    if hasattr(obj, "jinja_pass_arg"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'moment' is undefined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/serving.py", line 362, in run_wsgi
+    execute(self.server.app)
+    ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/serving.py", line 323, in execute
+    application_iter = app(environ, start_response)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1478, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1458, in wsgi_app
+    response = self.handle_exception(e)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 810, in handle_exception
+    server_error = self.ensure_sync(handler)(server_error)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/app.py", line 464, in internal_error
+    return render_template('error.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 152, in render_template
+    return _render(app, template, context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 133, in _render
+    rv = template.render(context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 1, in top-level template code
+    {% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/base.html", line 212, in top-level template code
+    {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+    ^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 57, in block 'content'
+    오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+    ^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/utils.py", line 83, in from_obj
+    if hasattr(obj, "jinja_pass_arg"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'moment' is undefined
+127.0.0.1 - - [16/Aug/2025 03:33:34] "[32mPOST /login?next=/ HTTP/1.1[0m" 302 -
+127.0.0.1 - - [16/Aug/2025 03:33:34] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2025 03:33:34] "GET /api/performance_history?days=30 HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2025 03:33:34] "GET /api/learning_improvements HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2025 03:33:34] "GET /api/feature_importance_trend HTTP/1.1" 200 -
+[2025-08-16 03:33:34,618] ERROR in app: Exception on /favicon.ico [GET]
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 841, in dispatch_request
+    self.raise_routing_exception(req)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 450, in raise_routing_exception
+    raise request.routing_exception  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/ctx.py", line 353, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/routing/map.py", line 624, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 752, in handle_user_exception
+    return self.handle_http_exception(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 727, in handle_http_exception
+    return self.ensure_sync(handler)(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/app.py", line 458, in not_found_error
+    return render_template('error.html',
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+                         error_code=404,
+                         ^^^^^^^^^^^^^^^
+                         error_message='페이지를 찾을 수 없습니다.'), 404
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 152, in render_template
+    return _render(app, template, context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 133, in _render
+    rv = template.render(context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 1, in top-level template code
+    {% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/base.html", line 212, in top-level template code
+    {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+    ^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 57, in block 'content'
+    오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+    ^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/utils.py", line 83, in from_obj
+    if hasattr(obj, "jinja_pass_arg"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'moment' is undefined
+127.0.0.1 - - [16/Aug/2025 03:33:34] "[35m[1mGET /favicon.ico HTTP/1.1[0m" 500 -
+Error on request:
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 841, in dispatch_request
+    self.raise_routing_exception(req)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 450, in raise_routing_exception
+    raise request.routing_exception  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/ctx.py", line 353, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/routing/map.py", line 624, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 752, in handle_user_exception
+    return self.handle_http_exception(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 727, in handle_http_exception
+    return self.ensure_sync(handler)(e)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/app.py", line 458, in not_found_error
+    return render_template('error.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 152, in render_template
+    return _render(app, template, context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 133, in _render
+    rv = template.render(context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 1, in top-level template code
+    {% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/base.html", line 212, in top-level template code
+    {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+    ^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 57, in block 'content'
+    오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+    ^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/utils.py", line 83, in from_obj
+    if hasattr(obj, "jinja_pass_arg"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'moment' is undefined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/serving.py", line 362, in run_wsgi
+    execute(self.server.app)
+    ~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/werkzeug/serving.py", line 323, in execute
+    application_iter = app(environ, start_response)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1478, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 1458, in wsgi_app
+    response = self.handle_exception(e)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/app.py", line 810, in handle_exception
+    server_error = self.ensure_sync(handler)(server_error)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/app.py", line 464, in internal_error
+    return render_template('error.html',
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 152, in render_template
+    return _render(app, template, context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/flask/templating.py", line 133, in _render
+    rv = template.render(context)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 1301, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/environment.py", line 936, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 1, in top-level template code
+    {% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/base.html", line 212, in top-level template code
+    {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+    ^^^^^^^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/templates/error.html", line 57, in block 'content'
+    오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+    ^^^^^^^^^
+  File "/Users/im-yoseb/coin_trading_journal/nautilus-ml-pipeline/ml_monitoring_frontend/.venv/lib/python3.13/site-packages/jinja2/utils.py", line 83, in from_obj
+    if hasattr(obj, "jinja_pass_arg"):
+       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'moment' is undefined
+127.0.0.1 - - [16/Aug/2025 03:33:34] "GET /api/pnl_history?agg=daily HTTP/1.1" 200 -
+127.0.0.1 - - [16/Aug/2025 03:34:04] "GET /api/performance_data HTTP/1.1" 200 -

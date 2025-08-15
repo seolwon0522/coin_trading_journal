@@ -1,97 +1,83 @@
-# ML 파이프라인 설정
-
-# 모델 업데이트 스케줄
-update_schedule:
-  daily_data_check: true
-  weekly_retrain:
-    enabled: true
-    day: "sunday"
-    time: "02:00"
-  monthly_full_retrain:
-    enabled: true
-    day: 1
-    time: "03:00"
-  emergency_threshold: 0.15 # 성능 15% 하락 시 즉시 재훈련
-
-# 데이터 양별 재훈련 주기
-data_based_schedule:
-  small_dataset: # 100건 미만
-    threshold: 100
-    retrain_every: 50
-  medium_dataset: # 100-500건
-    threshold: 500
-    retrain_every: "weekly"
-  large_dataset: # 500-2000건
-    threshold: 2000
-    retrain_every: "weekly"
-    performance_monitoring: true
-  xlarge_dataset: # 2000건 이상
-    threshold: 9999999
-    retrain_every: "biweekly"
-    drift_detection: true
-
-# 백테스팅 필터 설정
-strategy_filter:
-  min_score: 90 # 최소 전략 점수
-  rolling_window: 20 # 이동평균 윈도우
-  dynamic_threshold: true # 동적 임계값 조정
-
-# 모델 설정
-model:
-  algorithm: "xgboost"
-  hyperparameters:
-    n_estimators: 300
-    learning_rate: 0.05
-    max_depth: 5
-    subsample: 0.9
-    colsample_bytree: 0.9
-    random_state: 42
-
-  # 자동 하이퍼파라미터 튜닝
-  auto_tuning:
-    enabled: true
-    n_trials: 100
-    cv_folds: 5
-
-# 성능 모니터링
-monitoring:
-  metrics:
-    - "rmse"
-    - "r2_score"
-    - "sharpe_ratio"
-    - "information_ratio"
-
-  drift_detection:
-    method: "psi" # Population Stability Index
-    threshold: 0.2
-    window_size: 100
-
-  alerts:
-    email: "admin@trading-journal.com"
-    slack_webhook: ""
-    performance_threshold: 0.15
-
-# 데이터 설정
 data:
   features:
-    - "entry_timing_score"
-    - "exit_timing_score"
-    - "risk_mgmt_score"
-    - "pnl_ratio"
-    - "volatility"
-    - "market_condition"
-    - "volume_profile"
-
-  target: "return_pct"
-
+    - entry_timing_score
+    - exit_timing_score
+    - risk_mgmt_score
+    - pnl_ratio
+    - volatility
+    - market_condition
+    - volume_profile
+  target: return_pct
   validation:
+    min_train_size: 100
     test_size: 0.2
     time_series_split: true
-    min_train_size: 100
-
-# 저장소 설정
+data_based_schedule:
+  large_dataset:
+    performance_monitoring: true
+    retrain_every: weekly
+    threshold: 2000
+  medium_dataset:
+    retrain_every: weekly
+    threshold: 500
+  small_dataset:
+    retrain_every: 50
+    threshold: 100
+  xlarge_dataset:
+    drift_detection: true
+    retrain_every: biweekly
+    threshold: 9999999
+model:
+  algorithm: xgboost
+  auto_tuning:
+    cv_folds: 5
+    enabled: true
+    n_trials: 100
+  hyperparameters:
+    colsample_bytree: 0.9
+    learning_rate: 0.05
+    max_depth: 5
+    n_estimators: 300
+    random_state: 42
+    subsample: 0.9
+monitoring:
+  alerts:
+    email: admin@trading-journal.com
+    performance_threshold: 0.15
+    slack_webhook: ""
+  drift_detection:
+    method: psi
+    threshold: 0.2
+    window_size: 100
+  metrics:
+    - rmse
+    - r2_score
+    - sharpe_ratio
+    - information_ratio
+scoring:
+  entry_threshold: 80
+  hybrid_weight: 0.4
+  label_horizon: 1h
+  min_confidence: 0.4
+  mode: ml
+  objective: sharpe
 storage:
-  data_path: "data/training_data"
-  model_path: "data/models"
-  logs_path: "logs"
   backup_retention_days: 30
+  data_path: data/training_data
+  logs_path: logs
+  model_path: data/models
+strategy_filter:
+  dynamic_threshold: true
+  min_score: 90
+  rolling_window: 20
+update_schedule:
+  daily_data_check: true
+  emergency_threshold: 0.15
+  monthly_full_retrain:
+    day: 1
+    enabled: true
+    time: 03:00
+  weekly_retrain:
+    day: sunday
+    enabled: true
+    time: 02:00

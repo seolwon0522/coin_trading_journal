@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-08-16T02:38:24.189045",
+  "r2_score": 0.9999,
+  "rmse_score": 0.0142,
+  "mae_score": 0.0101,
+  "feature_importance": {
+    "pnl_ratio": 0.3918,
+    "market_condition": 0.2952,
+    "volatility": 0.1371,
+    "risk_mgmt_score": 0.1229,
+    "entry_timing_score": 0.0516
+  },
+  "training_samples": 119745,
+  "model_version": "xgb_model_20250816_023824.pkl"
+}
