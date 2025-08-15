@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}ML 성능 모니터링 관리자{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      .sidebar {
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 100;
+        padding: 48px 0 0;
+        box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
+        background-color: #f8f9fa;
+      }
+
+      .navbar-brand {
+        font-weight: bold;
+        color: #0d6efd !important;
+      }
+
+      .nav-link {
+        color: #333;
+        border-radius: 0.25rem;
+        margin: 0.1rem 0;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background-color: #0d6efd;
+        color: white !important;
+      }
+
+      .main-content {
+        margin-left: 240px;
+        padding: 20px;
+      }
+
+      .status-excellent {
+        color: #198754;
+      }
+      .status-good {
+        color: #20c997;
+      }
+      .status-fair {
+        color: #fd7e14;
+      }
+      .status-poor {
+        color: #dc3545;
+      }
+
+      .alert-critical {
+        border-left: 4px solid #dc3545;
+      }
+      .alert-high {
+        border-left: 4px solid #fd7e14;
+      }
+      .alert-medium {
+        border-left: 4px solid #ffc107;
+      }
+      .alert-low {
+        border-left: 4px solid #20c997;
+      }
+
+      .metric-card {
+        transition: transform 0.2s;
+      }
+
+      .metric-card:hover {
+        transform: translateY(-2px);
+      }
+
+      .chart-container {
+        position: relative;
+        height: 400px;
+        margin: 20px 0;
+      }
+      /* 차트 높이 고정: 캔버스 부모 영역 */
+      .chart-area {
+        position: relative;
+        height: 360px;
+        margin: 10px 0;
+      }
+
+      @media (max-width: 767.98px) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+
+        .main-content {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 상단 네비게이션 -->
+    <nav class="navbar navbar-dark bg-dark fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+          <i class="fas fa-chart-line me-2"></i>ML 성능 모니터링
+        </a>
+        {% if current_user.is_authenticated %}
+        <div class="navbar-nav ms-auto">
+          <div class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle text-white"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+            >
+              <i class="fas fa-user-shield me-1"></i>{{ current_user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item" href="{{ url_for('logout') }}">
+                  <i class="fas fa-sign-out-alt me-2"></i>로그아웃
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        {% if current_user.is_authenticated %}
+        <!-- 사이드바 -->
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+          <div class="position-sticky pt-3">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a
+                  class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}"
+                  href="{{ url_for('dashboard') }}"
+                >
+                  <i class="fas fa-tachometer-alt me-2"></i>대시보드
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link {{ 'active' if request.endpoint == 'alerts' }}"
+                  href="{{ url_for('alerts') }}"
+                >
+                  <i class="fas fa-exclamation-triangle me-2"></i>알림 관리
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link {{ 'active' if request.endpoint == 'reports' }}"
+                  href="{{ url_for('reports') }}"
+                >
+                  <i class="fas fa-file-chart-column me-2"></i>성능 리포트
+                </a>
+              </li>
+            </ul>
+
+            <hr class="my-3" />
+
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="refreshData()">
+                  <i class="fas fa-sync-alt me-2"></i>데이터 새로고침
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="exportReport()">
+                  <i class="fas fa-download me-2"></i>리포트 내보내기
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        {% endif %}
+
+        <!-- 메인 컨텐츠 -->
+        <main
+          class="{% if current_user.is_authenticated %}main-content{% else %}col-12{% endif %}"
+        >
+          <!-- Flash 메시지 -->
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock
+          %}
+        </main>
+      </div>
+    </div>
+
+    <!-- 페이지 플래그 (Jinja는 HTML 속성에서만 사용) -->
+    <div
+      id="dashboard-flags"
+      data-poll="{% if current_user.is_authenticated and request.endpoint == 'dashboard' %}1{% else %}0{% endif %}"
+      style="display: none"
+    ></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 공통 JavaScript -->
+    <script>
+      // 데이터 새로고침
+      function refreshData() {
+        const button = event.target.closest("a");
+        const icon = button.querySelector("i");
+
+        // 로딩 아이콘
+        icon.className = "fas fa-spinner fa-spin me-2";
+
+        setTimeout(() => {
+          location.reload();
+        }, 500);
+      }
+
+      // 리포트 내보내기
+      function exportReport() {
+        fetch("/api/export_report")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert("리포트가 성공적으로 생성되었습니다: " + data.report_file);
+            } else {
+              alert("리포트 생성 실패: " + data.error);
+            }
+          })
+          .catch((error) => {
+            alert("오류가 발생했습니다: " + error);
+          });
+      }
+
+      // 실시간 업데이트 (30초마다)
+      // 주의: Jinja 템플릿 표기는 HTML 속성에서만 사용하고, JS는 순수 JS만 사용
+      var __shouldPoll = (function () {
+        var el = document.getElementById("dashboard-flags");
+        return !!(el && el.dataset && el.dataset.poll === "1");
+      })();
+      if (__shouldPoll) {
+        (function () {
+          setInterval(function () {
+            fetch("/api/performance_data")
+              .then(function (response) {
+                return response.json();
+              })
+              .then(function (data) {
+                if (data.success) {
+                  updateDashboardData(data);
+                }
+              })
+              .catch(function (error) {
+                console.error("실시간 업데이트 실패:", error);
+              });
+          }, 30000);
+
+          function updateDashboardData(data) {
+            // 건강성 점수 업데이트
+            var healthElement = document.getElementById("health-score");
+            if (healthElement) {
+              healthElement.textContent = data.health_check.score;
+            }
+
+            // 상태 업데이트
+            var statusElement = document.getElementById("health-status");
+            if (statusElement) {
+              statusElement.textContent = data.health_check.status;
+              statusElement.className = "status-" + data.health_check.status;
+            }
+
+            // 타임스탬프 업데이트
+            var timestampElement = document.getElementById("last-update");
+            if (timestampElement) {
+              timestampElement.textContent = new Date().toLocaleString("ko-KR");
+            }
+          }
+        })();
+      }
+    </script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

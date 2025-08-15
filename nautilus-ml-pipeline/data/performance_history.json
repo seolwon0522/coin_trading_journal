@@ -1,0 +1,98 @@
+[
+  {
+    "timestamp": "2025-08-16T01:14:26.454902",
+    "r2_score": 0.9419105355053334,
+    "rmse": 1.1049467687026162,
+    "mae": 0.8346415140041172,
+    "overfit_ratio": 0.049874159650617145,
+    "training_size": 160,
+    "test_size": 40,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.0
+  },
+  {
+    "timestamp": "2025-08-16T01:34:15.790960",
+    "r2_score": 0.9394700055689303,
+    "rmse": 1.1279191928121945,
+    "mae": 0.8912814592137597,
+    "overfit_ratio": 0.060526017719131464,
+    "training_size": 160,
+    "test_size": 40,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.0
+  },
+  {
+    "timestamp": "2025-08-16T01:36:30.383068",
+    "r2_score": 0.9442769889339964,
+    "rmse": 1.0822060507018545,
+    "mae": 0.8970122274685111,
+    "overfit_ratio": 0.055548788235318614,
+    "training_size": 160,
+    "test_size": 40,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.0038128579716430176
+  },
+  {
+    "timestamp": "2025-08-16T01:38:28.266904",
+    "r2_score": 0.938063207867879,
+    "rmse": 1.1409510803789744,
+    "mae": 0.9449876346322222,
+    "overfit_ratio": 0.06193647307701844,
+    "training_size": 160,
+    "test_size": 40,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.004058491265425792
+  },
+  {
+    "timestamp": "2025-08-16T01:53:10.052156",
+    "r2_score": 0.9985582419631526,
+    "rmse": 0.04964409315891407,
+    "mae": 0.014160466618144551,
+    "overfit_ratio": 0.0013900536982341949,
+    "training_size": 5803,
+    "test_size": 1451,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.06124583783720067
+  },
+  {
+    "timestamp": "2025-08-16T01:55:04.524433",
+    "r2_score": 0.9997871347464291,
+    "rmse": 0.01911201835158888,
+    "mae": 0.007425774296645139,
+    "overfit_ratio": 0.00016922131751528902,
+    "training_size": 18920,
+    "test_size": 4730,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.049694000476393774
+  }
+]

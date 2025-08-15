@@ -1,0 +1,96 @@
+{% extends "base.html" %} {% block title %}오류 {{ error_code }} - ML 성능
+모니터링{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div
+    class="row justify-content-center align-items-center"
+    style="min-height: 70vh"
+  >
+    <div class="col-md-6 text-center">
+      <div class="error-template">
+        <h1 class="display-1 text-muted">{{ error_code }}</h1>
+
+        {% if error_code == 404 %}
+        <div class="error-details mb-4">
+          <i class="fas fa-search fa-5x text-muted mb-3"></i>
+          <h3>페이지를 찾을 수 없습니다</h3>
+          <p class="text-muted">요청하신 페이지가 존재하지 않습니다.</p>
+        </div>
+        {% elif error_code == 500 %}
+        <div class="error-details mb-4">
+          <i class="fas fa-exclamation-triangle fa-5x text-warning mb-3"></i>
+          <h3>내부 서버 오류</h3>
+          <p class="text-muted">일시적인 서버 오류가 발생했습니다.</p>
+        </div>
+        {% else %}
+        <div class="error-details mb-4">
+          <i class="fas fa-exclamation-circle fa-5x text-danger mb-3"></i>
+          <h3>오류가 발생했습니다</h3>
+          <p class="text-muted">
+            {{ error_message or '알 수 없는 오류가 발생했습니다.' }}
+          </p>
+        </div>
+        {% endif %}
+
+        <div class="error-actions">
+          {% if current_user.is_authenticated %}
+          <a href="{{ url_for('dashboard') }}" class="btn btn-primary me-2">
+            <i class="fas fa-home me-1"></i>대시보드로 돌아가기
+          </a>
+          {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary me-2">
+            <i class="fas fa-sign-in-alt me-1"></i>로그인
+          </a>
+          {% endif %}
+
+          <button class="btn btn-secondary" onclick="history.back()">
+            <i class="fas fa-arrow-left me-1"></i>이전 페이지
+          </button>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="error-help">
+          <h5>도움이 필요하신가요?</h5>
+          <p class="text-muted small">
+            문제가 지속되면 시스템 관리자에게 문의하세요.
+            <br />
+            오류 코드: {{ error_code }} | 시간: {{ moment().format('YYYY-MM-DD
+            HH:mm:ss') }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .error-template {
+    padding: 40px 20px;
+  }
+
+  .error-template .display-1 {
+    font-size: 8rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .error-details h3 {
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .error-actions .btn {
+    margin: 0.25rem;
+  }
+
+  @media (max-width: 768px) {
+    .error-template .display-1 {
+      font-size: 4rem;
+    }
+
+    .error-details i {
+      font-size: 3rem !important;
+    }
+  }
+</style>
+{% endblock %}

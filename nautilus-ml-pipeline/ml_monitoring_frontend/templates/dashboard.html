@@ -1,0 +1,577 @@
+{% extends "base.html" %} {% block title %}대시보드 - ML 성능 모니터링{%
+endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-tachometer-alt me-2"></i>ML 성능 모니터링 대시보드</h1>
+  <div class="text-muted">
+    <i class="fas fa-clock me-1"></i>
+    마지막 업데이트:
+    <span id="last-update">{{ data.last_update or '로딩 중...' }}</span>
+  </div>
+</div>
+
+<!-- 주요 지표 카드 -->
+<div class="row mb-4">
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card metric-card border-left-primary shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+            >
+              모델 건강성
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              <span id="health-score"
+                >{{ data.health_check.score if data.health_check else 'N/A'
+                }}</span
+              >/100
+            </div>
+            <small class="text-muted">
+              상태:
+              <span
+                id="health-status"
+                class="status-{{ data.health_check.status if data.health_check else 'unknown' }}"
+              >
+                {{ data.health_check.status if data.health_check else 'Unknown'
+                }}
+              </span>
+            </small>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-heartbeat fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card metric-card border-left-success shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-success text-uppercase mb-1"
+            >
+              최신 R² 점수
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {% if data.health_check and data.health_check.latest_performance
+              %} {{ "%.4f"|format(data.health_check.latest_performance.r2_score)
+              }} {% else %} N/A {% endif %}
+            </div>
+            <small class="text-muted">
+              {% if data.performance_summary and
+              data.performance_summary.trend_analysis %} {{
+              data.performance_summary.trend_analysis.r2_trend }} {% endif %}
+            </small>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card metric-card border-left-info shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+              총 평가 횟수
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {{ data.total_evaluations or 0 }}
+            </div>
+            <small class="text-muted">
+              최근 7일: {% if data.performance_summary and
+              data.performance_summary.total_evaluations %} {{
+              data.performance_summary.total_evaluations }}건 {% else %} 0건 {%
+              endif %}
+            </small>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card metric-card border-left-warning shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+            >
+              총 알림
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {{ data.total_alerts or 0 }}
+            </div>
+            <small class="text-muted">
+              심각: {% if data.performance_summary and
+              data.performance_summary.alerts_summary %} {{
+              data.performance_summary.alerts_summary.critical_alerts }}건 {%
+              else %} 0건 {% endif %}
+            </small>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 성능 차트 및 최근 알림 -->
+<div class="row">
+  <!-- 성능 트렌드 차트 -->
+  <div class="col-xl-8 col-lg-7">
+    <div class="card shadow mb-4">
+      <div
+        class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+      >
+        <h6 class="m-0 font-weight-bold text-primary">성능 트렌드</h6>
+        <div class="dropdown no-arrow">
+          <select
+            id="chart-period"
+            class="form-select form-select-sm"
+            onchange="updateChart()"
+          >
+            <option value="7">최근 7일</option>
+            <option value="30" selected>최근 30일</option>
+            <option value="90">최근 90일</option>
+          </select>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="performanceChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 최근 알림 -->
+  <div class="col-xl-4 col-lg-5">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">최근 알림</h6>
+      </div>
+      <div class="card-body">
+        {% if data.recent_alerts %}
+        <div class="list-group list-group-flush">
+          {% for alert in data.recent_alerts[-5:] %}
+          <div class="list-group-item alert-{{ alert.severity }} px-0">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">
+                {% if alert.severity == 'critical' %}
+                <i class="fas fa-times-circle text-danger"></i>
+                {% elif alert.severity == 'high' %}
+                <i class="fas fa-exclamation-circle text-warning"></i>
+                {% elif alert.severity == 'medium' %}
+                <i class="fas fa-info-circle text-info"></i>
+                {% else %}
+                <i class="fas fa-check-circle text-success"></i>
+                {% endif %} {{ alert.alert_type|title }}
+              </h6>
+              <small>{{ alert.timestamp[:16] }}</small>
+            </div>
+            <p class="mb-1">{{ alert.message }}</p>
+            <small class="text-muted">{{ alert.recommendation }}</small>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+          <i class="fas fa-bell-slash fa-2x mb-3"></i>
+          <p>최근 알림이 없습니다</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-3">
+          <a
+            href="{{ url_for('alerts') }}"
+            class="btn btn-primary btn-sm w-100"
+          >
+            <i class="fas fa-eye me-1"></i>모든 알림 보기
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 손익(PnL) 차트 -->
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow mb-4">
+      <div
+        class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+      >
+        <h6 class="m-0 font-weight-bold text-primary">
+          자동매매 손익 추이 (최근 백테스트)
+        </h6>
+        <small id="pnl-source" class="text-muted"></small>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="pnlChart"></canvas>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-2 col-6 mb-2">
+            <small class="text-muted">총 거래</small>
+            <div id="m-trades" class="fw-bold">-</div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <small class="text-muted">총 PnL ($)</small>
+            <div id="m-total" class="fw-bold">-</div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <small class="text-muted">승률</small>
+            <div id="m-win" class="fw-bold">-</div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <small class="text-muted">평균 PnL ($)</small>
+            <div id="m-avg" class="fw-bold">-</div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <small class="text-muted">MDD (%)</small>
+            <div id="m-mdd" class="fw-bold">-</div>
+          </div>
+          <div class="col-md-2 col-6 mb-2">
+            <small class="text-muted">CAGR / Sharpe</small>
+            <div id="m-cagr-sharpe" class="fw-bold">-</div>
+          </div>
+        </div>
+        <div class="text-end">
+          <div class="form-check form-switch d-inline-block me-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="aggToggle"
+              checked
+              onchange="updatePnlChart()"
+            />
+            <label class="form-check-label" for="aggToggle"
+              ><small>일별 집계</small></label
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- 성능 요약 정보 -->
+{% if data.performance_summary and data.performance_summary.performance_metrics
+%}
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">최근 7일 성능 요약</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-primary">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.avg_r2)
+                }}
+              </div>
+              <div class="text-muted">평균 R²</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-success">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.avg_rmse)
+                }}
+              </div>
+              <div class="text-muted">평균 RMSE</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-info">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.max_r2)
+                }}
+              </div>
+              <div class="text-muted">최대 R²</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-warning">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.min_rmse)
+                }}
+              </div>
+              <div class="text-muted">최소 RMSE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- 추천사항 -->
+{% if data.performance_summary and data.performance_summary.recommendations %}
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-lightbulb me-1"></i>추천사항
+        </h6>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          {% for recommendation in data.performance_summary.recommendations %}
+          <li class="mb-2">
+            <i class="fas fa-arrow-right text-primary me-2"></i>
+            {{ recommendation }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% endblock %} {% block scripts %}
+<script>
+  // 성능 차트 설정
+  let performanceChart;
+  let pnlChart;
+
+  function initChart() {
+    const ctx = document.getElementById("performanceChart").getContext("2d");
+
+    // 초기 빈 차트
+    performanceChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "R² Score",
+            data: [],
+            borderColor: "rgb(75, 192, 192)",
+            backgroundColor: "rgba(75, 192, 192, 0.1)",
+            tension: 0.1,
+            yAxisID: "y",
+          },
+          {
+            label: "RMSE",
+            data: [],
+            borderColor: "rgb(255, 99, 132)",
+            backgroundColor: "rgba(255, 99, 132, 0.1)",
+            tension: 0.1,
+            yAxisID: "y1",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: "시간",
+            },
+          },
+          y: {
+            type: "linear",
+            display: true,
+            position: "left",
+            title: {
+              display: true,
+              text: "R² Score",
+            },
+            min: 0,
+            max: 1,
+          },
+          y1: {
+            type: "linear",
+            display: true,
+            position: "right",
+            title: {
+              display: true,
+              text: "RMSE",
+            },
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: "모델 성능 트렌드",
+          },
+          legend: {
+            display: true,
+            position: "top",
+          },
+        },
+      },
+    });
+
+    // 초기 데이터 로드
+    updateChart();
+  }
+
+  // 손익 차트 초기화
+  function initPnlChart() {
+    const ctx = document.getElementById("pnlChart").getContext("2d");
+    pnlChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "PnL ($)",
+            data: [],
+            borderColor: "rgb(99, 132, 255)",
+            backgroundColor: "rgba(99, 132, 255, 0.1)",
+            tension: 0.1,
+            yAxisID: "y",
+          },
+          {
+            label: "누적 PnL ($)",
+            data: [],
+            borderColor: "rgb(54, 162, 235)",
+            backgroundColor: "rgba(54, 162, 235, 0.1)",
+            tension: 0.1,
+            yAxisID: "y1",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: { autoSkip: true, maxTicksLimit: 10 },
+            grid: { display: false },
+          },
+          y: {
+            position: "left",
+            title: { display: true, text: "PnL ($)" },
+            ticks: { maxTicksLimit: 6 },
+          },
+          y1: {
+            position: "right",
+            title: { display: true, text: "누적 PnL ($)" },
+            grid: { drawOnChartArea: false },
+            ticks: { maxTicksLimit: 6 },
+          },
+        },
+        plugins: {
+          legend: { position: "top" },
+          title: { display: true, text: "최근 백테스트 손익 추이" },
+          decimation: { enabled: true, algorithm: "min-max" },
+        },
+      },
+    });
+    updatePnlChart();
+  }
+
+  function updatePnlChart() {
+    const agg = document.getElementById("aggToggle")?.checked ? "daily" : "raw";
+    fetch(`/api/pnl_history?agg=${agg}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return;
+        const c = data.chart_data;
+        const labels = c.timestamps.map((ts) =>
+          new Date(ts).toLocaleString("ko-KR")
+        );
+        pnlChart.data.labels = labels;
+        pnlChart.data.datasets[0].data = c.pnl;
+        pnlChart.data.datasets[1].data = c.cum_pnl;
+        pnlChart.update();
+        const src = document.getElementById("pnl-source");
+        if (src)
+          src.textContent = c.source_file ? `파일: ${c.source_file}` : "";
+
+        // 지표 업데이트
+        const m = data.metrics || {};
+        document.getElementById("m-trades").textContent = m.trades ?? "-";
+        document.getElementById("m-total").textContent = (
+          m.total_pnl ?? 0
+        ).toLocaleString("en-US");
+        document.getElementById("m-win").textContent = m.win_rate
+          ? `${m.win_rate}%`
+          : "-";
+        document.getElementById("m-avg").textContent = (m.avg_pnl ?? 0).toFixed(
+          2
+        );
+        document.getElementById("m-mdd").textContent = m.max_drawdown_pct
+          ? `${m.max_drawdown_pct}%`
+          : "-";
+        document.getElementById("m-cagr-sharpe").textContent =
+          `${m.cagr_pct ?? 0}% / ${m.sharpe ?? 0}`;
+      })
+      .catch((err) => console.error("PnL 차트 갱신 실패:", err));
+  }
+
+  function updateChart() {
+    const period = document.getElementById("chart-period").value;
+
+    fetch(`/api/performance_history?days=${period}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const chartData = data.chart_data;
+
+          // 타임스탬프를 읽기 쉬운 형태로 변환
+          const labels = chartData.timestamps.map((ts) => {
+            const date = new Date(ts);
+            return (
+              date.toLocaleDateString("ko-KR") +
+              " " +
+              date.toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            );
+          });
+
+          performanceChart.data.labels = labels;
+          performanceChart.data.datasets[0].data = chartData.r2_scores;
+          performanceChart.data.datasets[1].data = chartData.rmse_scores;
+
+          performanceChart.update();
+        }
+      })
+      .catch((error) => {
+        console.error("차트 데이터 로드 실패:", error);
+      });
+  }
+
+  // 페이지 로드 시 차트 초기화
+  document.addEventListener("DOMContentLoaded", function () {
+    initChart();
+    initPnlChart();
+  });
+</script>
+{% endblock %}

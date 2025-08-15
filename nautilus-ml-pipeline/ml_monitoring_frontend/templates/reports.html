@@ -1,0 +1,488 @@
+{% extends "base.html" %} {% block title %}성능 리포트 - ML 성능 모니터링{%
+endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-file-chart-column me-2"></i>성능 리포트</h1>
+  <div>
+    <button class="btn btn-success" onclick="exportReport()">
+      <i class="fas fa-download me-1"></i>CSV 내보내기
+    </button>
+    <button class="btn btn-primary" onclick="location.reload()">
+      <i class="fas fa-sync-alt me-1"></i>새로고침
+    </button>
+  </div>
+</div>
+
+<!-- 전체 성능 요약 -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">30일 성능 요약</h6>
+      </div>
+      <div class="card-body">
+        {% if data.performance_summary and
+        data.performance_summary.performance_metrics %}
+        <div class="row">
+          <div class="col-md-2">
+            <div class="text-center">
+              <div class="h3 text-success">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.avg_r2)
+                }}
+              </div>
+              <div class="text-muted">평균 R²</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <div class="h3 text-primary">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.avg_rmse)
+                }}
+              </div>
+              <div class="text-muted">평균 RMSE</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <div class="h3 text-info">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.max_r2)
+                }}
+              </div>
+              <div class="text-muted">최고 R²</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <div class="h3 text-warning">
+                {{
+                "%.4f"|format(data.performance_summary.performance_metrics.min_rmse)
+                }}
+              </div>
+              <div class="text-muted">최저 RMSE</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <div class="h3 text-secondary">
+                {{ data.performance_summary.total_evaluations or 0 }}
+              </div>
+              <div class="text-muted">총 평가</div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="text-center">
+              <div class="h3 text-danger">
+                {{
+                "%.2f"|format((data.performance_summary.performance_metrics.avg_overfit_ratio
+                or 0) * 100) }}%
+              </div>
+              <div class="text-muted">평균 과적합</div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+          <i class="fas fa-chart-line fa-3x mb-3"></i>
+          <h4>성능 데이터 없음</h4>
+          <p>아직 성능 데이터가 수집되지 않았습니다.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 트렌드 분석 및 건강성 체크 -->
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card shadow h-100">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">트렌드 분석</h6>
+      </div>
+      <div class="card-body">
+        {% if data.performance_summary and
+        data.performance_summary.trend_analysis %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>R² 트렌드:</span>
+            <span
+              class="badge bg-{{ 'success' if data.performance_summary.trend_analysis.r2_trend == 'improving' else 'warning' }}"
+            >
+              {% if data.performance_summary.trend_analysis.r2_trend ==
+              'improving' %}
+              <i class="fas fa-arrow-up me-1"></i>개선 중 {% else %}
+              <i class="fas fa-arrow-down me-1"></i>안정/하락 {% endif %}
+            </span>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <span>RMSE 트렌드:</span>
+            <span
+              class="badge bg-{{ 'success' if data.performance_summary.trend_analysis.rmse_trend == 'improving' else 'warning' }}"
+            >
+              {% if data.performance_summary.trend_analysis.rmse_trend ==
+              'improving' %}
+              <i class="fas fa-arrow-down me-1"></i>개선 중 {% else %}
+              <i class="fas fa-arrow-up me-1"></i>안정/악화 {% endif %}
+            </span>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-muted">트렌드 분석 데이터가 부족합니다.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow h-100">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">모델 건강성</h6>
+      </div>
+      <div class="card-body">
+        {% if data.health_check %}
+        <div class="text-center mb-3">
+          <div class="h2 status-{{ data.health_check.status }}">
+            {{ data.health_check.score }}/100
+          </div>
+          <div class="h5 status-{{ data.health_check.status }}">
+            {{ data.health_check.status|title }}
+          </div>
+          <p class="text-muted">{{ data.health_check.message }}</p>
+        </div>
+
+        {% if data.health_check.issues %}
+        <div class="alert alert-warning" role="alert">
+          <h6 class="alert-heading">감지된 이슈:</h6>
+          <ul class="mb-0">
+            {% for issue in data.health_check.issues %}
+            <li>{{ issue }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %} {% if data.health_check.latest_performance %}
+        <div class="row text-center">
+          <div class="col-4">
+            <div class="small text-muted">R²</div>
+            <div class="font-weight-bold">
+              {{ "%.4f"|format(data.health_check.latest_performance.r2_score) }}
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="small text-muted">RMSE</div>
+            <div class="font-weight-bold">
+              {{ "%.4f"|format(data.health_check.latest_performance.rmse) }}
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="small text-muted">과적합</div>
+            <div class="font-weight-bold">
+              {{
+              "%.2f"|format(data.health_check.latest_performance.overfit_ratio *
+              100) }}%
+            </div>
+          </div>
+        </div>
+        {% endif %} {% else %}
+        <div class="text-muted">건강성 데이터를 로드할 수 없습니다.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 알림 통계 -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">알림 통계</h6>
+      </div>
+      <div class="card-body">
+        {% if data.alert_stats %}
+        <div class="row">
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-danger">
+                {{ data.alert_stats.critical or 0 }}
+              </div>
+              <div class="text-muted">긴급 알림</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-warning">
+                {{ data.alert_stats.high or 0 }}
+              </div>
+              <div class="text-muted">높음 알림</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-info">{{ data.alert_stats.medium or 0 }}</div>
+              <div class="text-muted">보통 알림</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center">
+              <div class="h4 text-success">{{ data.alert_stats.low or 0 }}</div>
+              <div class="text-muted">낮음 알림</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="text-center">
+              <div class="h4 text-primary">
+                {{ data.total_performance_records or 0 }}
+              </div>
+              <div class="text-muted">총 성능 기록</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-center">
+              <div class="h4 text-secondary">{{ data.total_alerts or 0 }}</div>
+              <div class="text-muted">총 알림 수</div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+          <i class="fas fa-bell-slash fa-2x mb-3"></i>
+          <p>알림 통계 데이터가 없습니다.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 추천사항 -->
+{% if data.performance_summary and data.performance_summary.recommendations %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-lightbulb me-1"></i>시스템 추천사항
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          {% for recommendation in data.performance_summary.recommendations %}
+          <div class="col-md-6 mb-3">
+            <div class="d-flex align-items-start">
+              <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+              <div>{{ recommendation }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- 상세 성능 차트 -->
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow">
+      <div
+        class="card-header py-3 d-flex justify-content-between align-items-center"
+      >
+        <h6 class="m-0 font-weight-bold text-primary">성능 히스토리 차트</h6>
+        <select
+          id="chart-period"
+          class="form-select form-select-sm w-auto"
+          onchange="updateChart()"
+        >
+          <option value="7">최근 7일</option>
+          <option value="30" selected>최근 30일</option>
+          <option value="90">최근 90일</option>
+          <option value="365">최근 1년</option>
+        </select>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="performanceHistoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<script>
+  let performanceHistoryChart;
+
+  function initChart() {
+    const ctx = document
+      .getElementById("performanceHistoryChart")
+      .getContext("2d");
+
+    performanceHistoryChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: "R² Score",
+            data: [],
+            borderColor: "rgb(75, 192, 192)",
+            backgroundColor: "rgba(75, 192, 192, 0.1)",
+            tension: 0.1,
+            yAxisID: "y",
+          },
+          {
+            label: "RMSE",
+            data: [],
+            borderColor: "rgb(255, 99, 132)",
+            backgroundColor: "rgba(255, 99, 132, 0.1)",
+            tension: 0.1,
+            yAxisID: "y1",
+          },
+          {
+            label: "과적합 비율",
+            data: [],
+            borderColor: "rgb(255, 159, 64)",
+            backgroundColor: "rgba(255, 159, 64, 0.1)",
+            tension: 0.1,
+            yAxisID: "y2",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
+        scales: {
+          x: {
+            display: true,
+            title: {
+              display: true,
+              text: "시간",
+            },
+          },
+          y: {
+            type: "linear",
+            display: true,
+            position: "left",
+            title: {
+              display: true,
+              text: "R² Score",
+            },
+            min: 0,
+            max: 1,
+          },
+          y1: {
+            type: "linear",
+            display: true,
+            position: "right",
+            title: {
+              display: true,
+              text: "RMSE",
+            },
+            grid: {
+              drawOnChartArea: false,
+            },
+          },
+          y2: {
+            type: "linear",
+            display: false,
+            min: 0,
+            max: 1,
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: "모델 성능 히스토리",
+          },
+          legend: {
+            display: true,
+            position: "top",
+          },
+          tooltip: {
+            callbacks: {
+              afterLabel: function (context) {
+                if (context.datasetIndex === 2) {
+                  return (
+                    "과적합 비율: " + (context.parsed.y * 100).toFixed(2) + "%"
+                  );
+                }
+                return "";
+              },
+            },
+          },
+        },
+      },
+    });
+
+    updateChart();
+  }
+
+  function updateChart() {
+    const period = document.getElementById("chart-period").value;
+
+    fetch(`/api/performance_history?days=${period}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const chartData = data.chart_data;
+
+          const labels = chartData.timestamps.map((ts) => {
+            const date = new Date(ts);
+            return (
+              date.toLocaleDateString("ko-KR") +
+              " " +
+              date.toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            );
+          });
+
+          performanceHistoryChart.data.labels = labels;
+          performanceHistoryChart.data.datasets[0].data = chartData.r2_scores;
+          performanceHistoryChart.data.datasets[1].data = chartData.rmse_scores;
+          performanceHistoryChart.data.datasets[2].data =
+            chartData.overfit_ratios;
+
+          performanceHistoryChart.update();
+        }
+      })
+      .catch((error) => {
+        console.error("차트 데이터 로드 실패:", error);
+      });
+  }
+
+  function exportReport() {
+    fetch("/api/export_report")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          alert("리포트가 성공적으로 생성되었습니다: " + data.report_file);
+        } else {
+          alert("리포트 생성 실패: " + data.error);
+        }
+      })
+      .catch((error) => {
+        alert("오류가 발생했습니다: " + error);
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    initChart();
+  });
+</script>
+{% endblock %}

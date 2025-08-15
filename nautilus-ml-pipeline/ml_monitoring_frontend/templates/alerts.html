@@ -1,0 +1,387 @@
+{% extends "base.html" %} {% block title %}알림 관리 - ML 성능 모니터링{%
+endblock %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-exclamation-triangle me-2"></i>알림 관리</h1>
+  <div>
+    <button class="btn btn-primary" onclick="refreshAlerts()">
+      <i class="fas fa-sync-alt me-1"></i>새로고침
+    </button>
+  </div>
+</div>
+
+<!-- 알림 통계 -->
+<div class="row mb-4">
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-danger shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+            >
+              긴급 알림
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {{ data.severity_counts.critical or 0 }}
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-warning shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+            >
+              높음 알림
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {{ data.severity_counts.high or 0 }}
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-info shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+              보통 알림
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {{ data.severity_counts.medium or 0 }}
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-3 col-md-6 mb-4">
+    <div class="card border-left-success shadow h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div
+              class="text-xs font-weight-bold text-success text-uppercase mb-1"
+            >
+              낮음 알림
+            </div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">
+              {{ data.severity_counts.low or 0 }}
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 알림 필터링 -->
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">알림 필터</h6>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4">
+        <label for="severity-filter" class="form-label">심각도</label>
+        <select
+          id="severity-filter"
+          class="form-select"
+          onchange="filterAlerts()"
+        >
+          <option value="">전체</option>
+          <option value="critical">긴급</option>
+          <option value="high">높음</option>
+          <option value="medium">보통</option>
+          <option value="low">낮음</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="type-filter" class="form-label">알림 유형</label>
+        <select id="type-filter" class="form-select" onchange="filterAlerts()">
+          <option value="">전체</option>
+          <option value="degradation">성능 저하</option>
+          <option value="overfitting">과적합</option>
+          <option value="drift">데이터 드리프트</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="limit-filter" class="form-label">표시 개수</label>
+        <select id="limit-filter" class="form-select" onchange="filterAlerts()">
+          <option value="20" selected>20개</option>
+          <option value="50">50개</option>
+          <option value="100">100개</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 알림 목록 -->
+<div class="card shadow">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">최근 알림 목록</h6>
+  </div>
+  <div class="card-body">
+    <div id="alerts-container">
+      {% if data.recent_alerts %} {% for alert in data.recent_alerts %}
+      <div
+        class="alert alert-{{ 'danger' if alert.severity == 'critical' else 'warning' if alert.severity == 'high' else 'info' if alert.severity == 'medium' else 'success' }} alert-{{ alert.severity }} mb-3"
+        role="alert"
+      >
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center mb-2">
+              {% if alert.severity == 'critical' %}
+              <i class="fas fa-times-circle fa-lg me-2"></i>
+              {% elif alert.severity == 'high' %}
+              <i class="fas fa-exclamation-circle fa-lg me-2"></i>
+              {% elif alert.severity == 'medium' %}
+              <i class="fas fa-info-circle fa-lg me-2"></i>
+              {% else %}
+              <i class="fas fa-check-circle fa-lg me-2"></i>
+              {% endif %}
+              <h5 class="alert-heading mb-0">
+                {{ alert.alert_type|title }} - {{ alert.severity|title }}
+              </h5>
+            </div>
+
+            <p class="mb-2">{{ alert.message }}</p>
+
+            <div class="mb-2">
+              <strong>추천사항:</strong> {{ alert.recommendation }}
+            </div>
+
+            {% if alert.metrics %}
+            <div class="mb-2">
+              <strong>관련 지표:</strong>
+              <small class="text-muted">
+                {% for key, value in alert.metrics.items() %} {{ key }}: {% if
+                value is number %} {{ "%.4f"|format(value) }} {% else %} {{
+                value }} {% endif %} {% if not loop.last %}, {% endif %} {%
+                endfor %}
+              </small>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="text-end">
+            <small class="text-muted">
+              <i class="fas fa-clock me-1"></i>
+              {{ alert.timestamp[:19].replace('T', ' ') }}
+            </small>
+          </div>
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="text-center text-muted py-5">
+        <i class="fas fa-bell-slash fa-3x mb-3"></i>
+        <h4>알림이 없습니다</h4>
+        <p>현재 표시할 알림이 없습니다.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- 로딩 스피너 -->
+    <div id="loading-spinner" class="text-center py-3" style="display: none">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">로딩 중...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 알림 유형별 통계 차트 -->
+{% if data.type_counts %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">알림 유형별 통계</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="alertTypeChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% endblock %} {% block scripts %}
+<script>
+  // 알림 필터링
+  function filterAlerts() {
+      const severity = document.getElementById('severity-filter').value;
+      const type = document.getElementById('type-filter').value;
+      const limit = document.getElementById('limit-filter').value;
+
+      // 로딩 표시
+      document.getElementById('loading-spinner').style.display = 'block';
+      document.getElementById('alerts-container').style.opacity = '0.5';
+
+      // API 호출
+      let url = `/api/alerts?limit=${limit}`;
+      if (severity) url += `&severity=${severity}`;
+      if (type) url += `&type=${type}`;
+
+      fetch(url)
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  updateAlertsDisplay(data.alerts);
+              } else {
+                  console.error('알림 필터링 실패:', data.error);
+              }
+          })
+          .catch(error => {
+              console.error('알림 필터링 오류:', error);
+          })
+          .finally(() => {
+              document.getElementById('loading-spinner').style.display = 'none';
+              document.getElementById('alerts-container').style.opacity = '1';
+          });
+  }
+
+  function updateAlertsDisplay(alerts) {
+      const container = document.getElementById('alerts-container');
+
+      if (alerts.length === 0) {
+          container.innerHTML = `
+              <div class="text-center text-muted py-5">
+                  <i class="fas fa-bell-slash fa-3x mb-3"></i>
+                  <h4>조건에 맞는 알림이 없습니다</h4>
+                  <p>필터 조건을 변경해보세요.</p>
+              </div>
+          `;
+          return;
+      }
+
+      let html = '';
+      alerts.forEach(alert => {
+          const severityClass = {
+              'critical': 'danger',
+              'high': 'warning',
+              'medium': 'info',
+              'low': 'success'
+          }[alert.severity] || 'secondary';
+
+          const iconClass = {
+              'critical': 'fas fa-times-circle',
+              'high': 'fas fa-exclamation-circle',
+              'medium': 'fas fa-info-circle',
+              'low': 'fas fa-check-circle'
+          }[alert.severity] || 'fas fa-bell';
+
+          html += `
+              <div class="alert alert-${severityClass} alert-${alert.severity} mb-3" role="alert">
+                  <div class="d-flex justify-content-between align-items-start">
+                      <div class="flex-grow-1">
+                          <div class="d-flex align-items-center mb-2">
+                              <i class="${iconClass} fa-lg me-2"></i>
+                              <h5 class="alert-heading mb-0">
+                                  ${alert.alert_type.charAt(0).toUpperCase() + alert.alert_type.slice(1)} - ${alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
+                              </h5>
+                          </div>
+                          <p class="mb-2">${alert.message}</p>
+                          <div class="mb-2">
+                              <strong>추천사항:</strong> ${alert.recommendation}
+                          </div>
+                          ${alert.metrics ? `
+                              <div class="mb-2">
+                                  <strong>관련 지표:</strong>
+                                  <small class="text-muted">
+                                      ${Object.entries(alert.metrics).map(([key, value]) =>
+                                          `${key}: ${typeof value === 'number' ? value.toFixed(4) : value}`
+                                      ).join(', ')}
+                                  </small>
+                              </div>
+                          ` : ''}
+                      </div>
+                      <div class="text-end">
+                          <small class="text-muted">
+                              <i class="fas fa-clock me-1"></i>
+                              ${alert.timestamp.slice(0, 19).replace('T', ' ')}
+                          </small>
+                      </div>
+                  </div>
+              </div>
+          `;
+      });
+
+      container.innerHTML = html;
+  }
+
+  function refreshAlerts() {
+      filterAlerts();
+  }
+
+  // 알림 유형별 차트
+  {% if data.type_counts %}
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('alertTypeChart').getContext('2d');
+
+      new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+              labels: [
+                  {% for type_name in data.type_counts.keys() %}
+                      '{{ type_name|title }}'{% if not loop.last %},{% endif %}
+                  {% endfor %}
+              ],
+              datasets: [{
+                  data: [
+                      {% for count in data.type_counts.values() %}
+                          {{ count }}{% if not loop.last %},{% endif %}
+                      {% endfor %}
+                  ],
+                  backgroundColor: [
+                      '#FF6384',
+                      '#36A2EB',
+                      '#FFCE56',
+                      '#4BC0C0',
+                      '#9966FF',
+                      '#FF9F40'
+                  ]
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  title: {
+                      display: true,
+                      text: '알림 유형별 분포'
+                  },
+                  legend: {
+                      position: 'bottom'
+                  }
+              }
+          }
+      });
+  });
+  {% endif %}
+</script>
+{% endblock %}

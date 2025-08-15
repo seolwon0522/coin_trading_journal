@@ -1,0 +1,106 @@
+{% extends "base.html" %} {% block title %}관리자 로그인 - ML 성능 모니터링{%
+endblock %} {% block content %}
+<div class="container-fluid">
+  <div
+    class="row justify-content-center align-items-center"
+    style="min-height: 100vh"
+  >
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow">
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+            <h2 class="card-title">관리자 로그인</h2>
+            <p class="text-muted">ML 성능 모니터링 시스템</p>
+          </div>
+
+          <form method="POST">
+            <div class="mb-3">
+              <label for="username" class="form-label">
+                <i class="fas fa-user me-1"></i>사용자명
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="username"
+                name="username"
+                required
+              />
+            </div>
+
+            <div class="mb-4">
+              <label for="password" class="form-label">
+                <i class="fas fa-lock me-1"></i>비밀번호
+              </label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                required
+              />
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-sign-in-alt me-2"></i>로그인
+              </button>
+            </div>
+          </form>
+
+          <hr class="my-4" />
+
+          <div class="text-center">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              관리자만 접근 가능합니다
+            </small>
+          </div>
+
+          <!-- 개발 환경에서만 표시 -->
+          {% if config.DEBUG %}
+          <div class="alert alert-info mt-3" role="alert">
+            <small>
+              <strong>개발 모드:</strong><br />
+              기본 계정: admin / admin123
+            </small>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="text-center mt-3">
+        <small class="text-muted">
+          © 2025 ML Trading System. 모든 권리 보유.
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .card {
+    border: none;
+    border-radius: 1rem;
+  }
+
+  .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+  }
+</style>
+{% endblock %}
