@@ -296,7 +296,7 @@ class PerformanceMonitor:
             },
             'trend_analysis': {
                 'r2_trend': 'improving' if len(r2_scores) > 1 and r2_scores[-1] > r2_scores[0] else 'stable_or_declining',
-                'rmse_trend': 'improving' if len(rmse_scores) > 1 and rmse_scores[-1] < rmse_scores[0] else 'stable_or_worsening'
+                'rmse_trend': 'improving' if len(rmse_scores) > 1 and rmse_scores[-1] < rmse_scores[0] else 'stable_or_worsening',
             },
             'alerts_summary': {
                 'total_alerts': len(recent_alerts),
