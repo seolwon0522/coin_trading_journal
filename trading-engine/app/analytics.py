@@ -20,13 +20,13 @@ def aggregate_strategy_performance(db: Session, user_id: str, start_date: date, 
             trading_type as strategy,
             COUNT(*) as total_trades,
             COUNT(CASE WHEN pnl > 0 THEN 1 END) as winning_trades,
-            ROUND(AVG(CASE WHEN pnl > 0 THEN pnl ELSE NULL END), 2) as avg_win,
-            ROUND(AVG(CASE WHEN pnl <= 0 THEN pnl ELSE NULL END), 2) as avg_loss,
-            ROUND(AVG(pnl), 2) as avg_pnl,
-            ROUND(SUM(pnl), 2) as total_pnl,
+            ROUND(AVG(CASE WHEN pnl > 0 THEN pnl ELSE NULL END)::numeric, 2) as avg_win,
+            ROUND(AVG(CASE WHEN pnl <= 0 THEN pnl ELSE NULL END)::numeric, 2) as avg_loss,
+            ROUND(AVG(pnl)::numeric, 2) as avg_pnl,
+            ROUND(SUM(pnl)::numeric, 2) as total_pnl,
             ROUND(AVG(final_score), 1) as avg_score
         FROM trades 
-        WHERE user_id = :user_id 
+        WHERE user_id::text = :user_id 
         AND DATE(entry_time) BETWEEN :start_date AND :end_date
         AND trading_type IS NOT NULL
         GROUP BY trading_type
@@ -63,9 +63,9 @@ def aggregate_penalty_violations(db: Session, user_id: str, start_date: date, en
             ROUND(AVG(fv.penalty_score), 1) as avg_penalty,
             ROUND(SUM(fv.penalty_score), 1) as total_penalty
         FROM trades t
-        CROSS JOIN LATERAL jsonb_array_elements(t.forbidden_violations) as fv_data
+        CROSS JOIN LATERAL jsonb_array_elements(COALESCE(t.forbidden_violations, '[]'::jsonb)) as fv_data
         JOIN LATERAL jsonb_to_record(fv_data) as fv(rule_code text, penalty_score numeric) ON true
-        WHERE t.user_id = :user_id 
+        WHERE t.user_id::text = :user_id 
         AND DATE(t.entry_time) BETWEEN :start_date AND :end_date
         GROUP BY fv.rule_code
         ORDER BY violation_count DESC
@@ -81,7 +81,7 @@ def aggregate_penalty_violations(db: Session, user_id: str, start_date: date, en
     total_trades_query = text("""
         SELECT COUNT(*) as total 
         FROM trades 
-        WHERE user_id = :user_id 
+        WHERE user_id::text = :user_id 
         AND DATE(entry_time) BETWEEN :start_date AND :end_date
     """)
     total_trades = db.execute(total_trades_query, {
@@ -111,11 +111,11 @@ def aggregate_time_performance(db: Session, user_id: str, start_date: date, end_
             EXTRACT(HOUR FROM entry_time) as hour_of_day,
             COUNT(*) as total_trades,
             COUNT(CASE WHEN pnl > 0 THEN 1 END) as winning_trades,
-            ROUND(AVG(pnl), 2) as avg_pnl,
-            ROUND(SUM(pnl), 2) as total_pnl,
+            ROUND(AVG(pnl)::numeric, 2) as avg_pnl,
+            ROUND(SUM(pnl)::numeric, 2) as total_pnl,
             ROUND(AVG(final_score), 1) as avg_score
         FROM trades 
-        WHERE user_id = :user_id 
+        WHERE user_id::text = :user_id 
         AND DATE(entry_time) BETWEEN :start_date AND :end_date
         GROUP BY EXTRACT(HOUR FROM entry_time)
         HAVING COUNT(*) >= 2  -- 최소 2건 이상인 시간대만

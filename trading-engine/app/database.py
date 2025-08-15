@@ -5,9 +5,17 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 import os
+from dotenv import load_dotenv
+
+# .env 로드 (셸 값을 .env로 덮어쓰기)
+load_dotenv(override=True)
 
 # PostgreSQL 연결 설정
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost:5432/trading_journal")
+
+# 한글 주석: 드라이버 접두어 보정 (psycopg2로 인식되는 것을 방지)
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -44,6 +52,7 @@ class TradeModel(Base):
     __tablename__ = "trades"
 
     id = Column(BigInteger, primary_key=True, index=True)
+    user_id = Column(UUID, nullable=False)
     symbol = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
     trading_type = Column(Text, nullable=False)
@@ -58,6 +67,7 @@ class TradeModel(Base):
     stop_loss = Column(Float, nullable=True)
     indicators = Column(JSONB, nullable=True)
     strategy_score = Column(JSONB, nullable=True)
+    forbidden_violations = Column(JSONB, nullable=True)
     forbidden_penalty = Column(Integer, nullable=True)
     final_score = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

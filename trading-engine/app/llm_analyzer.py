@@ -2,14 +2,16 @@
 import json
 import os
 from typing import Dict, Optional
-import openai
+from openai import AsyncOpenAI
+from openai import APIConnectionError, APIStatusError, RateLimitError, AuthenticationError
 import logging
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-# OpenAI API 키 설정
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI API 클라이언트 설정
+_OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = AsyncOpenAI(api_key=_OPENAI_API_KEY)
 
 SYSTEM_PROMPT = """
 너는 트레이딩 성과 분석 전문가다.
@@ -70,7 +72,7 @@ async def analyze_patterns_with_gpt(analysis_data: Dict[str, str], max_retries: 
         try:
             logger.info(f"GPT 호출 시도 {attempt + 1}/{max_retries + 1}")
             
-            response = await openai.ChatCompletion.acreate(
+            response = await client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
@@ -105,22 +107,37 @@ async def analyze_patterns_with_gpt(analysis_data: Dict[str, str], max_retries: 
             logger.info("GPT 응답 검증 완료")
             return result
             
-        except openai.error.OpenAIError as e:
-            logger.error(f"OpenAI API 오류 (시도 {attempt + 1}): {e}")
+        except (APIConnectionError, APIStatusError, RateLimitError, AuthenticationError) as e:
+            error_msg = f"OpenAI API 오류 (시도 {attempt + 1}): {e}"
+            logger.error(error_msg)
+            
+            # 한글 주석: 구체적인 에러 타입별 메시지 추가
+            if "insufficient_quota" in str(e).lower():
+                logger.error("OpenAI 크레딧 부족. platform.openai.com에서 충전이 필요합니다.")
+            elif "rate_limit" in str(e).lower():
+                logger.error("API 요청 한도 초과. 잠시 후 다시 시도하세요.")
+            elif isinstance(e, AuthenticationError):
+                logger.error("OPENAI_API_KEY를 확인하세요.")
+                
             if attempt == max_retries:
+                logger.error("최대 재시도 횟수 초과. GPT 분석 실패")
                 return None
                 
         except json.JSONDecodeError as e:
             logger.error(f"JSON 파싱 오류 (시도 {attempt + 1}): {e}")
             logger.error(f"응답 내용: {content if 'content' in locals() else 'N/A'}")
             if attempt == max_retries:
+                logger.error("최대 재시도 횟수 초과. GPT 응답 형식 오류")
                 return None
                 
         except Exception as e:
             logger.error(f"알 수 없는 오류 (시도 {attempt + 1}): {e}")
             if attempt == max_retries:
+                logger.error("최대 재시도 횟수 초과. 시스템 오류")
                 return None
     
+    # 한글 주석: 모든 재시도 실패 시 명확한 실패 로그
+    logger.error("GPT 패턴 분석 완전 실패 - 모든 재시도 소진")
     return None
 
 def validate_analysis_result(result: Dict) -> bool:
