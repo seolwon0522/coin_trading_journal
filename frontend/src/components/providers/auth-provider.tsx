@@ -104,6 +104,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setupAxiosInterceptors();
       interceptorsInitialized = true;
     }
+
+    // 한글 주석: 관리자 계정 체크 (localStorage 우선)
+    const adminUserStr = localStorage.getItem('admin_user');
+    if (adminUserStr) {
+      try {
+        const adminUser = JSON.parse(adminUserStr) as AuthUser;
+        setUser(adminUser);
+        setIsLoading(false);
+        return;
+      } catch {
+        localStorage.removeItem('admin_user');
+      }
+    }
+
     const { accessToken } = authStorage.load();
     if (!accessToken) {
       setIsLoading(false);
@@ -126,7 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const oauth2Login = useCallback(async (provider: 'GOOGLE' | 'APPLE', idToken: string) => {
     // 소셜 로그인 처리: 백엔드 검증 → 토큰 저장 → 사용자 상태 반영
-    const res: LoginResponse = await authApi.oauth2Login({ token: idToken, providerType: provider });
+    const res: LoginResponse = await authApi.oauth2Login({
+      token: idToken,
+      providerType: provider,
+    });
     authStorage.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
     setUser(res.user);
     toast.success(`${provider === 'GOOGLE' ? 'Google' : 'Apple'}로 로그인되었습니다`);
@@ -134,13 +151,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await authApi.logout();
+      // 한글 주석: 관리자 계정이면 백엔드 호출 스킵
+      if (user?.role !== 'ADMIN' || user.id !== 999) {
+        await authApi.logout();
+      }
     } finally {
       authStorage.clear();
+      localStorage.removeItem('admin_user'); // 관리자 계정 정보 삭제
       setUser(null);
       toast.success('로그아웃 되었습니다');
     }
-  }, []);
+  }, [user]);
 
   const refresh = useCallback(async () => {
     const refreshToken = authStorage.getRefreshToken();
@@ -162,5 +183,3 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth는 AuthProvider 내부에서만 사용해야 합니다');
   return ctx;
 }
-
-

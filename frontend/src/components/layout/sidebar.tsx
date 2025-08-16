@@ -11,10 +11,12 @@ import {
   Settings,
   ChevronRight,
   Code2,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useRecentTrades } from '@/hooks/use-trades';
+import { useAuth } from '@/components/providers/auth-provider';
 
 // 사이드바 메뉴 아이템 타입
 interface SidebarItem {
@@ -23,12 +25,14 @@ interface SidebarItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
   dynamicBadge?: 'trades' | 'openPositions'; // 동적 뱃지 타입
+  adminOnly?: boolean; // 관리자 전용 메뉴
 }
 
 // 사이드바 컴포넌트
 export function Sidebar() {
   const pathname = usePathname();
   const { data: tradesData } = useRecentTrades();
+  const { user } = useAuth();
 
   // 동적 데이터 계산
   const totalTrades = tradesData?.total || 0;
@@ -68,6 +72,12 @@ export function Sidebar() {
       href: '/settings',
       icon: Settings,
     },
+    {
+      title: 'ML 모니터링',
+      href: '/admin/ml-monitoring',
+      icon: Shield,
+      adminOnly: true,
+    },
   ];
 
   return (
@@ -84,6 +94,11 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-6">
         <div className="space-y-1 px-3">
           {sidebarItems.map((item) => {
+            // 한글 주석: 관리자 전용 메뉴 필터링
+            if (item.adminOnly && user?.role !== 'ADMIN') {
+              return null;
+            }
+
             const isActive = pathname === item.href;
             const Icon = item.icon;
 
