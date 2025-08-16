@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS backtest_runs (
     start_date TIMESTAMP NOT NULL, -- 백테스트 시작 일시
     end_date TIMESTAMP NOT NULL, -- 백테스트 종료 일시
     timeframe VARCHAR(10) NOT NULL, -- 시간프레임 (1m, 5m, 1h 등)
-    total_trades INTEGER DEFAULT 0, -- 총 거래 수
-    total_pnl DECIMAL(15,8) DEFAULT 0, -- 총 손익
+    total_trades INTEGER NOT NULL DEFAULT 0, -- 총 거래 수
+    total_pnl DECIMAL(12,6) NOT NULL DEFAULT 0, -- 총 손익
     win_rate DECIMAL(5,4) DEFAULT 0, -- 승률 (0.0 ~ 1.0)
     max_drawdown DECIMAL(8,4) DEFAULT 0, -- 최대 손실폭 (범위 확장)
     sharpe_ratio DECIMAL(8,4) DEFAULT 0, -- 샤프 비율
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS backtest_trades (
     strategy_type VARCHAR(50) NOT NULL, -- 전략 유형
     
     -- 진입 정보
-    entry_price DECIMAL(15,8) NOT NULL, -- 진입 가격
-    stop_loss DECIMAL(15,8), -- 손절가
-    take_profit DECIMAL(15,8), -- 익절가
+    entry_price DECIMAL(12,6) NOT NULL, -- 진입 가격
+    stop_loss DECIMAL(12,6) NOT NULL DEFAULT 0, -- 손절가
+    take_profit DECIMAL(12,6) NOT NULL DEFAULT 0, -- 익절가
     
     -- 전략 점수 및 신뢰도
     strategy_score DECIMAL(5,2), -- 전략 점수 (0-100)
@@ -42,12 +42,12 @@ CREATE TABLE IF NOT EXISTS backtest_trades (
     risk_level VARCHAR(20), -- 위험 수준 (low, medium, high)
     
     -- 청산 정보
-    exit_price DECIMAL(15,8), -- 청산 가격
+    exit_price DECIMAL(12,6) NOT NULL DEFAULT 0, -- 청산 가격
     exit_timestamp TIMESTAMP, -- 청산 일시
     exit_reason VARCHAR(50), -- 청산 사유 (take_profit, stop_loss, timeout)
     
     -- 성과 지표
-    pnl DECIMAL(15,8), -- 손익 (절대값)
+    pnl DECIMAL(12,6) NOT NULL DEFAULT 0, -- 손익 (절대값)
     return_pct DECIMAL(8,4), -- 수익률 (%)
     duration_minutes INTEGER, -- 거래 지속 시간 (분)
     
