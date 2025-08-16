@@ -13,18 +13,22 @@ from pathlib import Path
 
 def setup_environment():
     """환경 변수 설정"""
-    # 한글 주석: 기본 환경 변수 설정
+    # 한글 주석: 필수 환경 변수 확인
     os.environ.setdefault('FLASK_SECRET_KEY', 'ml-monitoring-secret-2025-trading-system')
-    os.environ.setdefault('ADMIN_USERNAME', 'admin')
-    
-    # 한글 주석: 기본 비밀번호 해시 (admin123)
+    required = ['ADMIN_USERNAME', 'ADMIN_PASSWORD_HASH', 'PUBLIC_API_TOKEN']
+
+    missing = [v for v in required if not os.environ.get(v)]
+    if missing:
+        raise RuntimeError(f"필수 환경 변수가 설정되지 않았습니다: {', '.join(missing)}")
+
     import hashlib
-    default_password_hash = hashlib.sha256('admin123'.encode()).hexdigest()
-    os.environ.setdefault('ADMIN_PASSWORD_HASH', default_password_hash)
-    
-    print("환경 변수 설정 완료")
+    if os.environ['ADMIN_PASSWORD_HASH'] == hashlib.sha256('admin123'.encode()).hexdigest():
+        raise RuntimeError('기본 관리자 비밀번호(admin123)를 변경해야 합니다.')
+
+    os.environ.setdefault('CORS_ALLOWED_ORIGINS', 'http://localhost,http://127.0.0.1')
+
+    print("환경 변수 확인 완료")
     print(f"관리자 계정: {os.environ['ADMIN_USERNAME']}")
-    print("기본 비밀번호: admin123 (보안을 위해 변경 권장)")
 
 def main():
     parser = argparse.ArgumentParser(description='ML 성능 모니터링 대시보드')
@@ -48,7 +52,7 @@ def main():
         print(f"{'='*60}")
         print(f"모드: {args.mode}")
         print(f"주소: http://{args.host}:{args.port}")
-        print(f"관리자 계정: {os.environ['ADMIN_USERNAME']} / admin123")
+        print(f"관리자 계정: {os.environ['ADMIN_USERNAME']}")
         print(f"{'='*60}\n")
         
         if args.mode == 'dev':

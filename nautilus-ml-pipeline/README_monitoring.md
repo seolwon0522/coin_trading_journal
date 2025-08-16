@@ -55,7 +55,6 @@ python start_monitoring.py --mode prod --host 0.0.0.0 --port 5001
 ### 3. 접속
 
 - **URL**: http://localhost:5001
-- **기본 계정**: admin / admin123
 
 ## 📊 API 엔드포인트
 
@@ -83,8 +82,10 @@ python start_monitoring.py --mode prod --host 0.0.0.0 --port 5001
 
 ```bash
 export FLASK_SECRET_KEY="your-secret-key-here"
-export ADMIN_USERNAME="admin"
+export ADMIN_USERNAME="your-admin"
 export ADMIN_PASSWORD_HASH="sha256-hash-of-password"
+export PUBLIC_API_TOKEN="random-readonly-token"
+export CORS_ALLOWED_ORIGINS="http://localhost,http://127.0.0.1"
 ```
 
 ### 비밀번호 변경
@@ -95,6 +96,10 @@ new_password = "your_new_password"
 password_hash = hashlib.sha256(new_password.encode()).hexdigest()
 # ADMIN_PASSWORD_HASH 환경 변수에 설정
 ```
+
+### 공개 API 사용
+
+`/api/pnl_history_public` 호출 시 `X-API-KEY` 헤더에 `PUBLIC_API_TOKEN` 값을 포함해야 합니다.
 
 ## 📱 UI 특징
 

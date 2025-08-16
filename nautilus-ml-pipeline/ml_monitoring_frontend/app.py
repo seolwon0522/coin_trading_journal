@@ -9,6 +9,9 @@ ML 성능 모니터링 관리자 대시보드
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_cors import CORS
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
 import json
 import os
@@ -29,8 +32,18 @@ from run_1year_backtest import YearLongBacktestRunner
 from analysis_tools import BacktestAnalyzer
 
 app = Flask(__name__)
-# 한글 주석: CORS 허용 (프론트에서 직접 호출 가능하도록)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# 한글 주석: CORS 허용 범위를 환경 변수로 제한 (기본: localhost)
+allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost,http://127.0.0.1')
+origins = [o.strip() for o in allowed_origins.split(',') if o.strip()]
+CORS(app, resources={r"/api/*": {"origins": origins}})
+
+# 한글 주석: CSRF 보호 활성화
+csrf = CSRFProtect(app)
+
+# 한글 주석: Rate Limiter 설정 (기본: 100 requests/hour)
+limiter = Limiter(get_remote_address, app=app, default_limits=["100 per hour"])
+
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'ml-monitoring-secret-key-2025')
 
 # 한글 주석: API 응답 캐시 방지 헤더 부여
@@ -50,10 +63,16 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = '관리자 로그인이 필요합니다.'
 
-# 한글 주석: 관리자 계정 설정 (환경변수 또는 기본값)
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH', 
-    hashlib.sha256('admin123'.encode()).hexdigest())  # 기본 비밀번호: admin123
+# 한글 주석: 관리자 계정 설정 (환경변수 필수)
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME')
+ADMIN_PASSWORD_HASH = os.environ.get('ADMIN_PASSWORD_HASH')
+
+if not ADMIN_USERNAME or not ADMIN_PASSWORD_HASH:
+    raise RuntimeError('ADMIN_USERNAME과 ADMIN_PASSWORD_HASH 환경 변수를 설정해야 합니다.')
+
+# 한글 주석: 기본 비밀번호(admin123) 사용 여부 체크
+if ADMIN_PASSWORD_HASH == hashlib.sha256('admin123'.encode()).hexdigest():
+    raise RuntimeError('기본 관리자 비밀번호를 변경한 후 실행하세요.')
 
 class User(UserMixin):
     """관리자 사용자 클래스"""
@@ -371,22 +390,22 @@ def api_pnl_history():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# 한글 주석: 퍼블릭 접근용 PnL API (간단 토큰 검증)
+# 한글 주석: 퍼블릭 접근용 PnL API (API 키 및 레이트 리미트 적용)
 @app.route('/api/pnl_history_public')
+@limiter.limit("10 per minute")
 def api_pnl_history_public():
     """로그인 없이 접근 가능한 PnL 히스토리 API (읽기 전용)
-    - 간단 토큰 검증으로 임시 보호
-    - 프론트엔드 통계 차트 연동용
+    - X-API-KEY 헤더 기반 인증
+    - 레이트 리미팅 적용
     """
     try:
-        # 쿼리 파라미터
-        token = request.args.get('token')
         symbol = request.args.get('symbol')
         days = int(request.args.get('days', 30))
 
-        # 한글 주석: 토큰 검증 (환경변수 또는 기본값)
-        expected = os.environ.get('PUBLIC_API_TOKEN', 'public-readonly')
-        if token != expected:
+        # 한글 주석: API 키 헤더 검증
+        token = request.headers.get('X-API-KEY')
+        expected = os.environ.get('PUBLIC_API_TOKEN')
+        if not expected or token != expected:
             return jsonify({'success': False, 'error': 'unauthorized'}), 401
 
         # 한글 주석: DB에서 PnL 히스토리 조회
