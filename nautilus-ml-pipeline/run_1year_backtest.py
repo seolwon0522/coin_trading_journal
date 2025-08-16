@@ -352,3 +352,4 @@ async def main():
 if __name__ == "__main__":
     # 한글 주석: 1년치 백테스트 실행
     asyncio.run(main())
+

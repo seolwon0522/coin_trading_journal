@@ -461,3 +461,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ 분석 실패: {e}")
         logger.error(f"분석 도구 실행 실패: {e}")
+

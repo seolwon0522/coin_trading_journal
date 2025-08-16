@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API 테스트</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .result {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+      .success {
+        background: #d4edda;
+      }
+      .error {
+        background: #f8d7da;
+      }
+      button {
+        padding: 10px;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>상세결과 API 테스트</h1>
+
+    <button onclick="testDetailedResults()">상세결과 API 테스트</button>
+    <button onclick="testBacktestStatus()">백테스트 상태 API 테스트</button>
+
+    <div id="results"></div>
+
+    <script>
+      function addResult(message, isSuccess = true) {
+        const div = document.createElement("div");
+        div.className = `result ${isSuccess ? "success" : "error"}`;
+        div.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+        document.getElementById("results").appendChild(div);
+      }
+
+      function testDetailedResults() {
+        addResult("상세결과 API 호출 시작...");
+
+        fetch("/api/detailed-results")
+          .then((response) => {
+            addResult(`HTTP 상태: ${response.status} ${response.statusText}`);
+            return response.json();
+          })
+          .then((data) => {
+            addResult(`응답 데이터: ${JSON.stringify(data, null, 2)}`);
+            if (data.success) {
+              addResult("✅ API 호출 성공!");
+            } else {
+              addResult(`⚠️ API 오류: ${data.error}`, false);
+            }
+          })
+          .catch((error) => {
+            addResult(`❌ 네트워크 오류: ${error.message}`, false);
+            console.error("상세 오류:", error);
+          });
+      }
+
+      function testBacktestStatus() {
+        addResult("백테스트 상태 API 호출 시작...");
+
+        fetch("/api/backtest/status")
+          .then((response) => {
+            addResult(`HTTP 상태: ${response.status} ${response.statusText}`);
+            return response.json();
+          })
+          .then((data) => {
+            addResult(`응답 데이터: ${JSON.stringify(data, null, 2)}`);
+            if (data.success) {
+              addResult("✅ 백테스트 상태 API 호출 성공!");
+            } else {
+              addResult(`⚠️ 백테스트 상태 오류: ${data.error}`, false);
+            }
+          })
+          .catch((error) => {
+            addResult(`❌ 네트워크 오류: ${error.message}`, false);
+            console.error("상세 오류:", error);
+          });
+      }
+
+      // 페이지 로드 시 자동 테스트
+      window.addEventListener("DOMContentLoaded", function () {
+        addResult("페이지 로드 완료. API 테스트 준비됨.");
+      });
+    </script>
+  </body>
+</html>

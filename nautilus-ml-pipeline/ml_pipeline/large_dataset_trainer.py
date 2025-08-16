@@ -374,3 +374,4 @@ if __name__ == "__main__":
         print(f"대용량 훈련 완료: R² {metrics.get('test_r2', 'N/A')}")
     else:
         logger.info("샘플 데이터 파일이 없습니다")
+

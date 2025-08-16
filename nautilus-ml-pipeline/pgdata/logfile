@@ -1079,3 +1079,5 @@
 2025-08-16 20:16:57.801 KST [70380] LOG:  checkpoint complete: wrote 14 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.325 s, sync=0.001 s, total=1.332 s; sync files=9, longest=0.001 s, average=0.001 s; distance=66 kB, estimate=42758 kB
 2025-08-16 20:32:47.925 KST [70380] LOG:  checkpoint starting: time
 2025-08-16 20:32:48.746 KST [70380] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.816 s, sync=0.001 s, total=0.822 s; sync files=8, longest=0.001 s, average=0.001 s; distance=43 kB, estimate=38487 kB
+2025-08-16 21:25:33.070 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 21:25:34.629 KST [70380] LOG:  checkpoint complete: wrote 16 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.547 s, sync=0.001 s, total=1.561 s; sync files=10, longest=0.001 s, average=0.001 s; distance=84 kB, estimate=34647 kB

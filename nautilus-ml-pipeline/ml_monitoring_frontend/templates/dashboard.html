@@ -9,6 +9,238 @@ endblock %} {% block content %}
   </div>
 </div>
 
+<!-- 1년치 백테스트 실행 패널 -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div
+        class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+      >
+        <h6 class="m-0 font-weight-bold text-primary">
+          <i class="fas fa-rocket me-2"></i>1년치 자동매매 백테스트 & ML 훈련
+        </h6>
+        <div class="dropdown no-arrow">
+          <a
+            class="dropdown-toggle"
+            href="#"
+            role="button"
+            id="backtestDropdown"
+            data-bs-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+          </a>
+          <div
+            class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+            aria-labelledby="backtestDropdown"
+          >
+            <div class="dropdown-header">백테스트 옵션:</div>
+            <a class="dropdown-item" href="#" onclick="showBacktestSettings()"
+              >고급 설정</a
+            >
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#" onclick="viewBacktestHistory()"
+              >실행 기록</a
+            >
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- 실행 컨트롤 -->
+          <div class="col-md-4">
+            <div class="form-group">
+              <label for="symbol-select" class="form-label">거래 심볼</label>
+              <select class="form-select" id="symbol-select">
+                <option value="BTCUSDT" selected>BTC/USDT</option>
+                <option value="ETHUSDT">ETH/USDT</option>
+                <option value="BNBUSDT">BNB/USDT</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="chunk-size" class="form-label">청크 크기 (일)</label>
+              <input
+                type="number"
+                class="form-control"
+                id="chunk-size"
+                value="30"
+                min="7"
+                max="90"
+              />
+              <small class="form-text text-muted"
+                >작을수록 메모리 효율적, 클수록 빠름</small
+              >
+            </div>
+            <div class="form-group mb-3">
+              <label for="timeframe-select" class="form-label"
+                >시간 프레임</label
+              >
+              <select class="form-select" id="timeframe-select">
+                <option value="1m" selected>1분봉</option>
+                <option value="5m">5분봉</option>
+                <option value="1h">1시간봉</option>
+              </select>
+            </div>
+
+            <!-- 실행 버튼들 -->
+            <div class="d-grid gap-2">
+              <button
+                type="button"
+                class="btn btn-primary btn-lg"
+                id="start-backtest-btn"
+                onclick="startBacktest()"
+              >
+                <i class="fas fa-play me-2"></i>1년치 백테스트 시작
+              </button>
+              <button
+                type="button"
+                class="btn btn-warning"
+                id="stop-backtest-btn"
+                onclick="stopBacktest()"
+                style="display: none"
+              >
+                <i class="fas fa-stop me-2"></i>중단
+              </button>
+            </div>
+          </div>
+
+          <!-- 진행 상황 -->
+          <div class="col-md-8">
+            <div id="backtest-status" style="display: none">
+              <h6 class="text-primary mb-3">
+                <i class="fas fa-chart-line me-2"></i>진행 상황
+                <span class="badge bg-info ms-2" id="status-badge"
+                  >준비 중</span
+                >
+              </h6>
+
+              <!-- 진행률 표시 -->
+              <div class="mb-3">
+                <div
+                  class="d-flex justify-content-between align-items-center mb-1"
+                >
+                  <span class="small text-muted">전체 진행률</span>
+                  <span class="small text-muted" id="progress-percent">0%</span>
+                </div>
+                <div class="progress">
+                  <div
+                    class="progress-bar progress-bar-striped progress-bar-animated"
+                    id="progress-bar"
+                    role="progressbar"
+                    style="width: 0%"
+                    aria-valuenow="0"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- 현재 단계 -->
+              <div class="alert alert-info mb-3" id="current-step">
+                <i class="fas fa-info-circle me-2"></i>
+                <span id="step-text">준비 중...</span>
+              </div>
+
+              <!-- 실시간 로그 -->
+              <div class="card">
+                <div class="card-header py-2">
+                  <h6 class="m-0 text-primary">
+                    <i class="fas fa-terminal me-2"></i>실시간 로그
+                    <button
+                      class="btn btn-sm btn-outline-secondary float-end"
+                      onclick="clearLogs()"
+                    >
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </h6>
+                </div>
+                <div class="card-body p-2">
+                  <div
+                    id="backtest-logs"
+                    style="
+                      height: 150px;
+                      overflow-y: auto;
+                      font-family: monospace;
+                      font-size: 0.9rem;
+                      background: #f8f9fa;
+                      padding: 10px;
+                      border-radius: 4px;
+                    "
+                  >
+                    <!-- 로그 메시지들이 여기에 추가됩니다 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 결과 표시 -->
+            <div id="backtest-result" style="display: none">
+              <h6 class="text-success mb-3">
+                <i class="fas fa-check-circle me-2"></i>백테스트 완료!
+              </h6>
+              <div class="row">
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h5 class="card-title text-primary" id="result-trades">
+                        -
+                      </h5>
+                      <p class="card-text small text-muted">생성된 거래</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h5 class="card-title text-success" id="result-r2">-</h5>
+                      <p class="card-text small text-muted">모델 R² 스코어</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h5 class="card-title text-info" id="result-time">-</h5>
+                      <p class="card-text small text-muted">실행 시간</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card bg-light">
+                    <div class="card-body text-center">
+                      <h5 class="card-title text-warning" id="result-winrate">
+                        -
+                      </h5>
+                      <p class="card-text small text-muted">승률</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3">
+                <button
+                  class="btn btn-success me-2"
+                  onclick="viewDetailedResults()"
+                >
+                  <i class="fas fa-chart-bar me-2"></i>상세 결과 보기
+                </button>
+                <button
+                  class="btn btn-outline-primary"
+                  onclick="downloadReport()"
+                >
+                  <i class="fas fa-download me-2"></i>리포트 다운로드
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 주요 지표 카드 -->
 <div class="row mb-4">
   <div class="col-xl-3 col-md-6 mb-4">
@@ -203,117 +435,6 @@ endblock %} {% block content %}
           >
             <i class="fas fa-eye me-1"></i>모든 알림 보기
           </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 손익(PnL) 차트 -->
-<div class="row">
-  <div class="col-12">
-    <div class="card shadow mb-4">
-      <div
-        class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
-      >
-        <h6 class="m-0 font-weight-bold text-primary">
-          자동매매 손익 추이 (최근 백테스트)
-        </h6>
-        <div class="d-flex align-items-center gap-3">
-          <select
-            id="pnl-period"
-            class="form-select form-select-sm"
-            onchange="updatePnlChart()"
-            style="width: auto; min-width: 120px"
-          >
-            <option value="30" selected>최근 30일</option>
-            <option value="90">최근 90일</option>
-            <option value="365">최근 1년</option>
-            <option value="1095">최근 3년</option>
-            <option value="3650">전체 기간</option>
-          </select>
-          <small id="pnl-source" class="text-muted"></small>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="chart-area">
-          <canvas id="pnlChart"></canvas>
-        </div>
-        <div class="row mt-3">
-          <div class="col-md-2 col-6 mb-2">
-            <small class="text-muted">총 거래</small>
-            <div id="m-trades" class="fw-bold">-</div>
-          </div>
-          <div class="col-md-2 col-6 mb-2">
-            <small class="text-muted">총 PnL ($)</small>
-            <div id="m-total" class="fw-bold">-</div>
-          </div>
-          <div class="col-md-2 col-6 mb-2">
-            <small class="text-muted">승률</small>
-            <div id="m-win" class="fw-bold">-</div>
-          </div>
-          <div class="col-md-2 col-6 mb-2">
-            <small class="text-muted">평균 PnL ($)</small>
-            <div id="m-avg" class="fw-bold">-</div>
-          </div>
-          <div class="col-md-2 col-6 mb-2">
-            <small class="text-muted">MDD (%)</small>
-            <div id="m-mdd" class="fw-bold">-</div>
-          </div>
-          <div class="col-md-2 col-6 mb-2">
-            <small class="text-muted">CAGR / Sharpe</small>
-            <div id="m-cagr-sharpe" class="fw-bold">-</div>
-          </div>
-        </div>
-        <div class="text-end">
-          <div class="form-check form-switch d-inline-block me-2">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="aggToggle"
-              checked
-              onchange="updatePnlChart()"
-            />
-            <label class="form-check-label" for="aggToggle"
-              ><small>일별 집계</small></label
-            >
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 학습 개선점 추적 -->
-<div class="row">
-  <div class="col-12">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">
-          <i class="fas fa-brain me-2"></i>학습 개선점 추적
-        </h6>
-      </div>
-      <div class="card-body">
-        <div class="chart-area">
-          <canvas id="learningChart"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 피처 중요도 변화 트렌드 -->
-<div class="row">
-  <div class="col-12">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">
-          <i class="fas fa-weight me-2"></i>피처 중요도 변화 트렌드
-        </h6>
-      </div>
-      <div class="card-body">
-        <div class="chart-area">
-          <canvas id="featureChart"></canvas>
         </div>
       </div>
     </div>
@@ -830,5 +951,239 @@ endblock %} {% block content %}
       }
     }, 60000);
   });
+
+  // ================================
+  // 1년치 백테스트 실행 기능
+  // ================================
+
+  let backtestStatusInterval = null;
+
+  // 백테스트 시작
+  function startBacktest() {
+    const symbol = document.getElementById("symbol-select").value;
+    const chunkSize = parseInt(document.getElementById("chunk-size").value);
+    const timeframe = document.getElementById("timeframe-select").value;
+
+    // 입력값 검증
+    if (chunkSize < 7 || chunkSize > 90) {
+      alert("청크 크기는 7-90일 사이로 설정해주세요.");
+      return;
+    }
+
+    // UI 상태 변경
+    document.getElementById("start-backtest-btn").style.display = "none";
+    document.getElementById("stop-backtest-btn").style.display = "block";
+    document.getElementById("backtest-status").style.display = "block";
+    document.getElementById("backtest-result").style.display = "none";
+
+    // 로그 초기화
+    clearLogs();
+    addLog(
+      `${symbol} 1년치 백테스트 시작 (청크: ${chunkSize}일, 시간프레임: ${timeframe})`
+    );
+
+    // 백테스트 시작 API 호출
+    fetch("/api/backtest/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        symbol: symbol,
+        chunk_size: chunkSize,
+        timeframe: timeframe,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          addLog(`✅ ${data.message}`);
+          // 진행상황 모니터링 시작
+          backtestStatusInterval = setInterval(checkBacktestStatus, 2000);
+        } else {
+          addLog(`❌ 시작 실패: ${data.error}`);
+          resetBacktestUI();
+        }
+      })
+      .catch((error) => {
+        console.error("백테스트 시작 오류:", error);
+        addLog(`❌ 네트워크 오류: ${error.message}`);
+        resetBacktestUI();
+      });
+  }
+
+  // 백테스트 중단
+  function stopBacktest() {
+    if (confirm("정말로 백테스트를 중단하시겠습니까?")) {
+      fetch("/api/backtest/stop", {
+        method: "POST",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            addLog(`⏹️ ${data.message}`);
+          } else {
+            addLog(`❌ 중단 실패: ${data.error}`);
+          }
+        })
+        .catch((error) => {
+          console.error("백테스트 중단 오류:", error);
+          addLog(`❌ 중단 요청 실패: ${error.message}`);
+        });
+    }
+  }
+
+  // 백테스트 상태 확인
+  function checkBacktestStatus() {
+    fetch("/api/backtest/status")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success && data.status) {
+          updateBacktestUI(data.status);
+
+          // 완료되거나 오류 발생시 모니터링 중단
+          if (!data.status.running) {
+            clearInterval(backtestStatusInterval);
+            backtestStatusInterval = null;
+
+            if (data.status.result) {
+              showBacktestResult(data.status.result);
+            } else if (data.status.error) {
+              addLog(`❌ 오류 발생: ${data.status.error}`);
+              resetBacktestUI();
+            }
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("상태 확인 오류:", error);
+      });
+  }
+
+  // 백테스트 UI 업데이트
+  function updateBacktestUI(status) {
+    // 진행률 업데이트
+    const progress = status.progress || 0;
+    document.getElementById("progress-bar").style.width = progress + "%";
+    document
+      .getElementById("progress-bar")
+      .setAttribute("aria-valuenow", progress);
+    document.getElementById("progress-percent").textContent = progress + "%";
+
+    // 현재 단계 업데이트
+    document.getElementById("step-text").textContent =
+      status.current_step || "진행 중...";
+
+    // 상태 배지 업데이트
+    const statusBadge = document.getElementById("status-badge");
+    if (status.running) {
+      statusBadge.textContent = "실행 중";
+      statusBadge.className = "badge bg-primary ms-2";
+    } else if (status.error) {
+      statusBadge.textContent = "오류";
+      statusBadge.className = "badge bg-danger ms-2";
+    } else {
+      statusBadge.textContent = "완료";
+      statusBadge.className = "badge bg-success ms-2";
+    }
+
+    // 새로운 로그 추가
+    if (status.logs && status.logs.length > 0) {
+      const currentLogCount =
+        document.getElementById("backtest-logs").children.length;
+      const newLogs = status.logs.slice(currentLogCount);
+
+      newLogs.forEach((log) => {
+        addLogDirect(log);
+      });
+    }
+  }
+
+  // 백테스트 결과 표시
+  function showBacktestResult(result) {
+    document.getElementById("backtest-status").style.display = "none";
+    document.getElementById("backtest-result").style.display = "block";
+
+    // 결과 데이터 표시
+    document.getElementById("result-trades").textContent =
+      (result.trades_generated || 0).toLocaleString() + "건";
+    document.getElementById("result-r2").textContent = (
+      result.model_r2 || 0
+    ).toFixed(3);
+    document.getElementById("result-time").textContent =
+      (result.execution_time_hours || 0).toFixed(1) + "시간";
+    document.getElementById("result-winrate").textContent =
+      (result.win_rate || 0).toFixed(1) + "%";
+
+    addLog(
+      `🎉 백테스트 완료! 거래 ${result.trades_generated || 0}건 생성, 모델 R² ${(result.model_r2 || 0).toFixed(3)}`
+    );
+
+    resetBacktestUI();
+  }
+
+  // UI 리셋
+  function resetBacktestUI() {
+    document.getElementById("start-backtest-btn").style.display = "block";
+    document.getElementById("stop-backtest-btn").style.display = "none";
+
+    if (backtestStatusInterval) {
+      clearInterval(backtestStatusInterval);
+      backtestStatusInterval = null;
+    }
+  }
+
+  // 로그 추가 (시간 포함)
+  function addLog(message) {
+    const timestamp = new Date().toLocaleTimeString();
+    const logMessage = `${timestamp} - ${message}`;
+    addLogDirect(logMessage);
+  }
+
+  // 로그 직접 추가
+  function addLogDirect(logMessage) {
+    const logsContainer = document.getElementById("backtest-logs");
+    const logElement = document.createElement("div");
+    logElement.textContent = logMessage;
+    logElement.style.marginBottom = "2px";
+    logsContainer.appendChild(logElement);
+
+    // 자동 스크롤
+    logsContainer.scrollTop = logsContainer.scrollHeight;
+
+    // 로그 개수 제한 (최대 100개)
+    while (logsContainer.children.length > 100) {
+      logsContainer.removeChild(logsContainer.firstChild);
+    }
+  }
+
+  // 로그 초기화
+  function clearLogs() {
+    document.getElementById("backtest-logs").innerHTML = "";
+  }
+
+  // 고급 설정 표시
+  function showBacktestSettings() {
+    alert(
+      "고급 설정 기능은 추후 구현 예정입니다.\n현재는 기본 설정만 지원합니다."
+    );
+  }
+
+  // 백테스트 기록 보기
+  function viewBacktestHistory() {
+    alert("백테스트 실행 기록 기능은 추후 구현 예정입니다.");
+  }
+
+  // 상세 결과 보기
+  function viewDetailedResults() {
+    // 상세 결과 페이지로 이동
+    window.open("/detailed-results", "_blank");
+  }
+
+  // 리포트 다운로드
+  function downloadReport() {
+    // 리포트 다운로드 API 호출 (구현 필요)
+    alert("리포트 다운로드 기능은 추후 구현 예정입니다.");
+  }
 </script>
 {% endblock %}

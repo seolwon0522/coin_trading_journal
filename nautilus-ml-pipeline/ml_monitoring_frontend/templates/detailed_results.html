@@ -1,0 +1,714 @@
+{% extends "base.html" %} {% block title %}상세 결과 분석{% endblock %} {% block
+head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %} {% block content %}
+<div class="container-fluid" style="margin-top: 20px; padding-top: 20px">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-bar me-2"></i>백테스트 상세 결과 분석</h1>
+    <div>
+      <button
+        class="btn btn-outline-primary me-2"
+        onclick="downloadDetailedReport()"
+      >
+        <i class="fas fa-download me-1"></i>리포트 다운로드
+      </button>
+      <a href="/" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i>대시보드로 돌아가기
+      </a>
+    </div>
+  </div>
+
+  <!-- 백테스트 실행 정보 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-info-circle me-2"></i>백테스트 실행 정보
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <strong>거래 심볼:</strong><br />
+              <span id="result-symbol" class="text-primary fs-5">BTCUSDT</span>
+            </div>
+            <div class="col-md-3">
+              <strong>실행 시간:</strong><br />
+              <span id="result-execution-time" class="text-info fs-5"
+                >3.5시간</span
+              >
+            </div>
+            <div class="col-md-3">
+              <strong>생성된 거래:</strong><br />
+              <span id="result-total-trades" class="text-success fs-5"
+                >1,234건</span
+              >
+            </div>
+            <div class="col-md-3">
+              <strong>데이터 기간:</strong><br />
+              <span class="text-muted fs-5">1년 (365일)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 성과 지표 개선 비교 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-chart-line me-2"></i>학습 전후 성과 지표 비교
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- 모델 R² 스코어 -->
+            <div class="col-md-4 mb-3">
+              <div class="card bg-light h-100">
+                <div class="card-body text-center">
+                  <h6 class="card-title text-primary">모델 R² 스코어</h6>
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <small class="text-muted">이전</small>
+                      <div id="r2-before" class="fs-6 text-muted">0.156</div>
+                    </div>
+                    <div class="mx-3">
+                      <i class="fas fa-arrow-right text-primary"></i>
+                    </div>
+                    <div>
+                      <small class="text-muted">현재</small>
+                      <div id="r2-after" class="fs-5 fw-bold text-primary">
+                        0.234
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span id="r2-change" class="badge bg-success">
+                      <i class="fas fa-arrow-up me-1"></i>+0.078 (+50.0%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 승률 -->
+            <div class="col-md-4 mb-3">
+              <div class="card bg-light h-100">
+                <div class="card-body text-center">
+                  <h6 class="card-title text-success">승률</h6>
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <small class="text-muted">이전</small>
+                      <div id="winrate-before" class="fs-6 text-muted">
+                        52.1%
+                      </div>
+                    </div>
+                    <div class="mx-3">
+                      <i class="fas fa-arrow-right text-success"></i>
+                    </div>
+                    <div>
+                      <small class="text-muted">현재</small>
+                      <div id="winrate-after" class="fs-5 fw-bold text-success">
+                        58.3%
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span id="winrate-change" class="badge bg-success">
+                      <i class="fas fa-arrow-up me-1"></i>+6.2% (+11.9%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 샤프비율 -->
+            <div class="col-md-4 mb-3">
+              <div class="card bg-light h-100">
+                <div class="card-body text-center">
+                  <h6 class="card-title text-warning">샤프비율</h6>
+                  <div
+                    class="d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      <small class="text-muted">이전</small>
+                      <div id="sharpe-before" class="fs-6 text-muted">1.23</div>
+                    </div>
+                    <div class="mx-3">
+                      <i class="fas fa-arrow-right text-warning"></i>
+                    </div>
+                    <div>
+                      <small class="text-muted">현재</small>
+                      <div id="sharpe-after" class="fs-5 fw-bold text-warning">
+                        1.45
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <span id="sharpe-change" class="badge bg-success">
+                      <i class="fas fa-arrow-up me-1"></i>+0.22 (+17.9%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1년치 PnL 차트와 피처 변화 -->
+  <div class="row mb-4">
+    <!-- 1년치 PnL 누적 차트 -->
+    <div class="col-lg-8">
+      <div class="card shadow h-100">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-chart-area me-2"></i>1년치 누적 손익 (PnL) 곡선
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-area">
+            <canvas id="yearlyPnlChart" style="height: 400px"></canvas>
+          </div>
+
+          <!-- 차트 하단 메트릭 -->
+          <div class="row mt-3 pt-3 border-top">
+            <div class="col-md-3 text-center">
+              <small class="text-muted">총 수익률</small>
+              <div class="h5 text-success" id="total-return">+18.7%</div>
+            </div>
+            <div class="col-md-3 text-center">
+              <small class="text-muted">최대 낙폭</small>
+              <div class="h5 text-danger" id="max-drawdown">-8.2%</div>
+            </div>
+            <div class="col-md-3 text-center">
+              <small class="text-muted">수익/위험비</small>
+              <div class="h5 text-info" id="profit-risk-ratio">2.28</div>
+            </div>
+            <div class="col-md-3 text-center">
+              <small class="text-muted">연평균 수익률</small>
+              <div class="h5 text-primary" id="cagr">18.7%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 피처 중요도 변화 -->
+    <div class="col-lg-4">
+      <div class="card shadow h-100">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-weight me-2"></i>피처 중요도 변화
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="feature-comparison">
+            <!-- 피처별 변화 -->
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <small class="fw-bold">entry_timing_score</small>
+                <span class="badge bg-success">
+                  <i class="fas fa-arrow-up me-1"></i>+12.3%
+                </span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2">0.234</span>
+                <div class="progress flex-fill me-2" style="height: 8px">
+                  <div class="progress-bar bg-primary" style="width: 45%"></div>
+                </div>
+                <span class="fw-bold">0.263</span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <small class="fw-bold">risk_mgmt_score</small>
+                <span class="badge bg-success">
+                  <i class="fas fa-arrow-up me-1"></i>+8.7%
+                </span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2">0.198</span>
+                <div class="progress flex-fill me-2" style="height: 8px">
+                  <div class="progress-bar bg-success" style="width: 38%"></div>
+                </div>
+                <span class="fw-bold">0.215</span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <small class="fw-bold">exit_timing_score</small>
+                <span class="badge bg-danger">
+                  <i class="fas fa-arrow-down me-1"></i>-5.2%
+                </span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2">0.187</span>
+                <div class="progress flex-fill me-2" style="height: 8px">
+                  <div class="progress-bar bg-warning" style="width: 32%"></div>
+                </div>
+                <span class="fw-bold">0.177</span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <small class="fw-bold">volatility</small>
+                <span class="badge bg-success">
+                  <i class="fas fa-arrow-up me-1"></i>+15.1%
+                </span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2">0.156</span>
+                <div class="progress flex-fill me-2" style="height: 8px">
+                  <div class="progress-bar bg-info" style="width: 28%"></div>
+                </div>
+                <span class="fw-bold">0.179</span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <small class="fw-bold">market_condition</small>
+                <span class="badge bg-warning text-dark">
+                  <i class="fas fa-minus me-1"></i>+0.8%
+                </span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2">0.124</span>
+                <div class="progress flex-fill me-2" style="height: 8px">
+                  <div
+                    class="progress-bar bg-secondary"
+                    style="width: 22%"
+                  ></div>
+                </div>
+                <span class="fw-bold">0.125</span>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <small class="fw-bold">volume_profile</small>
+                <span class="badge bg-danger">
+                  <i class="fas fa-arrow-down me-1"></i>-8.9%
+                </span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="text-muted me-2">0.112</span>
+                <div class="progress flex-fill me-2" style="height: 8px">
+                  <div class="progress-bar bg-danger" style="width: 18%"></div>
+                </div>
+                <span class="fw-bold">0.102</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-3 border-top">
+            <div class="text-center">
+              <small class="text-muted">전체 피처 개선률</small>
+              <div class="h5 text-success">
+                <i class="fas fa-arrow-up me-1"></i>+6.8%
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 월별 성과 분석 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-calendar-alt me-2"></i>월별 성과 분석
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>월</th>
+                  <th>거래 수</th>
+                  <th>총 손익</th>
+                  <th>승률</th>
+                  <th>평균 손익</th>
+                  <th>최대 손실</th>
+                  <th>성과 등급</th>
+                </tr>
+              </thead>
+              <tbody id="monthly-performance">
+                <tr>
+                  <td>2024-01</td>
+                  <td>98</td>
+                  <td class="text-success">+$1,234</td>
+                  <td>62.2%</td>
+                  <td>+$12.59</td>
+                  <td class="text-danger">-$156</td>
+                  <td><span class="badge bg-success">A</span></td>
+                </tr>
+                <tr>
+                  <td>2024-02</td>
+                  <td>112</td>
+                  <td class="text-success">+$987</td>
+                  <td>58.9%</td>
+                  <td>+$8.81</td>
+                  <td class="text-danger">-$203</td>
+                  <td><span class="badge bg-success">A-</span></td>
+                </tr>
+                <tr>
+                  <td>2024-03</td>
+                  <td>156</td>
+                  <td class="text-danger">-$234</td>
+                  <td>48.1%</td>
+                  <td>-$1.50</td>
+                  <td class="text-danger">-$287</td>
+                  <td><span class="badge bg-warning text-dark">C</span></td>
+                </tr>
+                <tr>
+                  <td>2024-04</td>
+                  <td>134</td>
+                  <td class="text-success">+$1,567</td>
+                  <td>65.7%</td>
+                  <td>+$11.69</td>
+                  <td class="text-danger">-$134</td>
+                  <td><span class="badge bg-success">A+</span></td>
+                </tr>
+                <!-- 더 많은 월별 데이터... -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 개선 권장사항 -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-lightbulb me-2"></i>AI 분석 기반 개선 권장사항
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="alert alert-success">
+                <h6><i class="fas fa-check-circle me-2"></i>강점</h6>
+                <ul class="mb-0">
+                  <li>Entry timing 점수가 크게 개선됨 (+12.3%)</li>
+                  <li>전체적인 승률이 안정적으로 향상</li>
+                  <li>리스크 관리 능력이 개선됨</li>
+                  <li>변동성 대응 능력이 강화됨</li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="alert alert-warning">
+                <h6>
+                  <i class="fas fa-exclamation-triangle me-2"></i>개선 영역
+                </h6>
+                <ul class="mb-0">
+                  <li>Exit timing 최적화 필요 (-5.2%)</li>
+                  <li>거래량 프로필 분석 강화 필요</li>
+                  <li>3월 성과 부진 원인 분석 필요</li>
+                  <li>최대 손실 제어 메커니즘 보완</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1년치 PnL 차트 생성
+    document.addEventListener("DOMContentLoaded", function () {
+      loadDetailedResults();
+    });
+
+    function loadDetailedResults() {
+      // 실제 백테스트 상세 결과 로드
+      console.log("상세결과 API 호출 시작...");
+      fetch("/api/detailed-results")
+        .then((response) => {
+          console.log("API 응답 상태:", response.status);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          console.log("API 응답 데이터:", data);
+          if (data.success) {
+            const result = data.data;
+
+            // 기본 정보 업데이트
+            document.getElementById("result-symbol").textContent =
+              result.basic_info.symbol;
+            document.getElementById("result-execution-time").textContent =
+              result.basic_info.execution_time + "시간";
+            document.getElementById("result-total-trades").textContent =
+              result.basic_info.total_trades.toLocaleString() + "건";
+
+            // 성과 지표 업데이트
+            updatePerformanceMetrics(result.performance_metrics);
+
+            // 피처 중요도 업데이트
+            updateFeatureImportance(result.feature_importance);
+
+            // 월별 성과 테이블 업데이트
+            updateMonthlyPerformance(result.monthly_performance);
+
+            // PnL 차트 업데이트
+            updateYearlyPnlChart(result.pnl_data);
+
+            // 요약 메트릭 업데이트
+            updateSummaryMetrics(result.summary);
+          } else {
+            console.error("데이터 로드 실패:", data.error);
+            // 오류 메시지를 페이지에 표시
+            showErrorMessage(data.error);
+          }
+        })
+        .catch((error) => {
+          console.error("API 호출 오류:", error);
+          showErrorMessage(`네트워크 오류가 발생했습니다: ${error.message}`);
+        });
+    }
+
+    function updatePerformanceMetrics(metrics) {
+      // R² 스코어 업데이트
+      document.getElementById("r2-before").textContent =
+        metrics.model_r2.before.toFixed(3);
+      document.getElementById("r2-after").textContent =
+        metrics.model_r2.after.toFixed(3);
+      const r2Change = metrics.model_r2.change;
+      const r2ChangePercent = (
+        (r2Change / metrics.model_r2.before) *
+        100
+      ).toFixed(1);
+      document.getElementById("r2-change").innerHTML =
+        `<i class="fas fa-arrow-${r2Change >= 0 ? "up" : "down"} me-1"></i>${r2Change >= 0 ? "+" : ""}${r2Change.toFixed(3)} (${r2Change >= 0 ? "+" : ""}${r2ChangePercent}%)`;
+      document.getElementById("r2-change").className =
+        `badge bg-${r2Change >= 0 ? "success" : "danger"}`;
+
+      // 승률 업데이트
+      document.getElementById("winrate-before").textContent =
+        metrics.win_rate.before.toFixed(1) + "%";
+      document.getElementById("winrate-after").textContent =
+        metrics.win_rate.after.toFixed(1) + "%";
+      const wrChange = metrics.win_rate.change;
+      const wrChangePercent = (
+        (wrChange / metrics.win_rate.before) *
+        100
+      ).toFixed(1);
+      document.getElementById("winrate-change").innerHTML =
+        `<i class="fas fa-arrow-${wrChange >= 0 ? "up" : "down"} me-1"></i>${wrChange >= 0 ? "+" : ""}${wrChange.toFixed(1)}% (${wrChange >= 0 ? "+" : ""}${wrChangePercent}%)`;
+      document.getElementById("winrate-change").className =
+        `badge bg-${wrChange >= 0 ? "success" : "danger"}`;
+
+      // 샤프비율 업데이트
+      document.getElementById("sharpe-before").textContent =
+        metrics.sharpe_ratio.before.toFixed(2);
+      document.getElementById("sharpe-after").textContent =
+        metrics.sharpe_ratio.after.toFixed(2);
+      const sChange = metrics.sharpe_ratio.change;
+      const sChangePercent = (
+        (sChange / metrics.sharpe_ratio.before) *
+        100
+      ).toFixed(1);
+      document.getElementById("sharpe-change").innerHTML =
+        `<i class="fas fa-arrow-${sChange >= 0 ? "up" : "down"} me-1"></i>${sChange >= 0 ? "+" : ""}${sChange.toFixed(2)} (${sChange >= 0 ? "+" : ""}${sChangePercent}%)`;
+      document.getElementById("sharpe-change").className =
+        `badge bg-${sChange >= 0 ? "success" : "danger"}`;
+    }
+
+    function updateFeatureImportance(features) {
+      // 피처 중요도는 이미 HTML에 하드코딩되어 있음 - 실제로는 동적으로 생성해야 함
+      console.log("피처 중요도 데이터:", features);
+    }
+
+    function updateMonthlyPerformance(monthly) {
+      const tbody = document.getElementById("monthly-performance");
+      tbody.innerHTML = ""; // 기존 데이터 클리어
+
+      monthly.forEach((month) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+         <td>${month.month}</td>
+         <td>${month.trades}</td>
+         <td class="${month.total_pnl >= 0 ? "text-success" : "text-danger"}">${month.total_pnl >= 0 ? "+" : ""}$${month.total_pnl.toLocaleString()}</td>
+         <td>${month.win_rate}%</td>
+         <td>${month.avg_pnl >= 0 ? "+" : ""}$${month.avg_pnl}</td>
+         <td class="text-danger">$${month.max_loss}</td>
+         <td><span class="badge bg-${month.grade === "A+" || month.grade === "A" ? "success" : month.grade === "B" ? "warning text-dark" : "danger"}">${month.grade}</span></td>
+       `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function updateSummaryMetrics(summary) {
+      document.getElementById("total-return").textContent =
+        `+${summary.total_return}%`;
+      document.getElementById("max-drawdown").textContent =
+        `${summary.max_drawdown}%`;
+      document.getElementById("profit-risk-ratio").textContent =
+        summary.profit_risk_ratio.toFixed(2);
+      document.getElementById("cagr").textContent = `${summary.cagr}%`;
+    }
+
+    function updateYearlyPnlChart(pnlData) {
+      // 기존 차트가 있다면 제거
+      const existingChart = Chart.getChart("yearlyPnlChart");
+      if (existingChart) {
+        existingChart.destroy();
+      }
+
+      const ctx = document.getElementById("yearlyPnlChart").getContext("2d");
+      const dates = pnlData.map((d) => d.date);
+      const dailyPnl = pnlData.map((d) => d.daily_pnl);
+      const cumulativePnl = pnlData.map((d) => d.cumulative_pnl);
+
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [
+            {
+              label: "누적 손익 ($)",
+              data: cumulativePnl,
+              borderColor: "rgba(54, 162, 235, 1)",
+              backgroundColor: "rgba(54, 162, 235, 0.1)",
+              borderWidth: 2,
+              fill: true,
+              tension: 0.1,
+            },
+            {
+              label: "일별 손익 ($)",
+              data: dailyPnl,
+              borderColor: "rgba(255, 99, 132, 0.5)",
+              backgroundColor: "rgba(255, 99, 132, 0.1)",
+              borderWidth: 1,
+              type: "bar",
+              yAxisID: "y1",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "날짜",
+              },
+              ticks: {
+                maxTicksLimit: 12,
+              },
+            },
+            y: {
+              title: {
+                display: true,
+                text: "누적 손익 ($)",
+              },
+              position: "left",
+            },
+            y1: {
+              title: {
+                display: true,
+                text: "일별 손익 ($)",
+              },
+              position: "right",
+              grid: {
+                drawOnChartArea: false,
+              },
+            },
+          },
+          plugins: {
+            legend: {
+              display: true,
+            },
+            tooltip: {
+              mode: "index",
+              intersect: false,
+            },
+          },
+        },
+      });
+    }
+
+    function downloadDetailedReport() {
+      alert("상세 리포트 다운로드 기능은 추후 구현 예정입니다.");
+    }
+
+    function showErrorMessage(errorText) {
+      // 페이지 상단에 오류 메시지 표시
+      const container = document.querySelector(".container-fluid");
+      const alertDiv = document.createElement("div");
+      alertDiv.className =
+        "alert alert-warning alert-dismissible fade show mt-3";
+      alertDiv.innerHTML = `
+         <h6><i class="fas fa-exclamation-triangle me-2"></i>데이터 로드 실패</h6>
+         <p class="mb-0">${errorText}</p>
+         <p class="mt-2 mb-0"><small>
+           <strong>해결 방법:</strong> 
+           <a href="/" class="alert-link">대시보드로 돌아가서</a> 
+           먼저 1년치 백테스트를 실행해주세요.
+         </small></p>
+         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+       `;
+
+      // 기존 알림이 있다면 제거
+      const existingAlert = container.querySelector(".alert-warning");
+      if (existingAlert) {
+        existingAlert.remove();
+      }
+
+      // 제목 다음에 알림 추가
+      const titleDiv = container.querySelector(
+        ".d-flex.justify-content-between"
+      );
+      titleDiv.insertAdjacentElement("afterend", alertDiv);
+
+      // 모든 카드 숨기기
+      const cards = container.querySelectorAll(".card");
+      cards.forEach((card) => {
+        card.style.display = "none";
+      });
+    }
+  </script>
+</div>
+
+{% endblock %}

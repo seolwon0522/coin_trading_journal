@@ -286,5 +286,21 @@
     },
     "prediction_accuracy": 0.0,
     "drift_score": 0.00020733004798137702
+  },
+  {
+    "timestamp": "2025-08-16T21:26:06.673734",
+    "r2_score": 0.9996915103666673,
+    "rmse": 0.02313163760932537,
+    "mae": 0.005616991862918789,
+    "overfit_ratio": 0.0002877230614195536,
+    "training_size": 80000,
+    "test_size": 20000,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.3394632637500763,
+      "market_condition": 0.40731605887413025,
+      "volatility": 0.13268718123435974
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.0001034983593063612
   }
 ]
