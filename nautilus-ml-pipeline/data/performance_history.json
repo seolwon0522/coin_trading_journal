@@ -190,5 +190,37 @@
     },
     "prediction_accuracy": 0.0,
     "drift_score": 0.0003370248120809822
+  },
+  {
+    "timestamp": "2025-08-16T12:27:32.216385",
+    "r2_score": 0.9997003551547006,
+    "rmse": 0.02242430765346684,
+    "mae": 0.005106425334099115,
+    "overfit_ratio": 0.0002754217183733587,
+    "training_size": 107838,
+    "test_size": 26960,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.37498411536216736,
+      "market_condition": 0.33261168003082275,
+      "volatility": 0.1369132101535797
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.00010656306443410882
+  },
+  {
+    "timestamp": "2025-08-16T15:15:34.730913",
+    "r2_score": 0.9989379644393921,
+    "rmse": 0.042628254548314246,
+    "mae": 0.01033000834286213,
+    "overfit_ratio": 0.0009742379188537598,
+    "training_size": 40000,
+    "test_size": 10000,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.2694057524204254,
+      "market_condition": 0.3723584711551666,
+      "volatility": 0.10749470442533493
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.0008517565430319751
   }
 ]

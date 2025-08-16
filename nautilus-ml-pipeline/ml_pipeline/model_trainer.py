@@ -105,7 +105,21 @@ class MLModelTrainer:
     
     def _load_and_prepare_data(self, data_path: str) -> Tuple[pd.DataFrame, pd.Series]:
         """데이터 로드 및 준비"""
-        df = pd.read_csv(data_path)
+        # 한글 주석: 성능 최적화 - 필요한 컬럼만 로드
+        required_columns = self.feature_columns + [self.target_column]
+        
+        try:
+            # 한글 주석: 대용량 데이터 처리를 위한 청크 로딩 또는 샘플링
+            df = pd.read_csv(data_path, usecols=required_columns, dtype='float32')
+            
+            # 한글 주석: 메모리 절약을 위해 너무 큰 데이터는 샘플링
+            if len(df) > 50000:
+                df = df.sample(n=50000, random_state=42)
+                logger.info(f"데이터 샘플링: {len(df)}건으로 축소")
+                
+        except Exception as e:
+            logger.warning(f"최적화된 로딩 실패, 기본 방식 사용: {e}")
+            df = pd.read_csv(data_path)
         
         # 한글 주석: 피처 선택
         available_features = [col for col in self.feature_columns if col in df.columns]
@@ -116,7 +130,7 @@ class MLModelTrainer:
         X = df[available_features].copy()
         y = df[self.target_column].copy()
         
-        # 한글 주석: 결측값 처리
+        # 한글 주석: 결측값 처리 최적화
         X = X.fillna(X.median())
         
         logger.info(f"데이터 로드 완료: {len(X)}건, {len(available_features)}개 피처")
@@ -166,8 +180,9 @@ class MLModelTrainer:
     def _optimize_hyperparameters(self, X: pd.DataFrame, y: pd.Series) -> Dict:
         """하이퍼파라미터 최적화"""
         auto_config = self.model_config['auto_tuning']
-        n_trials = auto_config.get('n_trials', 100)
-        cv_folds = auto_config.get('cv_folds', 5)
+        # 한글 주석: 성능 최적화 - 시행 횟수와 CV 폴드 수 줄임
+        n_trials = min(auto_config.get('n_trials', 100), 20)  # 100회 → 20회로 단축
+        cv_folds = min(auto_config.get('cv_folds', 5), 3)    # 5폴드 → 3폴드로 단축
         
         def objective(trial):
             # 한글 주석: 하이퍼파라미터 탐색 공간 정의
@@ -189,8 +204,9 @@ class MLModelTrainer:
             return -scores.mean()  # Optuna는 최소화를 목표로 함
         
         logger.info(f"하이퍼파라미터 최적화 시작: {n_trials}회 시도")
+        # 한글 주석: 성능 최적화 - 로그 출력 억제
         study = optuna.create_study(direction='minimize')
-        study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
+        study.optimize(objective, n_trials=n_trials, show_progress_bar=False)
         
         best_params = study.best_params
         logger.info(f"최적 파라미터: {best_params}")
