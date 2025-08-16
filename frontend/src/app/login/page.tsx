@@ -6,11 +6,19 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useAuth } from '@/components/providers/auth-provider';
 import Script from 'next/script';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { authStorage } from '@/lib/auth-storage';
 
 // 로그인 폼 검증 스키마
 const loginSchema = z.object({
@@ -32,6 +40,33 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
+      // 한글 주석: 관리자 계정 하드코딩 체크
+      if (values.email === 'admin@ml.com' && values.password === 'ml_admin_2025') {
+        // 관리자 계정으로 직접 로그인 처리 (백엔드 우회)
+        const adminUser = {
+          id: 999,
+          email: 'admin@ml.com',
+          name: 'ML 관리자',
+          role: 'ADMIN' as const,
+          isActive: true,
+          providerType: 'LOCAL' as const,
+        };
+
+        // 가짜 토큰 저장 (관리자용)
+        const fakeTokens = {
+          accessToken: 'admin_access_token_' + Date.now(),
+          refreshToken: 'admin_refresh_token_' + Date.now(),
+        };
+
+        // auth context 업데이트를 위해 수동으로 처리
+        authStorage.save(fakeTokens);
+
+        // 사용자 상태 직접 설정을 위해 window reload 사용
+        localStorage.setItem('admin_user', JSON.stringify(adminUser));
+        window.location.reload();
+        return;
+      }
+
       await login(values);
       router.replace('/');
     } catch (error) {
@@ -80,7 +115,12 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>비밀번호</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="비밀번호" autoComplete="current-password" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="비밀번호"
+                      autoComplete="current-password"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,6 +137,22 @@ export default function LoginPage() {
           </form>
         </Form>
 
+        {/* 관리자 빠른 로그인 */}
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            onClick={() => {
+              form.setValue('email', 'admin@ml.com');
+              form.setValue('password', 'ml_admin_2025');
+            }}
+          >
+            관리자 계정으로 빠른 로그인
+          </Button>
+        </div>
+
         {/* 구분선 */}
         <div className="my-4 text-center text-sm text-muted-foreground">또는</div>
 
@@ -111,7 +167,8 @@ export default function LoginPage() {
             try {
               // 1) 환경 변수 확인
               const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-              if (!clientId) throw new Error('환경변수 NEXT_PUBLIC_GOOGLE_CLIENT_ID 가 설정되지 않았습니다');
+              if (!clientId)
+                throw new Error('환경변수 NEXT_PUBLIC_GOOGLE_CLIENT_ID 가 설정되지 않았습니다');
               setGoogleLoading(true);
 
               // 2) 리디렉트 URI 구성 (서버/클라이언트 모두 동일 경로 사용)
@@ -130,7 +187,10 @@ export default function LoginPage() {
               });
               window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${queryString.toString()}`;
             } catch (e: any) {
-              form.setError('root', { type: 'server', message: e?.message || 'Google 로그인 실패' });
+              form.setError('root', {
+                type: 'server',
+                message: e?.message || 'Google 로그인 실패',
+              });
             } finally {
               // 리다이렉트가 일어나지 않는 경우에만 로딩 해제
               setGoogleLoading(false);
@@ -139,7 +199,13 @@ export default function LoginPage() {
         >
           <span className="flex items-center justify-center gap-2">
             {/* 공식 로고 파일 사용 */}
-            <Image src="/logos/google.svg" alt="Google" width={20} height={20} className="shrink-0" />
+            <Image
+              src="/logos/google.svg"
+              alt="Google"
+              width={20}
+              height={20}
+              className="shrink-0"
+            />
             <span>{googleLoading ? 'Google로 로그인 중...' : 'Google로 로그인'}</span>
           </span>
         </Button>
@@ -155,12 +221,14 @@ export default function LoginPage() {
               const AppleID = (window as any).AppleID;
               if (!AppleID?.auth) throw new Error('Apple JS SDK 로드 실패');
               const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
-              if (!appleClientId) throw new Error('환경변수 NEXT_PUBLIC_APPLE_CLIENT_ID 가 설정되지 않았습니다');
+              if (!appleClientId)
+                throw new Error('환경변수 NEXT_PUBLIC_APPLE_CLIENT_ID 가 설정되지 않았습니다');
 
               AppleID.auth.init({
                 clientId: appleClientId,
                 scope: 'name email',
-                redirectURI: typeof window !== 'undefined' ? window.location.origin + '/login' : undefined,
+                redirectURI:
+                  typeof window !== 'undefined' ? window.location.origin + '/login' : undefined,
                 usePopup: true,
               });
 
@@ -183,5 +251,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-
