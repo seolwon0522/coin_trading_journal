@@ -137,8 +137,17 @@ class IntegratedMLPipeline:
             logger.info("강제 재훈련 모드")
             return True
             
-        # 한글 주석: 현재 모델 성능 가져오기 (임시로 기본값 사용)
-        current_performance = {'r2_score': 0.85, 'rmse': 1.2}
+        # 한글 주석: 현재 모델 성능 가져오기 (모니터의 최신 기록 사용)
+        current_performance = {}
+        try:
+            if self.performance_monitor.performance_history:
+                latest = self.performance_monitor.performance_history[-1]
+                current_performance = {
+                    'r2_score': latest.get('r2_score', 0),
+                    'rmse': latest.get('rmse', 0),
+                }
+        except Exception:
+            current_performance = {}
         
         retrain_needed = self.scheduler.should_retrain(self.total_trades, current_performance)
         

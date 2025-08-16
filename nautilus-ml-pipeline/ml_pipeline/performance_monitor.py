@@ -153,12 +153,48 @@ class PerformanceMonitor:
     
     def _extract_top_features(self, metrics: Dict) -> Dict[str, float]:
         """상위 피처 중요도 추출"""
-        # 한글 주석: 임시로 기본값 반환 (실제로는 metrics에서 추출)
-        return {
-            "pnl_ratio": 0.85,
-            "market_condition": 0.08,
-            "exit_timing_score": 0.04
-        }
+        # 한글 주석: 모델 메타데이터 또는 제공된 metrics에서 실제 중요도 로드
+        try:
+            # 1) 훈련 메트릭에 포함된 경우 우선 사용
+            feature_importance = metrics.get('feature_importance') if isinstance(metrics, dict) else None
+            if not feature_importance:
+                # 2) 최신 메타데이터에서 로드
+                models_dir = Path("data/models")
+                if models_dir.exists():
+                    meta_files = sorted(models_dir.glob("metadata_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+                    if meta_files:
+                        with open(meta_files[0], 'r', encoding='utf-8') as f:
+                            meta = json.load(f)
+                            feature_importance = meta.get('feature_importance', {})
+
+            # 한글 주석: 사용처에서 기대하는 키 우선 추출 (없으면 생략)
+            selected_keys = ["pnl_ratio", "market_condition", "volatility"]
+            top: Dict[str, float] = {}
+            if feature_importance and isinstance(feature_importance, dict):
+                for key in selected_keys:
+                    if key in feature_importance:
+                        try:
+                            top[key] = float(feature_importance[key])
+                        except Exception:
+                            pass
+
+                # 한글 주석: 비어있거나 일부만 존재한다면, 중요도 상위 3개를 보완적으로 채워넣되 임의값은 사용하지 않음
+                if len(top) < 3:
+                    sorted_items = sorted(feature_importance.items(), key=lambda x: x[1], reverse=True)
+                    for name, val in sorted_items:
+                        if name in top:
+                            continue
+                        try:
+                            top[name] = float(val)
+                        except Exception:
+                            continue
+                        if len(top) >= 3:
+                            break
+
+            return top
+        except Exception:
+            # 한글 주석: 실패 시 임의값을 쓰지 않고 빈 dict 반환
+            return {}
     
     def _calculate_drift_score(self, metrics: Dict) -> float:
         """데이터 드리프트 점수 계산"""

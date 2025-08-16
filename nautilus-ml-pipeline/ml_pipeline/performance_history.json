@@ -22,5 +22,21 @@
     "mae_score": 0.0101,
     "total_evaluations": 119745,
     "model_version": "xgb_model_20250816_023824.pkl"
+  },
+  {
+    "timestamp": "2025-08-16T11:24:03.787373",
+    "r2_score": 0.9998122743548156,
+    "rmse": 0.01777109748809636,
+    "mae": 0.004657190381708629,
+    "overfit_ratio": 0.0001663031617282762,
+    "training_size": 107837,
+    "test_size": 26960,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.85,
+      "market_condition": 0.08,
+      "exit_timing_score": 0.04
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 1.2276810177580135e-05
   }
 ]

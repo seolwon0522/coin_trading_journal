@@ -58,7 +58,14 @@ def get_performance_monitor():
     """지연 로딩된 PerformanceMonitor 싱글톤 반환"""
     global performance_monitor_instance
     if performance_monitor_instance is None:
-        performance_monitor_instance = PerformanceMonitor()
+        # 한글 주석: 성능 기록 파일 경로를 학습 파이프라인에서 쓰는 위치로 고정
+        base_dir = Path(__file__).parent.parent  # nautilus-ml-pipeline 루트
+        performance_history_path = base_dir / "ml_pipeline" / "performance_history.json"
+        alerts_history_path = base_dir / "ml_pipeline" / "performance_alerts.json"
+        performance_monitor_instance = PerformanceMonitor(
+            performance_history_file=str(performance_history_path),
+            alerts_file=str(alerts_history_path),
+        )
     return performance_monitor_instance
 
 def get_db_manager():
@@ -390,33 +397,27 @@ def learning_improvements():
             with open(learning_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             return jsonify(data)
-        
-        # 한글 주석: 폴백 - 최근 일별 PnL을 기반으로 간단한 사이클 지표 생성
-        db_manager = get_db_manager()
-        base = db_manager.get_pnl_history(days=60)
-        if not base['timestamps']:
+
+        # 한글 주석: 폴백 제거 - 실제 성능 히스토리 기반으로 구성
+        performance_monitor = get_performance_monitor()
+        history = performance_monitor.performance_history or []
+        if not history:
             return jsonify([])
-        df = pd.DataFrame({
-            'ts': pd.to_datetime(base['timestamps']),
-            'pnl': pd.Series(base['pnl'])
-        })
-        df['date'] = df['ts'].dt.date
-        daily = df.groupby('date', as_index=False)['pnl'].agg(['sum','count'])
-        daily = daily.reset_index().rename(columns={'sum':'daily_pnl','count':'trades'})
-        # 사이클을 일자 순으로 1..N 부여
-        daily['cycle'] = range(1, len(daily)+1)
-        # 승률 근사: 일별 PnL>0 비율을 누적 7일 이동 평균으로 계산(데모)
-        daily['win'] = (daily['daily_pnl'] > 0).astype(int)
-        win_ma = daily['win'].rolling(window=7, min_periods=1).mean()
-        # R2 근사치는 데이터 없으므로 0.0~1.0 범위에서 0.7±0.1 노이즈로 대체
-        r2_est = (0.7 + (win_ma - 0.5) * 0.2).clip(0.0, 1.0)
+
+        # 한글 주석: 히스토리에서 r2와 알 수 있는 간단 지표만 노출 (랜덤/노이즈 미사용)
         payload = []
-        for i, row in daily.iterrows():
+        for idx, h in enumerate(history[-60:]):
             payload.append({
-                'cycle': int(row['cycle']),
-                'timestamp': str(row['index']),
-                'model_metrics': { 'test_r2': float(round(r2_est.iloc[i], 4)) },
-                'backtest_summary': { 'win_rate': float(round(win_ma.iloc[i]*100, 2)) }
+                'cycle': idx + 1,
+                'timestamp': h.get('timestamp'),
+                'model_metrics': {
+                    'test_r2': float(h.get('r2_score', 0.0)),
+                    'test_rmse': float(h.get('rmse', 0.0))
+                },
+                'backtest_summary': {
+                    # 한글 주석: 별도 계산 없이 제공 가능한 기본 지표만 노출
+                    'trades': int(h.get('training_size', 0)) + int(h.get('test_size', 0))
+                }
             })
         return jsonify(payload)
     except Exception as e:
@@ -447,21 +448,24 @@ def feature_importance_trend():
                     })
             return jsonify(trend_data)
 
-        # 한글 주석: 폴백 - 성능 히스토리의 feature_importance_top3에서 트렌드 생성
+        # 한글 주석: 폴백 - 성능 히스토리의 feature_importance_top3에서 트렌드 생성 (mock 제거: 값이 없으면 빈 배열 반환)
         performance_monitor = get_performance_monitor()
         history = performance_monitor.performance_history or []
         if not history:
             return jsonify([])
         trend = []
         for idx, h in enumerate(history[-50:]):
-            fi = h.get('feature_importance_top3', {})
+            fi = h.get('feature_importance_top3', {}) or {}
             trend.append({
                 'cycle': idx+1,
                 'timestamp': h.get('timestamp'),
-                'pnl_ratio': float(fi.get('pnl_ratio', 0)),
-                'market_condition': float(fi.get('market_condition', 0)),
-                'volatility': float(fi.get('volatility', 0)),
+                # 한글 주석: 존재하는 키만 전달. 없으면 포함하지 않음
+                **({ 'pnl_ratio': float(fi['pnl_ratio']) } if 'pnl_ratio' in fi else {}),
+                **({ 'market_condition': float(fi['market_condition']) } if 'market_condition' in fi else {}),
+                **({ 'volatility': float(fi['volatility']) } if 'volatility' in fi else {}),
             })
+        # 한글 주석: 모두 비어있으면 빈 배열 반환
+        trend = [t for t in trend if any(k in t for k in ['pnl_ratio','market_condition','volatility'])]
         return jsonify(trend)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -501,6 +505,8 @@ def reports():
 def alerts():
     """알림 관리 페이지"""
     try:
+        # 한글 주석: 모니터 인스턴스 로드
+        performance_monitor = get_performance_monitor()
         # 한글 주석: 최근 50개 알림
         recent_alerts = sorted(
             performance_monitor.alerts, 
@@ -536,13 +542,15 @@ def alerts():
 def not_found_error(error):
     return render_template('error.html', 
                          error_code=404, 
-                         error_message='페이지를 찾을 수 없습니다.'), 404
+                         error_message='페이지를 찾을 수 없습니다.',
+                         timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S')), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('error.html', 
                          error_code=500, 
-                         error_message='내부 서버 오류가 발생했습니다.'), 500
+                         error_message='내부 서버 오류가 발생했습니다.',
+                         timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S')), 500
 
 if __name__ == '__main__':
     # 한글 주석: 개발 모드로 실행
