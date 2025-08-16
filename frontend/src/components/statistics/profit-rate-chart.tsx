@@ -32,11 +32,12 @@ export default function ProfitRateChart() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const url = `${MONITORING_API_BASE.replace(/\/$/, '')}/api/pnl_history_public?token=${encodeURIComponent(
-      PUBLIC_TOKEN
-    )}&days=30`;
+    const url = `${MONITORING_API_BASE.replace(/\/$/, '')}/api/pnl_history_public?days=30`;
 
-    fetch(url, { signal: controller.signal })
+    fetch(url, {
+      signal: controller.signal,
+      headers: { 'X-API-KEY': PUBLIC_TOKEN },
+    })
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data: PnlApiResponse = await r.json();
