@@ -72,7 +72,7 @@ export default function LoginPage() {
     } catch (error) {
       form.setError('root', {
         type: 'server',
-        message: (error as any)?.message || '로그인에 실패했습니다',
+        message: error instanceof Error ? error.message : '로그인에 실패했습니다',
       });
     }
   };
@@ -186,10 +186,10 @@ export default function LoginPage() {
                 access_type: 'offline',
               });
               window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${queryString.toString()}`;
-            } catch (e: any) {
+            } catch (e) {
               form.setError('root', {
                 type: 'server',
-                message: e?.message || 'Google 로그인 실패',
+                message: e instanceof Error ? e.message : 'Google 로그인 실패',
               });
             } finally {
               // 리다이렉트가 일어나지 않는 경우에만 로딩 해제
@@ -218,7 +218,16 @@ export default function LoginPage() {
           className="w-full h-11"
           onClick={async () => {
             try {
-              const AppleID = (window as any).AppleID;
+              const AppleID = (
+                window as typeof window & {
+                  AppleID?: {
+                    auth?: {
+                      init: (config: unknown) => void;
+                      signIn: () => Promise<{ authorization?: { id_token?: string } }>;
+                    };
+                  };
+                }
+              ).AppleID;
               if (!AppleID?.auth) throw new Error('Apple JS SDK 로드 실패');
               const appleClientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
               if (!appleClientId)
@@ -237,8 +246,11 @@ export default function LoginPage() {
               if (!idToken) throw new Error('Apple ID Token을 받지 못했습니다');
               await oauth2Login('APPLE', idToken);
               router.replace('/');
-            } catch (e: any) {
-              form.setError('root', { type: 'server', message: e?.message || 'Apple 로그인 실패' });
+            } catch (e) {
+              form.setError('root', {
+                type: 'server',
+                message: e instanceof Error ? e.message : 'Apple 로그인 실패',
+              });
             }
           }}
         >
