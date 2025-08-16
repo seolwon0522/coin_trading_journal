@@ -181,6 +181,10 @@ class IntegratedMLPipeline:
     
     async def _update_performance_history(self, metrics: dict):
         """성능 히스토리 업데이트"""
+        if metrics.get('status') == 'insufficient_samples':
+            logger.info("데이터 부족으로 성능 히스토리 업데이트를 스킵합니다")
+            return
+
         self.scheduler.update_performance_history(metrics)
         self.scheduler.mark_retrain_completed()
         

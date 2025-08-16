@@ -7,7 +7,7 @@ ML 모델 훈련 및 관리
 
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from datetime import datetime
 import logging
 from pathlib import Path
@@ -38,6 +38,7 @@ class MLModelTrainer:
         
         self.feature_columns = self.config['data']['features']
         self.target_column = self.config['data']['target']
+        self.min_samples = self.config['data'].get('min_samples', 5)
         self.model_config = self.config['model']
         
         self.model = None
@@ -45,32 +46,46 @@ class MLModelTrainer:
         self.feature_importance = {}
         self.training_metrics = {}
         
-    def train_model(self, data_path: str, save_model: bool = True) -> Dict:
+    def train_model(
+        self,
+        data_path: str,
+        save_model: bool = True,
+        retry_callback: Optional[Callable[[], None]] = None
+    ) -> Dict:
         """
         모델 훈련 실행
         
         Args:
             data_path: 훈련 데이터 파일 경로
             save_model: 모델 저장 여부
-            
+            retry_callback: 표본 부족 시 호출되는 데이터 수집 콜백
+
         Returns:
-            훈련 결과 메트릭
+            훈련 결과 메트릭 또는 오류 정보
         """
         # 한글 주석: 데이터 로드 및 준비
         X, y = self._load_and_prepare_data(data_path)
         
-        # 한글 주석: 표본 부족 시 훈련 스킵
-        if len(X) < 5:
-            logger.warning("표본이 너무 적어 훈련을 스킵합니다.")
-            return {
-                'train_rmse': None,
-                'test_rmse': None,
-                'train_r2': None,
-                'test_r2': None,
-                'overfit_ratio': 0.0,
-                'model_path': None,
-                'r2_score': 0.0
-            }
+        # 한글 주석: 표본 부족 시 재시도 처리
+        if len(X) < self.min_samples:
+            logger.warning(
+                f"표본이 너무 적습니다: {len(X)} < {self.min_samples}."
+            )
+            if retry_callback is not None:
+                logger.info("추가 데이터 수집을 시도합니다...")
+                try:
+                    retry_callback()
+                    X, y = self._load_and_prepare_data(data_path)
+                except Exception as e:
+                    logger.error(f"데이터 수집 콜백 실패: {e}")
+
+            if len(X) < self.min_samples:
+                return {
+                    'status': 'insufficient_samples',
+                    'error_code': 'INSUFFICIENT_SAMPLES',
+                    'train_size': len(X),
+                    'required_min_samples': self.min_samples
+                }
         
         # 한글 주석: 훈련/테스트 분할
         X_train, X_test, y_train, y_test = self._split_data(X, y)
