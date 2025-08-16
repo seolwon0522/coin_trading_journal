@@ -1,0 +1,1081 @@
+2025-08-16 18:54:27.504 KST [70379] LOG:  starting PostgreSQL 15.14 (Homebrew) on aarch64-apple-darwin24.4.0, compiled by Apple clang version 17.0.0 (clang-1700.0.13.3), 64-bit
+2025-08-16 18:54:27.506 KST [70379] LOG:  listening on IPv6 address "::1", port 5433
+2025-08-16 18:54:27.506 KST [70379] LOG:  listening on IPv4 address "127.0.0.1", port 5433
+2025-08-16 18:54:27.506 KST [70379] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
+2025-08-16 18:54:27.508 KST [70382] LOG:  database system was shut down at 2025-08-16 18:54:27 KST
+2025-08-16 18:54:27.510 KST [70379] LOG:  database system is ready to accept connections
+2025-08-16 18:54:30.019 KST [70400] ERROR:  syntax error at or near "59402" at character 4
+2025-08-16 18:54:30.019 KST [70400] STATEMENT:  DO 59402 BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'trading_user') THEN CREATE ROLE trading_user LOGIN PASSWORD 'trading_password'; END IF; IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'trading_journal') THEN CREATE DATABASE trading_journal OWNER trading_user; END IF; END 59402;
+2025-08-16 18:57:16.513 KST [71388] ERROR:  syntax error at or near "trading_password" at character 124
+2025-08-16 18:57:16.513 KST [71388] STATEMENT:  DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = trading_user) THEN CREATE ROLE trading_user LOGIN PASSWORD trading_password; END IF; IF NOT EXISTS (SELECT FROM pg_database WHERE datname = trading_journal) THEN CREATE DATABASE trading_journal OWNER trading_user; END IF; END $$;
+2025-08-16 18:59:27.499 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:01:08.105 KST [70380] LOG:  checkpoint complete: wrote 996 buffers (6.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=100.592 s, sync=0.011 s, total=100.607 s; sync files=331, longest=0.002 s, average=0.001 s; distance=4586 kB, estimate=4586 kB
+2025-08-16 19:01:38.098 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.098 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:22:19.333993, 2025-08-16 18:22:19.333993, breakout) already exists.
+2025-08-16 19:01:38.098 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:22:19.333993'::timestamp, '2025-08-16T18:22:19.333993'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.120 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.120 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2020-01-01 20:00:00, 2021-12-31 21:00:00, breakout) already exists.
+2025-08-16 19:01:38.120 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2020-01-01T20:00:00'::timestamp, '2021-12-31T21:00:00'::timestamp, '1m',
+	                     7420, 15334.362885710594, 0.5609164420485175,  -9.363331084570259, 0.165826840931553)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.140 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.140 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2018-01-01 20:00:00, 2019-12-31 22:00:00, breakout) already exists.
+2025-08-16 19:01:38.140 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2018-01-01T20:00:00'::timestamp, '2019-12-31T22:00:00'::timestamp, '1m',
+	                     7559, 17800.388286506517, 0.5713718745865856,  -1.074793423536565, 0.17783590133388447)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.147 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.147 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 03:25:30.907528, 2025-08-16 03:25:30.907528, breakout) already exists.
+2025-08-16 19:01:38.147 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T03:25:30.907528'::timestamp, '2025-08-16T03:25:30.907528'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.150 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.150 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:14:59.504555, 2025-08-16 18:14:59.504555, breakout) already exists.
+2025-08-16 19:01:38.150 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:14:59.504555'::timestamp, '2025-08-16T18:14:59.504555'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.154 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.154 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 02:21:19.846425, 2025-08-16 02:21:19.846425, breakout) already exists.
+2025-08-16 19:01:38.154 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T02:21:19.846425'::timestamp, '2025-08-16T02:21:19.846425'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.157 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.157 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 15:55:56.613944, 2025-08-16 15:55:56.613944, breakout) already exists.
+2025-08-16 19:01:38.157 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T15:55:56.613944'::timestamp, '2025-08-16T15:55:56.613944'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.165 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.165 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:23:46.138113, 2025-08-16 18:23:46.138113, breakout) already exists.
+2025-08-16 19:01:38.165 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:23:46.138113'::timestamp, '2025-08-16T18:23:46.138113'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.170 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.170 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:11:03.657665, 2025-08-16 18:11:03.657665, breakout) already exists.
+2025-08-16 19:01:38.170 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:11:03.657665'::timestamp, '2025-08-16T18:11:03.657665'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.225 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.225 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2020-01-02 11:00:00, 2024-12-30 23:00:00, breakout) already exists.
+2025-08-16 19:01:38.225 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2020-01-02T11:00:00'::timestamp, '2024-12-30T23:00:00'::timestamp, '1m',
+	                     17835, 32337.732614498353, 0.552116624614522,  -5.6710995129565855, 0.1329678469061546)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.241 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.241 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-09 04:09:47.875605, 2025-08-16 03:48:47.875605, breakout) already exists.
+2025-08-16 19:01:38.241 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-09T04:09:47.875605'::timestamp, '2025-08-16T03:48:47.875605'::timestamp, '1m',
+	                     4224, 6227.49261313842, 0.4952651515151515,  -0.7628533252871748, 0.10072762565392078)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.254 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.254 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-09 15:48:30.333162, 2025-08-16 15:27:30.333162, breakout) already exists.
+2025-08-16 19:01:38.254 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-09T15:48:30.333162'::timestamp, '2025-08-16T15:27:30.333162'::timestamp, '1m',
+	                     4093, 10290.01024513134, 0.5489860737845101,  -3.2609094706597914, 0.16884788084905547)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.257 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.257 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:13:14.637003, 2025-08-16 18:13:14.637003, breakout) already exists.
+2025-08-16 19:01:38.257 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:13:14.637003'::timestamp, '2025-08-16T18:13:14.637003'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.261 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.261 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:13:00.258947, 2025-08-16 18:13:00.258947, breakout) already exists.
+2025-08-16 19:01:38.261 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:13:00.258947'::timestamp, '2025-08-16T18:13:00.258947'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.263 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.263 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:13:28.874914, 2025-08-16 18:13:28.874914, breakout) already exists.
+2025-08-16 19:01:38.263 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:13:28.874914'::timestamp, '2025-08-16T18:13:28.874914'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.270 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.270 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:24:19.37773, 2025-08-16 18:24:19.37773, breakout) already exists.
+2025-08-16 19:01:38.270 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:24:19.377730'::timestamp, '2025-08-16T18:24:19.377730'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.286 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.286 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-09 02:16:15.943698, 2025-08-16 01:48:15.943698, breakout) already exists.
+2025-08-16 19:01:38.286 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-09T02:16:15.943698'::timestamp, '2025-08-16T01:48:15.943698'::timestamp, '1m',
+	                     4160, 14818.411638650023, 0.5728365384615385,  -0.669153536512604, 0.24544883752773577)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.294 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.294 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 15:15:08.377635, 2025-08-16 15:15:08.377635, breakout) already exists.
+2025-08-16 19:01:38.294 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T15:15:08.377635'::timestamp, '2025-08-16T15:15:08.377635'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.304 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.304 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:22:34.221711, 2025-08-16 18:22:34.221711, breakout) already exists.
+2025-08-16 19:01:38.304 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:22:34.221711'::timestamp, '2025-08-16T18:22:34.221711'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.306 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.306 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:09:58.693745, 2025-08-16 18:09:58.693745, breakout) already exists.
+2025-08-16 19:01:38.306 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:09:58.693745'::timestamp, '2025-08-16T18:09:58.693745'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.313 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.313 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 15:52:21.606105, 2025-08-16 15:52:21.606105, breakout) already exists.
+2025-08-16 19:01:38.313 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T15:52:21.606105'::timestamp, '2025-08-16T15:52:21.606105'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.331 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.331 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-09 17:59:15.613623, 2025-08-16 17:17:15.613623, breakout) already exists.
+2025-08-16 19:01:38.331 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-09T17:59:15.613623'::timestamp, '2025-08-16T17:17:15.613623'::timestamp, '1m',
+	                     4098, 10464.474802301507, 0.5561249389946316,  -4.466485364717592, 0.18082963474075697)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.351 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.351 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2020-01-01 20:00:00, 2021-12-31 22:00:00, breakout) already exists.
+2025-08-16 19:01:38.351 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2020-01-01T20:00:00'::timestamp, '2021-12-31T22:00:00'::timestamp, '1m',
+	                     7523, 34691.888601905055, 0.6133191545925828,  -1.6892274843667605, 0.32879246533336653)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.354 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.354 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 03:17:28.543964, 2025-08-16 03:17:28.543964, breakout) already exists.
+2025-08-16 19:01:38.354 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T03:17:28.543964'::timestamp, '2025-08-16T03:17:28.543964'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.361 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.361 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 02:34:48.850528, 2025-08-16 02:34:48.850528, breakout) already exists.
+2025-08-16 19:01:38.361 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T02:34:48.850528'::timestamp, '2025-08-16T02:34:48.850528'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.363 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.363 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 02:20:30.165884, 2025-08-16 02:20:30.165884, breakout) already exists.
+2025-08-16 19:01:38.363 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T02:20:30.165884'::timestamp, '2025-08-16T02:20:30.165884'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.366 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.366 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:10:14.715576, 2025-08-16 18:10:14.715576, breakout) already exists.
+2025-08-16 19:01:38.366 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:10:14.715576'::timestamp, '2025-08-16T18:10:14.715576'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.368 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.368 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:21:33.659935, 2025-08-16 18:21:33.659935, breakout) already exists.
+2025-08-16 19:01:38.368 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:21:33.659935'::timestamp, '2025-08-16T18:21:33.659935'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.370 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.370 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:12:16.686649, 2025-08-16 18:12:16.686649, breakout) already exists.
+2025-08-16 19:01:38.370 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:12:16.686649'::timestamp, '2025-08-16T18:12:16.686649'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.374 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.374 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:23:31.783789, 2025-08-16 18:23:31.783789, breakout) already exists.
+2025-08-16 19:01:38.374 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:23:31.783789'::timestamp, '2025-08-16T18:23:31.783789'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.384 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.384 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:14:11.392676, 2025-08-16 18:14:11.392676, breakout) already exists.
+2025-08-16 19:01:38.384 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:14:11.392676'::timestamp, '2025-08-16T18:14:11.392676'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.407 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.407 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2020-01-02 00:00:00, 2021-12-31 22:00:00, breakout) already exists.
+2025-08-16 19:01:38.407 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2020-01-02T00:00:00'::timestamp, '2021-12-31T22:00:00'::timestamp, '1m',
+	                     7421, 26929.22687291455, 0.5872523918609351,  -0.9797082315096858, 0.25277823860376625)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.413 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.413 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 17:56:09.855116, 2025-08-16 17:56:09.855116, breakout) already exists.
+2025-08-16 19:01:38.413 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T17:56:09.855116'::timestamp, '2025-08-16T17:56:09.855116'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.417 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.417 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 03:24:22.026272, 2025-08-16 03:24:22.026272, breakout) already exists.
+2025-08-16 19:01:38.417 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T03:24:22.026272'::timestamp, '2025-08-16T03:24:22.026272'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.436 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.436 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2016-01-01 20:00:00, 2017-12-31 22:00:00, breakout) already exists.
+2025-08-16 19:01:38.436 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2016-01-01T20:00:00'::timestamp, '2017-12-31T22:00:00'::timestamp, '1m',
+	                     7440, 31586.215700759356, 0.5920698924731183,  -1.4385862261210662, 0.27821060161021033)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.442 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.442 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 17:41:06.881711, 2025-08-16 17:41:06.881711, breakout) already exists.
+2025-08-16 19:01:38.442 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T17:41:06.881711'::timestamp, '2025-08-16T17:41:06.881711'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.465 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.465 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2020-01-02 08:00:00, 2021-12-31 08:00:00, breakout) already exists.
+2025-08-16 19:01:38.465 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2020-01-02T08:00:00'::timestamp, '2021-12-31T08:00:00'::timestamp, '1m',
+	                     7125, 17620.79541363765, 0.552,  -0.7519085759370461, 0.16896684615598956)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.468 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.468 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 02:18:44.143856, 2025-08-16 02:18:44.143856, breakout) already exists.
+2025-08-16 19:01:38.468 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T02:18:44.143856'::timestamp, '2025-08-16T02:18:44.143856'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.471 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.471 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 17:09:57.216509, 2025-08-16 17:09:57.216509, breakout) already exists.
+2025-08-16 19:01:38.471 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T17:09:57.216509'::timestamp, '2025-08-16T17:09:57.216509'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.474 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.474 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 03:24:23.826902, 2025-08-16 03:24:23.826902, breakout) already exists.
+2025-08-16 19:01:38.474 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T03:24:23.826902'::timestamp, '2025-08-16T03:24:23.826902'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.478 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.478 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:09:07.477445, 2025-08-16 18:09:07.477445, breakout) already exists.
+2025-08-16 19:01:38.478 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:09:07.477445'::timestamp, '2025-08-16T18:09:07.477445'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.480 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.480 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 17:04:04.112555, 2025-08-16 17:04:04.112555, breakout) already exists.
+2025-08-16 19:01:38.480 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T17:04:04.112555'::timestamp, '2025-08-16T17:04:04.112555'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.484 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.484 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 02:26:26.753545, 2025-08-16 02:26:26.753545, breakout) already exists.
+2025-08-16 19:01:38.484 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T02:26:26.753545'::timestamp, '2025-08-16T02:26:26.753545'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.488 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.488 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 12:23:43.011475, 2025-08-16 12:23:43.011475, breakout) already exists.
+2025-08-16 19:01:38.488 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T12:23:43.011475'::timestamp, '2025-08-16T12:23:43.011475'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.497 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.497 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 16:47:12.576826, 2025-08-16 16:47:12.576826, breakout) already exists.
+2025-08-16 19:01:38.497 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T16:47:12.576826'::timestamp, '2025-08-16T16:47:12.576826'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.512 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.512 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-09 17:58:39.272992, 2025-08-16 17:37:39.272992, breakout) already exists.
+2025-08-16 19:01:38.512 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-09T17:58:39.272992'::timestamp, '2025-08-16T17:37:39.272992'::timestamp, '1m',
+	                     4045, 10774.763152564532, 0.5443757725587145,  -1.4489814101696508, 0.16489578185655196)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.525 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.525 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-09 16:11:06.353344, 2025-08-16 15:28:06.353344, breakout) already exists.
+2025-08-16 19:01:38.525 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-09T16:11:06.353344'::timestamp, '2025-08-16T15:28:06.353344'::timestamp, '1m',
+	                     4333, 11310.457774934515, 0.578121393953381,  -2.381747852899186, 0.1824232834948515)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.531 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.531 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(SOLUSDT, 2025-08-16 03:17:29.259221, 2025-08-16 03:17:29.259221, breakout) already exists.
+2025-08-16 19:01:38.531 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('SOLUSDT', 'breakout', '2025-08-16T03:17:29.259221'::timestamp, '2025-08-16T03:17:29.259221'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.554 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.554 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2020-01-02 04:00:00, 2021-12-31 19:00:00, breakout) already exists.
+2025-08-16 19:01:38.554 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2020-01-02T04:00:00'::timestamp, '2021-12-31T19:00:00'::timestamp, '1m',
+	                     7298, 16127.679725691054, 0.5654973965469992,  -0.6373436014639114, 0.17333711734559024)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.562 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.562 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:14:25.431162, 2025-08-16 18:14:25.431162, breakout) already exists.
+2025-08-16 19:01:38.562 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:14:25.431162'::timestamp, '2025-08-16T18:14:25.431162'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.564 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.564 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:13:57.148475, 2025-08-16 18:13:57.148475, breakout) already exists.
+2025-08-16 19:01:38.564 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:13:57.148475'::timestamp, '2025-08-16T18:13:57.148475'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.568 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.568 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 16:46:54.643592, 2025-08-16 16:46:54.643592, breakout) already exists.
+2025-08-16 19:01:38.568 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T16:46:54.643592'::timestamp, '2025-08-16T16:46:54.643592'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.571 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.571 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:13:42.963231, 2025-08-16 18:13:42.963231, breakout) already exists.
+2025-08-16 19:01:38.571 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:13:42.963231'::timestamp, '2025-08-16T18:13:42.963231'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.575 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.575 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 12:47:35.053739, 2025-08-16 15:47:35.053739, breakout) already exists.
+2025-08-16 19:01:38.575 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T12:47:35.053739'::timestamp, '2025-08-16T15:47:35.053739'::timestamp, '1m',
+	                     4, 0.7789155055586203, 0.75, 0.0, 1.286819074720986)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.578 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.578 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(SOLUSDT, 2025-08-16 03:24:25.244391, 2025-08-16 03:24:25.244391, breakout) already exists.
+2025-08-16 19:01:38.578 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('SOLUSDT', 'breakout', '2025-08-16T03:24:25.244391'::timestamp, '2025-08-16T03:24:25.244391'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.580 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.580 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 16:49:06.744677, 2025-08-16 16:49:06.744677, breakout) already exists.
+2025-08-16 19:01:38.580 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T16:49:06.744677'::timestamp, '2025-08-16T16:49:06.744677'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.583 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.583 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 03:14:54.032046, 2025-08-16 03:14:54.032046, breakout) already exists.
+2025-08-16 19:01:38.583 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T03:14:54.032046'::timestamp, '2025-08-16T03:14:54.032046'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.586 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.586 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:12:32.22301, 2025-08-16 18:12:32.22301, breakout) already exists.
+2025-08-16 19:01:38.586 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:12:32.223010'::timestamp, '2025-08-16T18:12:32.223010'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.588 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.588 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:09:25.00057, 2025-08-16 18:09:25.00057, breakout) already exists.
+2025-08-16 19:01:38.588 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:09:25.000570'::timestamp, '2025-08-16T18:09:25.000570'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.603 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.603 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-09 04:11:22.697029, 2025-08-16 03:43:22.697029, breakout) already exists.
+2025-08-16 19:01:38.603 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-09T04:11:22.697029'::timestamp, '2025-08-16T03:43:22.697029'::timestamp, '1m',
+	                     4224, 13141.021204464385, 0.5705492424242424,  -1.3086994035458557, 0.20444556464361452)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.625 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.625 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2020-01-02 00:00:00, 2021-12-31 05:00:00, breakout) already exists.
+2025-08-16 19:01:38.625 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2020-01-02T00:00:00'::timestamp, '2021-12-31T05:00:00'::timestamp, '1m',
+	                     7298, 14570.896677190365, 0.5254864346396273,  -0.5773734948662755, 0.1455721370713037)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.628 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.628 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:22:48.667145, 2025-08-16 18:22:48.667145, breakout) already exists.
+2025-08-16 19:01:38.628 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:22:48.667145'::timestamp, '2025-08-16T18:22:48.667145'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.631 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.631 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 03:14:53.294777, 2025-08-16 03:14:53.294777, breakout) already exists.
+2025-08-16 19:01:38.631 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T03:14:53.294777'::timestamp, '2025-08-16T03:14:53.294777'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.633 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.633 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:08:50.351253, 2025-08-16 18:08:50.351253, breakout) already exists.
+2025-08-16 19:01:38.633 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:08:50.351253'::timestamp, '2025-08-16T18:08:50.351253'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.636 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.636 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:10:31.207609, 2025-08-16 18:10:31.207609, breakout) already exists.
+2025-08-16 19:01:38.636 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:10:31.207609'::timestamp, '2025-08-16T18:10:31.207609'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.639 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.639 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 03:17:27.221903, 2025-08-16 03:17:27.221903, breakout) already exists.
+2025-08-16 19:01:38.639 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T03:17:27.221903'::timestamp, '2025-08-16T03:17:27.221903'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.656 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.656 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-09 10:38:12.914665, 2025-08-16 10:07:12.914665, breakout) already exists.
+2025-08-16 19:01:38.656 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-09T10:38:12.914665'::timestamp, '2025-08-16T10:07:12.914665'::timestamp, '1m',
+	                     4222, 16228.39009318265, 0.6018474656560872,  -5.779916532998405, 0.284646609694978)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.702 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.702 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2020-01-02 03:00:00, 2024-12-31 22:00:00, breakout) already exists.
+2025-08-16 19:01:38.702 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2020-01-02T03:00:00'::timestamp, '2024-12-31T22:00:00'::timestamp, '1m',
+	                     18180, 49602.856425925595, 0.5697469746974697,  -1.1783256378080949, 0.19586808404738124)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.706 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.706 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:23:02.893446, 2025-08-16 18:23:02.893446, breakout) already exists.
+2025-08-16 19:01:38.706 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:23:02.893446'::timestamp, '2025-08-16T18:23:02.893446'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.720 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.720 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-09 02:08:06.667943, 2025-08-16 01:47:06.667943, breakout) already exists.
+2025-08-16 19:01:38.720 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-09T02:08:06.667943'::timestamp, '2025-08-16T01:47:06.667943'::timestamp, '1m',
+	                     3860, 4003.6275086678406, 0.5126943005181347,  -5.460446249485165, 0.06417081593203575)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.728 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.728 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:23:17.724083, 2025-08-16 18:23:17.724083, breakout) already exists.
+2025-08-16 19:01:38.728 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:23:17.724083'::timestamp, '2025-08-16T18:23:17.724083'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.733 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.733 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:08:34.511825, 2025-08-16 18:08:34.511825, breakout) already exists.
+2025-08-16 19:01:38.733 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:08:34.511825'::timestamp, '2025-08-16T18:08:34.511825'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.739 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.739 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:09:41.740766, 2025-08-16 18:09:41.740766, breakout) already exists.
+2025-08-16 19:01:38.739 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:09:41.740766'::timestamp, '2025-08-16T18:09:41.740766'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.768 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.768 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2024-08-01 00:30:00, 2024-08-15 23:59:00, breakout) already exists.
+2025-08-16 19:01:38.768 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2024-08-01T00:30:00'::timestamp, '2024-08-15T23:59:00'::timestamp, '1m',
+	                     10283, 25036.036236036583, 0.494019255081202,  -4.958295515741899,  -0.014833367028477332)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.789 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.789 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2016-01-02 21:00:00, 2017-12-31 20:00:00, breakout) already exists.
+2025-08-16 19:01:38.789 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2016-01-02T21:00:00'::timestamp, '2017-12-31T20:00:00'::timestamp, '1m',
+	                     7358, 16633.885053064867, 0.5597988583854309,  -13.193577501844905, 0.15506179390619684)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.797 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.797 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 16:14:39.723364, 2025-08-16 16:14:39.723364, breakout) already exists.
+2025-08-16 19:01:38.797 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T16:14:39.723364'::timestamp, '2025-08-16T16:14:39.723364'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.803 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.803 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:24:15.080572, 2025-08-16 18:24:15.080572, breakout) already exists.
+2025-08-16 19:01:38.803 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:24:15.080572'::timestamp, '2025-08-16T18:24:15.080572'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.821 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.821 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2020-01-03 00:00:00, 2021-12-31 20:00:00, breakout) already exists.
+2025-08-16 19:01:38.821 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2020-01-03T00:00:00'::timestamp, '2021-12-31T20:00:00'::timestamp, '1m',
+	                     7269, 11315.418324818225, 0.5443664878250103,  -4.543034609912975, 0.10925156283348847)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.827 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.827 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:11:23.466405, 2025-08-16 18:11:23.466405, breakout) already exists.
+2025-08-16 19:01:38.827 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:11:23.466405'::timestamp, '2025-08-16T18:11:23.466405'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.830 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.830 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(SOLUSDT, 2025-08-16 03:25:32.411927, 2025-08-16 03:25:32.411927, breakout) already exists.
+2025-08-16 19:01:38.830 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('SOLUSDT', 'breakout', '2025-08-16T03:25:32.411927'::timestamp, '2025-08-16T03:25:32.411927'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.832 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.832 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:24:00.528797, 2025-08-16 18:24:00.528797, breakout) already exists.
+2025-08-16 19:01:38.832 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:24:00.528797'::timestamp, '2025-08-16T18:24:00.528797'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.835 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.835 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:10:47.9164, 2025-08-16 18:10:47.9164, breakout) already exists.
+2025-08-16 19:01:38.835 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:10:47.916400'::timestamp, '2025-08-16T18:10:47.916400'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.846 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.846 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:22:03.849284, 2025-08-16 18:22:03.849284, breakout) already exists.
+2025-08-16 19:01:38.846 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:22:03.849284'::timestamp, '2025-08-16T18:22:03.849284'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.848 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.848 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-16 18:21:49.472446, 2025-08-16 18:21:49.472446, breakout) already exists.
+2025-08-16 19:01:38.848 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-16T18:21:49.472446'::timestamp, '2025-08-16T18:21:49.472446'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.852 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.852 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 03:25:29.506507, 2025-08-16 03:25:29.506507, breakout) already exists.
+2025-08-16 19:01:38.852 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T03:25:29.506507'::timestamp, '2025-08-16T03:25:29.506507'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.857 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.857 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:12:46.282032, 2025-08-16 18:12:46.282032, breakout) already exists.
+2025-08-16 19:01:38.857 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:12:46.282032'::timestamp, '2025-08-16T18:12:46.282032'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.877 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.877 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2020-01-01 20:00:00, 2021-12-31 06:00:00, breakout) already exists.
+2025-08-16 19:01:38.877 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2020-01-01T20:00:00'::timestamp, '2021-12-31T06:00:00'::timestamp, '1m',
+	                     7474, 33546.82570290072, 0.6312550173936312,  -0.8484546437538275, 0.3257250058222138)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.881 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.881 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 02:17:55.230177, 2025-08-16 02:17:55.230177, breakout) already exists.
+2025-08-16 19:01:38.881 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T02:17:55.230177'::timestamp, '2025-08-16T02:17:55.230177'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.883 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.883 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:08:19.937436, 2025-08-16 18:08:19.937436, breakout) already exists.
+2025-08-16 19:01:38.883 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:08:19.937436'::timestamp, '2025-08-16T18:08:19.937436'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.903 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.903 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2018-01-01 20:00:00, 2019-12-31 07:00:00, breakout) already exists.
+2025-08-16 19:01:38.903 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2018-01-01T20:00:00'::timestamp, '2019-12-31T07:00:00'::timestamp, '1m',
+	                     7481, 23127.907862856344, 0.5734527469589628,  -29.774393283476986, 0.21254479752553845)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.907 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.907 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:14:40.575359, 2025-08-16 18:14:40.575359, breakout) already exists.
+2025-08-16 19:01:38.907 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:14:40.575359'::timestamp, '2025-08-16T18:14:40.575359'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.920 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.920 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(ETHUSDT, 2025-08-09 10:38:47.970214, 2025-08-16 10:03:47.970214, breakout) already exists.
+2025-08-16 19:01:38.920 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('ETHUSDT', 'breakout', '2025-08-09T10:38:47.970214'::timestamp, '2025-08-16T10:03:47.970214'::timestamp, '1m',
+	                     4013, 5560.356962050754, 0.5387490655370047,  -4.759460624788062, 0.1068241224354672)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.922 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.922 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 02:30:22.583196, 2025-08-16 02:30:22.583196, breakout) already exists.
+2025-08-16 19:01:38.922 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T02:30:22.583196'::timestamp, '2025-08-16T02:30:22.583196'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.931 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.931 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:11:19.180821, 2025-08-16 18:11:19.180821, breakout) already exists.
+2025-08-16 19:01:38.931 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:11:19.180821'::timestamp, '2025-08-16T18:11:19.180821'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:01:38.937 KST [73641] ERROR:  duplicate key value violates unique constraint "idx_backtest_runs_symbol_date"
+2025-08-16 19:01:38.937 KST [73641] DETAIL:  Key (symbol, start_date, end_date, strategy_type)=(BTCUSDT, 2025-08-16 18:14:55.250662, 2025-08-16 18:14:55.250662, breakout) already exists.
+2025-08-16 19:01:38.937 KST [73641] STATEMENT:  
+	                    INSERT INTO backtest_runs 
+	                    (symbol, strategy_type, start_date, end_date, timeframe, 
+	                     total_trades, total_pnl, win_rate, max_drawdown, sharpe_ratio)
+	                    VALUES 
+	                    ('BTCUSDT', 'breakout', '2025-08-16T18:14:55.250662'::timestamp, '2025-08-16T18:14:55.250662'::timestamp, '1m',
+	                     1, 20.0, 1.0, 0.0, 0.0)
+	                    RETURNING id
+	                
+2025-08-16 19:04:27.101 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:08:57.025 KST [70380] LOG:  checkpoint complete: wrote 7933 buffers (48.4%); 0 WAL file(s) added, 0 removed, 7 recycled; write=269.915 s, sync=0.003 s, total=269.924 s; sync files=51, longest=0.002 s, average=0.001 s; distance=110250 kB, estimate=110250 kB
+2025-08-16 19:15:10.999 KST [75989] LOG:  invalid length of startup packet
+2025-08-16 19:15:12.661 KST [75993] LOG:  invalid length of startup packet
+2025-08-16 19:19:27.012 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:19:28.849 KST [70380] LOG:  checkpoint complete: wrote 19 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.834 s, sync=0.002 s, total=1.838 s; sync files=12, longest=0.001 s, average=0.001 s; distance=57 kB, estimate=99231 kB
+2025-08-16 19:24:27.872 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:24:28.833 KST [70380] LOG:  checkpoint complete: wrote 10 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.925 s, sync=0.002 s, total=0.969 s; sync files=9, longest=0.001 s, average=0.001 s; distance=52 kB, estimate=89313 kB
+2025-08-16 19:29:27.793 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:29:29.625 KST [70380] LOG:  checkpoint complete: wrote 19 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.829 s, sync=0.001 s, total=1.833 s; sync files=12, longest=0.001 s, average=0.001 s; distance=104 kB, estimate=80392 kB
+2025-08-16 19:34:27.615 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:34:28.942 KST [70380] LOG:  checkpoint complete: wrote 14 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.324 s, sync=0.001 s, total=1.328 s; sync files=10, longest=0.001 s, average=0.001 s; distance=95 kB, estimate=72362 kB
+2025-08-16 19:39:27.932 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:39:28.653 KST [70380] LOG:  checkpoint complete: wrote 8 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.716 s, sync=0.002 s, total=0.721 s; sync files=8, longest=0.001 s, average=0.001 s; distance=49 kB, estimate=65131 kB
+2025-08-16 19:44:27.657 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:44:29.588 KST [70380] LOG:  checkpoint complete: wrote 20 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.927 s, sync=0.002 s, total=1.931 s; sync files=11, longest=0.001 s, average=0.001 s; distance=113 kB, estimate=58629 kB
+2025-08-16 19:51:14.440 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 19:51:15.463 KST [70380] LOG:  checkpoint complete: wrote 11 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.020 s, sync=0.001 s, total=1.023 s; sync files=9, longest=0.001 s, average=0.001 s; distance=72 kB, estimate=52773 kB
+2025-08-16 20:05:16.010 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 20:05:16.940 KST [70380] LOG:  checkpoint complete: wrote 10 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.922 s, sync=0.002 s, total=0.931 s; sync files=9, longest=0.001 s, average=0.001 s; distance=58 kB, estimate=47502 kB
+2025-08-16 20:16:56.472 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 20:16:57.801 KST [70380] LOG:  checkpoint complete: wrote 14 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.325 s, sync=0.001 s, total=1.332 s; sync files=9, longest=0.001 s, average=0.001 s; distance=66 kB, estimate=42758 kB
+2025-08-16 20:32:47.925 KST [70380] LOG:  checkpoint starting: time
+2025-08-16 20:32:48.746 KST [70380] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.816 s, sync=0.001 s, total=0.822 s; sync files=8, longest=0.001 s, average=0.001 s; distance=43 kB, estimate=38487 kB

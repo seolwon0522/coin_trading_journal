@@ -219,7 +219,21 @@ endblock %} {% block content %}
         <h6 class="m-0 font-weight-bold text-primary">
           자동매매 손익 추이 (최근 백테스트)
         </h6>
-        <small id="pnl-source" class="text-muted"></small>
+        <div class="d-flex align-items-center gap-3">
+          <select
+            id="pnl-period"
+            class="form-select form-select-sm"
+            onchange="updatePnlChart()"
+            style="width: auto; min-width: 120px"
+          >
+            <option value="30" selected>최근 30일</option>
+            <option value="90">최근 90일</option>
+            <option value="365">최근 1년</option>
+            <option value="1095">최근 3년</option>
+            <option value="3650">전체 기간</option>
+          </select>
+          <small id="pnl-source" class="text-muted"></small>
+        </div>
       </div>
       <div class="card-body">
         <div class="chart-area">
@@ -534,18 +548,57 @@ endblock %} {% block content %}
 
   function updatePnlChart() {
     const agg = document.getElementById("aggToggle")?.checked ? "daily" : "raw";
-    fetch(`/api/pnl_history?agg=${agg}`)
-      .then((res) => res.json())
+    const days = document.getElementById("pnl-period")?.value || 30;
+    // 한글 주석: 캐시 무효화를 위해 타임스탬프 쿼리 추가 및 no-store 옵션 사용
+    // 한글 주석: 카드 타이틀이 '최근 백테스트'이므로 기본 요청은 CSV 최신 기준으로 강제
+    // 한글 주석: 모든 기간에서 CSV 병합 데이터 사용
+    const mode = "all";
+    fetch(
+      `/api/pnl_history?agg=${agg}&days=${days}&source=csv&mode=${mode}&_ts=${Date.now()}`,
+      {
+        cache: "no-store",
+      }
+    )
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (!data.success) return;
+        if (!data.success) {
+          console.error("API 응답 오류:", data.error);
+          return;
+        }
         const c = data.chart_data;
+
+        // 한글 주석: 데이터가 없는 경우 처리
+        if (!c.timestamps || c.timestamps.length === 0) {
+          console.log("PnL 데이터가 없습니다");
+          // 빈 차트 표시
+          pnlChart.data.labels = [];
+          pnlChart.data.datasets[0].data = [];
+          pnlChart.data.datasets[1].data = [];
+          pnlChart.update();
+          return;
+        }
+
         const labels = c.timestamps.map((ts) =>
           new Date(ts).toLocaleString("ko-KR")
         );
         pnlChart.data.labels = labels;
         pnlChart.data.datasets[0].data = c.pnl;
         pnlChart.data.datasets[1].data = c.cum_pnl;
+
+        // 한글 주석: 데이터 포인트가 2개 미만이면 점을 크게 보여 가시성 확보
+        const isSparse = labels.length < 2;
+        pnlChart.data.datasets.forEach((ds) => {
+          ds.pointRadius = isSparse ? 5 : 3;
+          ds.pointHoverRadius = isSparse ? 7 : 4;
+          ds.showLine = !isSparse; // 점만 표시
+        });
         pnlChart.update();
+
         const src = document.getElementById("pnl-source");
         if (src)
           src.textContent = c.source_file ? `파일: ${c.source_file}` : "";
@@ -567,8 +620,15 @@ endblock %} {% block content %}
           : "-";
         document.getElementById("m-cagr-sharpe").textContent =
           `${m.cagr_pct ?? 0}% / ${m.sharpe ?? 0}`;
+
+        console.log(
+          `PnL 차트 업데이트 완료: ${c.timestamps.length}개 데이터포인트`
+        );
       })
-      .catch((err) => console.error("PnL 차트 갱신 실패:", err));
+      .catch((err) => {
+        console.error("PnL 차트 갱신 실패:", err);
+        // 에러 표시를 위한 UI 업데이트도 가능
+      });
   }
 
   // 학습 개선점 차트 초기화
@@ -760,6 +820,15 @@ endblock %} {% block content %}
     // 학습 개선점 차트 업데이트
     updateLearningChart();
     updateFeatureChart();
+
+    // 한글 주석: PnL 차트 자동 갱신 (60초마다)
+    setInterval(() => {
+      try {
+        updatePnlChart();
+      } catch (e) {
+        console.error("자동 갱신 실패:", e);
+      }
+    }, 60000);
   });
 </script>
 {% endblock %}

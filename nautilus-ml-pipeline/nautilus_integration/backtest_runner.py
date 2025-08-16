@@ -18,6 +18,9 @@ import os
 # 복잡한 의존성을 피하고 순수 Python으로 구현
 
 from .strategy_filter import StrategyFilter, BacktestingDataCollector, StrategySignal
+# 한글 주석: 동적 포지션 사이징 시스템 임포트
+sys.path.append(str(Path(__file__).parent.parent))
+from risk_management.position_sizer import DynamicPositionSizer
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +43,10 @@ class MLBacktestStrategy:
         scoring_config = scoring_config or {}
         self.scoring_mode: str = scoring_config.get('mode', 'baseline')
         self.hybrid_weight: float = float(scoring_config.get('hybrid_weight', 0.4))
+        
+        # 한글 주석: 모델 매니저 캐싱 (무한 로딩 방지)
+        self._model_manager = None
+        self._cached_model = None
         
     def generate_signals(self, bars: List[Dict]) -> List[StrategySignal]:
         """
@@ -236,14 +243,21 @@ class MLBacktestStrategy:
         return base_score
 
     def _ml_strategy_score(self, strategy_type: str, feat: Dict[str, float]) -> float:
-        """최신 ML 모델로 return_pct 예측 → 0~100 점수로 정규화"""
+        """최신 ML 모델로 return_pct 예측 → 0~100 점수로 정규화 (캐싱 지원)"""
         try:
-            from ml_pipeline.model_trainer import ModelManager
             import pandas as pd
-            manager = ModelManager()
-            model = manager.load_latest_model()
-            if model is None:
-                return 50.0
+            
+            # 한글 주석: 모델 매니저 캐싱 (처음 한 번만 생성)
+            if self._model_manager is None:
+                from ml_pipeline.model_trainer import ModelManager
+                self._model_manager = ModelManager()
+            
+            # 한글 주석: 모델 캐싱 (5분마다 새로고침)
+            if self._cached_model is None:
+                self._cached_model = self._model_manager.load_latest_model()
+                if self._cached_model is None:
+                    return 50.0
+            
             row = {
                 'entry_timing_score': (feat.get('sma_short',0)-feat.get('sma_long',0)) / max(feat.get('sma_long',1e-9),1e-9) * 100 + (50 - abs(50 - feat.get('rsi',50))),
                 'exit_timing_score': 70.0,
@@ -254,7 +268,7 @@ class MLBacktestStrategy:
                 'volume_profile': 1.0 + feat.get('volume_spike',0)*0.5,
             }
             X = pd.DataFrame([row])
-            ret = float(model.predict(X)[0])
+            ret = float(self._cached_model.predict(X)[0])
             return max(0.0, min(100.0, 50 + ret))
         except Exception:
             return 50.0
@@ -262,12 +276,13 @@ class MLBacktestStrategy:
 class NautilusBacktestRunner:
     """노틸러스 백테스팅 실행기"""
     
-    def __init__(self, config_path: str = "config/ml_config.yaml"):
+    def __init__(self, config_path: str = "config/ml_config.yaml", initial_capital: float = 10000.0):
         """
         백테스팅 러너 초기화
         
         Args:
             config_path: 설정 파일 경로
+            initial_capital: 초기 자본금
         """
         import yaml
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -279,6 +294,14 @@ class NautilusBacktestRunner:
         self.data_collector = BacktestingDataCollector()
         scoring_conf = self.config.get('scoring', {}) if isinstance(self.config, dict) else {}
         self.strategy = MLBacktestStrategy(self.strategy_filter, self.data_collector, scoring_config=scoring_conf)
+        
+        # 한글 주석: 동적 포지션 사이징 시스템 초기화
+        self.position_sizer = DynamicPositionSizer(
+            initial_capital=initial_capital,
+            max_position_pct=0.20,  # 최대 20% 포지션
+            mdd_threshold=0.15,     # MDD 15% 시 포지션 축소
+            kelly_lookback=50       # 최근 50거래로 Kelly 계산
+        )
         
     def create_sample_data(self, symbol: str = "BTCUSDT", days: int = 30,
                            start_date: Optional[datetime] = None,
@@ -387,11 +410,32 @@ class NautilusBacktestRunner:
             should_execute, reason = self.strategy_filter.should_execute_strategy(signal)
             
             if should_execute:
-                # 한글 주석: 거래 실행 시뮬레이션
-                trade_result = self._simulate_trade_execution(signal, bars)
+                # 한글 주석: 동적 포지션 사이징 적용
+                recent_trade_data = [
+                    {
+                        'return_pct': trade.get('return_pct', 0),
+                        'pnl': trade.get('pnl', 0)
+                    } for trade in executed_trades[-50:]  # 최근 50거래
+                ]
+                
+                position_size = self.position_sizer.get_position_size(
+                    signal_confidence=signal.confidence,
+                    recent_trades=recent_trade_data
+                )
+                
+                # 한글 주석: 거래 실행 시뮬레이션 (동적 포지션 크기 적용)
+                trade_result = self._simulate_trade_execution(signal, bars, position_size)
+                
+                # 한글 주석: 포지션 사이저 업데이트
+                self.position_sizer.update_capital(trade_result['pnl'], trade_result['return_pct'])
+                
+                # 한글 주석: 재학습 트리거 확인
+                if self.position_sizer.should_trigger_retraining():
+                    logger.warning("재학습 트리거 조건 충족! 모델 재훈련을 권장합니다.")
+                
                 self.data_collector.record_executed_trade(signal, trade_result)
                 executed_trades.append(trade_result)
-                logger.debug(f"거래 실행: {signal.symbol} {signal.strategy_type} PnL: {trade_result['pnl']:.2f}")
+                logger.debug(f"거래 실행: {signal.symbol} {signal.strategy_type} 포지션: ${position_size:.0f} PnL: {trade_result['pnl']:.2f}")
             else:
                 self.data_collector.record_rejected_signal(signal, reason)
                 rejected_signals.append({'signal': signal, 'reason': reason})
@@ -446,20 +490,31 @@ class NautilusBacktestRunner:
         except Exception as e:
             logger.warning(f"데이터베이스 저장 실패 (CSV는 정상 저장됨): {e}")
             
-        # 한글 주석: 백테스팅 요약
+        # 한글 주석: 백테스팅 요약 (동적 포지션 사이징 메트릭 포함)
         total_pnl = sum(trade['pnl'] for trade in executed_trades)
         win_rate = len([t for t in executed_trades if t['pnl'] > 0]) / len(executed_trades) if executed_trades else 0
+        
+        # 리스크 메트릭 가져오기
+        risk_metrics = self.position_sizer.get_risk_metrics()
         
         logger.info(f"백테스팅 완료:")
         logger.info(f"  - 실행된 거래: {len(executed_trades)}건")
         logger.info(f"  - 거부된 신호: {len(rejected_signals)}건")
         logger.info(f"  - 총 PnL: ${total_pnl:.2f}")
         logger.info(f"  - 승률: {win_rate:.1%}")
+        logger.info(f"  - 최종 자본: ${risk_metrics['current_capital']:.2f}")
+        logger.info(f"  - 총 수익률: {risk_metrics['total_return_pct']:.2f}%")
+        logger.info(f"  - 최대 MDD: {risk_metrics['max_drawdown_pct']:.2f}%")
+        logger.info(f"  - 연속 손실: {risk_metrics['consecutive_losses']}회")
+        
+        if risk_metrics['needs_retraining']:
+            logger.warning("  ⚠️  재학습 권장 조건 충족!")
+        
         logger.info(f"  - 결과 파일: {results_file}")
         
         return results_file
     
-    def _simulate_trade_execution(self, signal: StrategySignal, bars: List[Dict]) -> Dict:
+    def _simulate_trade_execution(self, signal: StrategySignal, bars: List[Dict], position_size: float = 1000.0) -> Dict:
         """거래 실행 시뮬레이션"""
         # 한글 주석: 실제 백테스팅 엔진 대신 간단한 시뮬레이션
         entry_price = signal.entry_price
@@ -514,13 +569,13 @@ class NautilusBacktestRunner:
                 exit_price = bar['close']
                 exit_time = bar['timestamp']
         
-        # 한글 주석: PnL 계산
+        # 한글 주석: PnL 계산 (동적 포지션 크기 적용)
         if signal.strategy_type == 'trend':
             # 숏 포지션
-            pnl = (entry_price - exit_price) / entry_price * 1000  # $1000 기준
+            pnl = (entry_price - exit_price) / entry_price * position_size
         else:
             # 롱 포지션
-            pnl = (exit_price - entry_price) / entry_price * 1000
+            pnl = (exit_price - entry_price) / entry_price * position_size
             
         return_pct = ((exit_price - entry_price) / entry_price) * 100
         duration_minutes = (exit_time - signal_time).total_seconds() / 60

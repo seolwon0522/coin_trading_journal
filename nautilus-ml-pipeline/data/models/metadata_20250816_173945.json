@@ -1,0 +1,49 @@
+{
+  "model_path": "data/models/xgb_model_20250816_173945.pkl",
+  "feature_columns": [
+    "entry_timing_score",
+    "exit_timing_score",
+    "risk_mgmt_score",
+    "pnl_ratio",
+    "volatility",
+    "market_condition",
+    "volume_profile"
+  ],
+  "feature_importance": {
+    "entry_timing_score": 0.0650632455945015,
+    "exit_timing_score": 0.004411172587424517,
+    "risk_mgmt_score": 0.0939587876200676,
+    "pnl_ratio": 0.3412986099720001,
+    "volatility": 0.13094031810760498,
+    "market_condition": 0.36354169249534607,
+    "volume_profile": 0.0007862710626795888
+  },
+  "training_metrics": {
+    "train_rmse": 0.008334338765396122,
+    "test_rmse": 0.0440539434656476,
+    "train_mae": 0.005036569200456142,
+    "test_mae": 0.008986781351268291,
+    "train_r2": 0.9999606609344482,
+    "test_r2": 0.998916506767273,
+    "train_size": 20149,
+    "test_size": 5038,
+    "training_date": "2025-08-16T17:39:45.961064",
+    "overfit_ratio": 0.001044154167175293
+  },
+  "model_config": {
+    "algorithm": "xgboost",
+    "auto_tuning": {
+      "cv_folds": 3,
+      "enabled": true,
+      "n_trials": 20
+    },
+    "hyperparameters": {
+      "colsample_bytree": 0.8,
+      "learning_rate": 0.1,
+      "max_depth": 4,
+      "n_estimators": 100,
+      "random_state": 42,
+      "subsample": 0.8
+    }
+  }
+}

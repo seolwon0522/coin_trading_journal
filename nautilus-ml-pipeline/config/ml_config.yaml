@@ -16,30 +16,43 @@ data_based_schedule:
   large_dataset:
     performance_monitoring: true
     retrain_every: weekly
-    threshold: 2000
+    threshold: 50000 # 2000 → 50000으로 확대
   medium_dataset:
     retrain_every: weekly
-    threshold: 500
+    threshold: 10000 # 500 → 10000으로 확대
   small_dataset:
-    retrain_every: 50
-    threshold: 100
+    retrain_every: 5000 # 안전한 간격으로 설정
+    threshold: 10000 # medium과 동일하게 설정
   xlarge_dataset:
     drift_detection: true
     retrain_every: biweekly
-    threshold: 9999999
+    threshold: 100000 # 10만건 이상일 때만
+  # 1년치 대용량 데이터셋 설정
+  year_long_dataset:
+    drift_detection: true
+    retrain_every: monthly
+    threshold: 500000 # 50만건 이상 (1년치 예상)
+    performance_monitoring: true
+    model_validation: true
 model:
   algorithm: xgboost
   auto_tuning:
-    cv_folds: 3
+    cv_folds: 5 # 3 → 5로 늘려서 더 정확한 검증
     enabled: true
-    n_trials: 20
+    n_trials: 50 # 20 → 50으로 늘려서 더 정밀한 튜닝
   hyperparameters:
     colsample_bytree: 0.8
     learning_rate: 0.1
-    max_depth: 4
-    n_estimators: 100
+    max_depth: 6 # 4 → 6으로 늘려서 더 복잡한 패턴 학습
+    n_estimators: 200 # 100 → 200으로 늘려서 더 정확한 학습
     random_state: 42
     subsample: 0.8
+  # 1년치 대용량 데이터 전용 설정
+  large_dataset_config:
+    max_depth: 8
+    n_estimators: 500
+    learning_rate: 0.05
+    early_stopping_rounds: 50
 monitoring:
   alerts:
     email: admin@trading-journal.com
@@ -71,13 +84,15 @@ strategy_filter:
   min_score: 90
   rolling_window: 20
 update_schedule:
-  daily_data_check: true
-  emergency_threshold: 0.15
+  daily_data_check: false # true → false 불필요한 체크 비활성화
+  emergency_threshold: 0.05 # 0.15 → 0.05 더 엄격한 기준
   monthly_full_retrain:
     day: 1
-    enabled: true
+    enabled: false # true → false 자동 재훈련 비활성화
     time: 03:00
   weekly_retrain:
     day: sunday
-    enabled: true
+    enabled: false # true → false 자동 재훈련 비활성화
     time: 02:00
+  # 새로운 설정: 재학습 쿨다운
+  retrain_cooldown_hours: 6 # 재학습 후 6시간 대기

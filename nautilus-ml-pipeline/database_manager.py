@@ -35,6 +35,9 @@ class BacktestDatabaseManager:
         self.engine = create_engine(self.database_url)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         
+        # CSV 기본 디렉토리 (자동매매/백테스트 결과 폴더) - 환경변수로 오버라이드 가능
+        self.csv_dir = Path(os.getenv('AUTO_TRADE_CSV_DIR', 'data/backtest_results'))
+
         # 스키마 초기화
         self._initialize_schema()
     
@@ -64,7 +67,55 @@ class BacktestDatabaseManager:
                 
                 logger.info("데이터베이스 스키마 초기화 완료")
             else:
-                logger.warning("database_setup.sql 파일을 찾을 수 없습니다")
+                # 한글 주석: 최소 스키마 자동 생성 (database_setup.sql이 없을 경우 대비)
+                try:
+                    with self.engine.connect() as conn:
+                        conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS backtest_runs (
+                            id SERIAL PRIMARY KEY,
+                            symbol VARCHAR(50) NOT NULL,
+                            strategy_type VARCHAR(100) NULL,
+                            start_date TIMESTAMP NULL,
+                            end_date TIMESTAMP NULL,
+                            timeframe VARCHAR(20) NULL,
+                            total_trades INTEGER DEFAULT 0,
+                            total_pnl DOUBLE PRECISION DEFAULT 0,
+                            win_rate DOUBLE PRECISION DEFAULT 0,
+                            max_drawdown DOUBLE PRECISION DEFAULT 0,
+                            sharpe_ratio DOUBLE PRECISION DEFAULT 0,
+                            created_at TIMESTAMP DEFAULT NOW()
+                        );
+                        """))
+                        conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS backtest_trades (
+                            id SERIAL PRIMARY KEY,
+                            backtest_run_id INTEGER REFERENCES backtest_runs(id) ON DELETE CASCADE,
+                            timestamp TIMESTAMP NULL,
+                            symbol VARCHAR(50) NULL,
+                            strategy_type VARCHAR(100) NULL,
+                            entry_price DOUBLE PRECISION NULL,
+                            stop_loss DOUBLE PRECISION NULL,
+                            take_profit DOUBLE PRECISION NULL,
+                            strategy_score DOUBLE PRECISION NULL,
+                            confidence DOUBLE PRECISION NULL,
+                            risk_level DOUBLE PRECISION NULL,
+                            exit_price DOUBLE PRECISION NULL,
+                            exit_timestamp TIMESTAMP NULL,
+                            pnl DOUBLE PRECISION NULL,
+                            return_pct DOUBLE PRECISION NULL,
+                            duration_minutes DOUBLE PRECISION NULL,
+                            exit_reason VARCHAR(100) NULL,
+                            entry_timing_score DOUBLE PRECISION NULL,
+                            exit_timing_score DOUBLE PRECISION NULL,
+                            risk_mgmt_score DOUBLE PRECISION NULL,
+                            pnl_ratio DOUBLE PRECISION NULL,
+                            target_return_pct DOUBLE PRECISION NULL
+                        );
+                        """))
+                        conn.commit()
+                    logger.info("데이터베이스 최소 스키마 생성 완료 (폴백)")
+                except Exception as inner_e:
+                    logger.warning(f"database_setup.sql 파일을 찾을 수 없고 폴백 스키마 생성도 실패: {inner_e}")
                 
         except Exception as e:
             logger.error(f"스키마 초기화 실패: {e}")
@@ -83,6 +134,8 @@ class BacktestDatabaseManager:
             # CSV 파일 로드
             df = pd.read_csv(csv_file_path)
             logger.info(f"CSV 파일 로드: {len(df)}개 거래 데이터")
+            if df is None or len(df) == 0:
+                raise ValueError("빈 CSV 파일이거나 데이터가 없습니다")
             
             # 파일명에서 메타데이터 추출
             file_name = Path(csv_file_path).name
@@ -96,14 +149,27 @@ class BacktestDatabaseManager:
                 timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
             
             # 백테스트 실행 정보 생성
-            start_date = pd.to_datetime(df['timestamp']).min()
-            end_date = pd.to_datetime(df['timestamp']).max()
-            strategy_type = df['strategy_type'].iloc[0] if 'strategy_type' in df.columns else 'unknown'
+            # 안전한 날짜/전략 추출
+            if 'timestamp' in df.columns and df['timestamp'].notna().any():
+                start_date = pd.to_datetime(df['timestamp'], errors='coerce').min()
+                end_date = pd.to_datetime(df['timestamp'], errors='coerce').max()
+            else:
+                start_date = None
+                end_date = None
+            strategy_type = (
+                df['strategy_type'].iloc[0]
+                if ('strategy_type' in df.columns and len(df['strategy_type']) > 0)
+                else 'unknown'
+            )
             
             # 집계 통계 계산
-            total_trades = len(df)
-            total_pnl = df['pnl'].sum() if 'pnl' in df.columns else 0
-            win_rate = (df['pnl'] > 0).mean() if 'pnl' in df.columns else 0
+            total_trades = int(len(df))
+            total_pnl = float(df['pnl'].sum()) if 'pnl' in df.columns else 0.0
+            if 'pnl' in df.columns and len(df['pnl']) > 0:
+                wr = (df['pnl'] > 0).mean()
+                win_rate = float(wr) if pd.notna(wr) else 0.0
+            else:
+                win_rate = 0.0
             
             # 맥스 드로우다운 계산 (간단한 버전)
             if 'pnl' in df.columns:
@@ -115,11 +181,12 @@ class BacktestDatabaseManager:
                 max_drawdown = 0
             
             # 샤프 비율 계산 (간단한 버전)
-            if 'return_pct' in df.columns:
+            if 'return_pct' in df.columns and len(df['return_pct']) > 1:
                 returns = df['return_pct'] / 100  # 퍼센트를 소수로 변환
-                sharpe_ratio = returns.mean() / returns.std() if returns.std() > 0 else 0
+                std = returns.std()
+                sharpe_ratio = float(returns.mean() / std) if std and std > 0 else 0.0
             else:
-                sharpe_ratio = 0
+                sharpe_ratio = 0.0
             
             with self.engine.connect() as conn:
                 # 백테스트 실행 정보 저장
@@ -300,50 +367,80 @@ class BacktestDatabaseManager:
             logger.error(f"성과 지표 조회 실패: {e}")
             return {}
     
-    def get_pnl_history(self, symbol: Optional[str] = None, days: int = 30) -> Dict:
+    def get_pnl_history(self, symbol: Optional[str] = None, days: int = 30, mode: str = 'latest', source: str = 'db') -> Dict:
         """
         PnL 히스토리 조회 (차트 데이터용)
         
         Args:
             symbol: 심볼 필터
             days: 조회 일수
+            mode: 'latest' | 'all' (집계 범위)
+            source: 'db' | 'csv' (데이터 소스)
             
         Returns:
             차트 데이터 딕셔너리
         """
         try:
+            # 한글 주석: CSV 소스 강제 지정 시 CSV에서 로드
+            if source == 'csv':
+                return self._get_pnl_history_from_csv(symbol=symbol, days=days, mode=mode)
+
             with self.engine.connect() as conn:
                 # 날짜 필터 적용
                 since_date = datetime.now() - timedelta(days=days)
                 
-                if symbol:
+                if mode == 'latest':
+                    # 한글 주석: 최신 실행 기준으로 제한
+                    if symbol:
+                        latest_run_sql = text("""
+                            SELECT id FROM backtest_runs 
+                            WHERE symbol = :symbol 
+                            ORDER BY created_at DESC 
+                            LIMIT 1
+                        """)
+                        latest_row = conn.execute(latest_run_sql, {'symbol': symbol}).fetchone()
+                    else:
+                        latest_run_sql = text("""
+                            SELECT id FROM backtest_runs 
+                            ORDER BY created_at DESC 
+                            LIMIT 1
+                        """)
+                        latest_row = conn.execute(latest_run_sql).fetchone()
+                    if not latest_row:
+                        return {'timestamps': [], 'pnl': [], 'cum_pnl': [], 'return_pct': []}
+                    latest_run_id = int(latest_row[0])
                     pnl_sql = text("""
-                        SELECT timestamp, pnl, return_pct 
+                        SELECT bt.timestamp, bt.pnl, bt.return_pct 
                         FROM backtest_trades bt
-                        JOIN backtest_runs br ON bt.backtest_run_id = br.id
-                        WHERE br.symbol = :symbol AND bt.timestamp >= :since_date
-                        ORDER BY timestamp
+                        WHERE bt.backtest_run_id = :run_id AND bt.timestamp >= :since_date
+                        ORDER BY bt.timestamp
                     """)
-                    params = {'symbol': symbol, 'since_date': since_date}
+                    params = {'run_id': latest_run_id, 'since_date': since_date}
                 else:
-                    pnl_sql = text("""
-                        SELECT timestamp, pnl, return_pct 
-                        FROM backtest_trades bt
-                        JOIN backtest_runs br ON bt.backtest_run_id = br.id
-                        WHERE bt.timestamp >= :since_date
-                        ORDER BY timestamp
-                    """)
-                    params = {'since_date': since_date}
+                    # 전체 집계(all) 모드
+                    if symbol:
+                        pnl_sql = text("""
+                            SELECT bt.timestamp, bt.pnl, bt.return_pct 
+                            FROM backtest_trades bt
+                            JOIN backtest_runs br ON bt.backtest_run_id = br.id
+                            WHERE br.symbol = :symbol AND bt.timestamp >= :since_date
+                            ORDER BY bt.timestamp
+                        """)
+                        params = {'symbol': symbol, 'since_date': since_date}
+                    else:
+                        pnl_sql = text("""
+                            SELECT bt.timestamp, bt.pnl, bt.return_pct 
+                            FROM backtest_trades bt
+                            WHERE bt.timestamp >= :since_date
+                            ORDER BY bt.timestamp
+                        """)
+                        params = {'since_date': since_date}
                 
                 df = pd.read_sql(pnl_sql, conn, params=params)
                 
                 if len(df) == 0:
-                    return {
-                        'timestamps': [],
-                        'pnl': [],
-                        'cum_pnl': [],
-                        'return_pct': []
-                    }
+                    # 한글 주석: DB에 데이터가 없으면 CSV 폴백
+                    return self._get_pnl_history_from_csv(symbol=symbol, days=days, mode=mode)
                 
                 # 누적 PnL 계산
                 df['cum_pnl'] = df['pnl'].cumsum()
@@ -357,7 +454,86 @@ class BacktestDatabaseManager:
                 
         except Exception as e:
             logger.error(f"PnL 히스토리 조회 실패: {e}")
+            # 한글 주석: 폴백 - CSV 파일에서 직접 PnL 히스토리 생성 (전역 pd 사용)
+            try:
+                return self._get_pnl_history_from_csv(symbol=symbol, days=days, mode=mode)
+            except Exception:
+                return {'timestamps': [], 'pnl': [], 'cum_pnl': []}
+
+    def _get_pnl_history_from_csv(self, symbol: Optional[str], days: int, mode: str) -> Dict:
+        """CSV 파일에서 PnL 히스토리 생성 (자동매매 최근 CSV 등)"""
+        if not self.csv_dir.exists():
             return {'timestamps': [], 'pnl': [], 'cum_pnl': []}
+        files = list(self.csv_dir.glob('backtest_*.csv')) + list(self.csv_dir.glob('consolidated_*.csv'))
+        if not files:
+            return {'timestamps': [], 'pnl': [], 'cum_pnl': []}
+        # 심볼 필터: 파일명 또는 컬럼 기반
+        if symbol:
+            files = [f for f in files if f.name.split('_')[1] == symbol]
+        # 최신/전체 스코프 정렬 (최신 우선)
+        files = sorted(files, key=lambda p: p.stat().st_mtime, reverse=True)
+        frames = []
+        since_date = datetime.now() - timedelta(days=days)
+        used_file: Optional[Path] = None
+        def load_file(fp: Path) -> Optional[pd.DataFrame]:
+            try:
+                df = pd.read_csv(fp)
+                if 'timestamp' not in df.columns or 'pnl' not in df.columns:
+                    return None
+                if symbol and 'symbol' in df.columns:
+                    df = df[df['symbol'] == symbol]
+                df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+                return df
+            except Exception:
+                return None
+
+        if mode == 'latest':
+            # 가장 최근의 "비어있지 않은" 파일을 찾음 (필터링 적용 후)
+            for f in files:
+                df = load_file(f)
+                if df is None or df.empty:
+                    continue
+                df_recent = df[df['timestamp'] >= since_date]
+                if not df_recent.empty:
+                    frames = [df_recent]
+                    used_file = f
+                    break
+            # 기간 내 데이터가 없다면, 최신 비어있지 않은 파일로 폴백
+            if not frames:
+                for f in files:
+                    df = load_file(f)
+                    if df is not None and not df.empty:
+                        frames = [df]
+                        used_file = f
+                        break
+        else:
+            # 전체 모드: 기간 내 데이터가 있는 파일들을 모두 병합
+            for f in files[::-1]:  # 오래된 순으로 누적
+                df = load_file(f)
+                if df is None or df.empty:
+                    continue
+                df_recent = df[df['timestamp'] >= since_date]
+                if df_recent.empty:
+                    continue
+                frames.append(df_recent)
+            if frames:
+                used_file = None  # 다수 파일 병합
+
+        if not frames:
+            return {'timestamps': [], 'pnl': [], 'cum_pnl': []}
+
+        full = pd.concat(frames, ignore_index=True).sort_values('timestamp')
+        full['cum_pnl'] = full['pnl'].cumsum()
+        result = {
+            'timestamps': full['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S').tolist(),
+            'pnl': full['pnl'].tolist(),
+            'cum_pnl': full['cum_pnl'].tolist(),
+            'return_pct': (full['return_pct'].tolist() if 'return_pct' in full.columns else [])
+        }
+        if used_file:
+            result['source_file'] = str(used_file.name)
+            result['source'] = 'csv'
+        return result
     
     def migrate_csv_files(self, csv_directory: str):
         """

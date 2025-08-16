@@ -222,5 +222,69 @@
     },
     "prediction_accuracy": 0.0,
     "drift_score": 0.0008517565430319751
+  },
+  {
+    "timestamp": "2025-08-16T18:12:00.527586",
+    "r2_score": 0.999610424041748,
+    "rmse": 0.025668330017386887,
+    "mae": 0.0061950585804879665,
+    "overfit_ratio": 0.00034230947494506836,
+    "training_size": 80000,
+    "test_size": 20000,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.39337316155433655,
+      "market_condition": 0.3362007439136505,
+      "volatility": 0.13007377088069916
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 3.538012242724658e-05
+  },
+  {
+    "timestamp": "2025-08-16T18:16:18.988582",
+    "r2_score": 0.9998329396796426,
+    "rmse": 0.01693557848507672,
+    "mae": 0.005660648285762595,
+    "overfit_ratio": 0.00013103708827155724,
+    "training_size": 80000,
+    "test_size": 20000,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.3879684507846832,
+      "market_condition": 0.32443904876708984,
+      "volatility": 0.14313006401062012
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.0002445154447714743
+  },
+  {
+    "timestamp": "2025-08-16T18:25:32.435050",
+    "r2_score": 0.9997794725271821,
+    "rmse": 0.019344006610162414,
+    "mae": 0.005458081304480387,
+    "overfit_ratio": 0.00020356255030307135,
+    "training_size": 80000,
+    "test_size": 20000,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.40545323491096497,
+      "market_condition": 0.28407350182533264,
+      "volatility": 0.16701678931713104
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.00018730945721084533
+  },
+  {
+    "timestamp": "2025-08-16T18:33:15.631778",
+    "r2_score": 0.9997794725271821,
+    "rmse": 0.019344006610162414,
+    "mae": 0.005458081304480387,
+    "overfit_ratio": 0.00020356255030307135,
+    "training_size": 80000,
+    "test_size": 20000,
+    "feature_importance_top3": {
+      "pnl_ratio": 0.40545323491096497,
+      "market_condition": 0.28407350182533264,
+      "volatility": 0.16701678931713104
+    },
+    "prediction_accuracy": 0.0,
+    "drift_score": 0.00020733004798137702
   }
 ]

@@ -1,0 +1,2 @@
+timestamp,symbol,strategy_type,entry_price,stop_loss,take_profit,strategy_score,confidence,risk_level,exit_price,exit_timestamp,pnl,return_pct,duration_minutes,exit_reason
+2025-08-16 18:13:57.148475,BTCUSDT,breakout,100.0,98.0,104.0,82.0,0.7,low,102.0,2025-08-16 18:43:57.148476,20.0,2.0,30,timeout

@@ -27,6 +27,17 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'ml-monitoring-secret-key-2025')
 
+# 한글 주석: API 응답 캐시 방지 헤더 부여
+@app.after_request
+def add_no_cache_headers(response):
+    try:
+        if request.path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+    finally:
+        return response
+
 # 한글 주석: Flask-Login 설정
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -58,10 +69,10 @@ def get_performance_monitor():
     """지연 로딩된 PerformanceMonitor 싱글톤 반환"""
     global performance_monitor_instance
     if performance_monitor_instance is None:
-        # 한글 주석: 성능 기록 파일 경로를 학습 파이프라인에서 쓰는 위치로 고정
+        # 한글 주석: 성능 기록 파일 경로를 파이프라인 기본 경로(data/*.json)와 통일
         base_dir = Path(__file__).parent.parent  # nautilus-ml-pipeline 루트
-        performance_history_path = base_dir / "ml_pipeline" / "performance_history.json"
-        alerts_history_path = base_dir / "ml_pipeline" / "performance_alerts.json"
+        performance_history_path = base_dir / "data" / "performance_history.json"
+        alerts_history_path = base_dir / "data" / "performance_alerts.json"
         performance_monitor_instance = PerformanceMonitor(
             performance_history_file=str(performance_history_path),
             alerts_file=str(alerts_history_path),
@@ -206,8 +217,8 @@ def api_performance_history():
         chart_data = {
             'timestamps': [h['timestamp'] for h in history],
             'r2_scores': [h['r2_score'] for h in history],
-            'rmse_scores': [h['rmse'] for h in history],
-            'overfit_ratios': [h['overfit_ratio'] for h in history],
+            'rmse_scores': [h.get('rmse', h.get('rmse_score', 0)) for h in history],  # 호환성 개선
+            'overfit_ratios': [h.get('overfit_ratio', 0) for h in history],
             'drift_scores': [h.get('drift_score', 0) for h in history]
         }
         
@@ -235,7 +246,15 @@ def api_pnl_history():
         agg = request.args.get('agg', 'raw')  # 'raw' | 'daily'
 
         db_manager = get_db_manager()
-        base = db_manager.get_pnl_history(symbol=symbol, days=days)
+        # 한글 주석: 데이터 소스/모드 기본값 개선
+        env_csv_dir = os.environ.get('AUTO_TRADE_CSV_DIR')
+        source = request.args.get('source')
+        if not source:
+            source = 'csv' if env_csv_dir else 'db'
+        mode = request.args.get('mode')
+        if not mode:
+            mode = 'latest' if source == 'csv' else 'all'
+        base = db_manager.get_pnl_history(symbol=symbol, days=days, mode=mode, source=source)
 
         if not base['timestamps']:
             empty_chart = {
@@ -262,23 +281,38 @@ def api_pnl_history():
         else:
             df_plot = df[['ts', 'pnl']].copy()
 
-        # 누적, MDD 계산
+        # 누적 및 MDD 계산
         df_plot['cum_pnl'] = df_plot['pnl'].cumsum()
-        rolling_max = df_plot['cum_pnl'].cummax()
         mdd_pct = None
         try:
-            peak = float(rolling_max.max())
-            trough = float(df_plot['cum_pnl'].min())
-            if peak != 0:
-                mdd_pct = round(((trough - peak) / peak) * 100, 2)
+            if agg == 'daily':
+                # 한글 주석: 일별 집계 시에는 에쿼티 기반으로 MDD 계산 (초기자본 가정)
+                initial_capital = 10000.0
+                daily_returns = df_plot['pnl'] / initial_capital
+                equity = (1.0 + daily_returns).cumprod() * initial_capital
+                rolling_max_eq = equity.cummax()
+                dd = (equity / rolling_max_eq) - 1.0
+                if not dd.empty:
+                    mdd_pct = float(round(dd.min() * 100, 2))
+            else:
+                # 원시 거래 단위에서는 누적 PnL 기반 근사치 유지
+                rolling_max = df_plot['cum_pnl'].cummax()
+                peak = float(rolling_max.max())
+                trough = float(df_plot['cum_pnl'].min())
+                if peak != 0:
+                    mdd_pct = round(((trough - peak) / peak) * 100, 2)
         except Exception:
             pass
 
-        # 메트릭 계산 (원본 거래 단위 기준)
-        trades_count = int(len(pnl))
-        total_pnl = float(round(pnl.sum(), 2))
-        win_rate_pct = float(round((pnl > 0).mean() * 100, 2)) if trades_count > 0 else 0.0
-        avg_pnl = float(round(pnl.mean(), 2)) if trades_count > 0 else 0.0
+        # 메트릭 계산: 집계 단위에 맞춰 계산
+        if agg == 'daily':
+            base_series = df_plot['pnl']
+        else:
+            base_series = pnl
+        trades_count = int(len(base_series))
+        total_pnl = float(round(base_series.sum(), 2))
+        win_rate_pct = float(round((base_series > 0).mean() * 100, 2)) if trades_count > 0 else 0.0
+        avg_pnl = float(round(base_series.mean(), 2)) if trades_count > 0 else 0.0
 
         # CAGR / Sharpe (일별 집계에 한해 근사 계산)
         cagr_pct = None
@@ -412,7 +446,7 @@ def learning_improvements():
                 'timestamp': h.get('timestamp'),
                 'model_metrics': {
                     'test_r2': float(h.get('r2_score', 0.0)),
-                    'test_rmse': float(h.get('rmse', 0.0))
+                    'test_rmse': float(h.get('rmse', h.get('rmse_score', 0.0)))  # 호환성 개선
                 },
                 'backtest_summary': {
                     # 한글 주석: 별도 계산 없이 제공 가능한 기본 지표만 노출

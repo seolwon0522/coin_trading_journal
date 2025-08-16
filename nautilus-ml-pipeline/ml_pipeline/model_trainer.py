@@ -110,12 +110,24 @@ class MLModelTrainer:
         
         try:
             # 한글 주석: 대용량 데이터 처리를 위한 청크 로딩 또는 샘플링
-            df = pd.read_csv(data_path, usecols=required_columns, dtype='float32')
+            try:
+                df = pd.read_csv(
+                    data_path,
+                    usecols=list(dict.fromkeys(required_columns + ['timestamp']))  # 'timestamp' 포함 시 자동 파싱
+                )
+            except Exception:
+                df = pd.read_csv(
+                    data_path,
+                    usecols=required_columns
+                )
             
-            # 한글 주석: 메모리 절약을 위해 너무 큰 데이터는 샘플링
-            if len(df) > 50000:
-                df = df.sample(n=50000, random_state=42)
-                logger.info(f"데이터 샘플링: {len(df)}건으로 축소")
+            # 한글 주석: 4년치 데이터 테스트 - 샘플링 크기 확대
+            if len(df) > 200000:  # 20만건으로 확대 (4년치 시뮬레이션)
+                df = df.sample(n=200000, random_state=42)
+                logger.info(f"대용량 데이터 샘플링: {len(df)}건으로 축소")
+            elif len(df) > 100000:  # 10만건 이상이면 10만건으로
+                df = df.sample(n=100000, random_state=42)
+                logger.info(f"중간 규모 데이터 샘플링: {len(df)}건으로 축소")
                 
         except Exception as e:
             logger.warning(f"최적화된 로딩 실패, 기본 방식 사용: {e}")
@@ -127,11 +139,24 @@ class MLModelTrainer:
             missing = set(self.feature_columns) - set(available_features)
             logger.warning(f"누락된 피처: {missing}")
         
+        # 한글 주석: 시계열 분할용 타임스탬프 별도 보관 (인스턴스 변수에 저장)
+        self._timestamp_series = None
+        if 'timestamp' in df.columns:
+            try:
+                self._timestamp_series = pd.to_datetime(df['timestamp'])
+            except Exception:
+                self._timestamp_series = None
+
         X = df[available_features].copy()
         y = df[self.target_column].copy()
         
         # 한글 주석: 결측값 처리 최적화
         X = X.fillna(X.median())
+        # 한글 주석: 숫자 컬럼 형변환 (메모리 최적화)
+        try:
+            X = X.astype('float32')
+        except Exception:
+            pass
         
         logger.info(f"데이터 로드 완료: {len(X)}건, {len(available_features)}개 피처")
         return X, y
@@ -146,8 +171,15 @@ class MLModelTrainer:
             logger.warning(f"데이터가 부족합니다: {len(X)} < {min_train_size}")
         
         # 한글 주석: 시계열 고려 여부
-        if validation_config.get('time_series_split', False) and 'timestamp' in X.columns:
+        if validation_config.get('time_series_split', False) and getattr(self, '_timestamp_series', None) is not None:
             # 시계열 분할 (최신 데이터를 테스트용으로)
+            # 한글 주석: 타임스탬프 기준 정렬 보장
+            try:
+                order = self._timestamp_series.sort_values().index
+                X = X.loc[order]
+                y = y.loc[order]
+            except Exception:
+                pass
             split_idx = int(len(X) * (1 - test_size))
             X_train, X_test = X.iloc[:split_idx], X.iloc[split_idx:]
             y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
@@ -180,9 +212,9 @@ class MLModelTrainer:
     def _optimize_hyperparameters(self, X: pd.DataFrame, y: pd.Series) -> Dict:
         """하이퍼파라미터 최적화"""
         auto_config = self.model_config['auto_tuning']
-        # 한글 주석: 성능 최적화 - 시행 횟수와 CV 폴드 수 줄임
-        n_trials = min(auto_config.get('n_trials', 100), 20)  # 100회 → 20회로 단축
-        cv_folds = min(auto_config.get('cv_folds', 5), 3)    # 5폴드 → 3폴드로 단축
+        # 한글 주석: 설정값을 그대로 사용 (상한 하드코딩 제거)
+        n_trials = int(auto_config.get('n_trials', 100))
+        cv_folds = int(auto_config.get('cv_folds', 5))
         
         def objective(trial):
             # 한글 주석: 하이퍼파라미터 탐색 공간 정의
@@ -303,14 +335,21 @@ class MLModelTrainer:
         }
 
 class ModelManager:
-    """모델 버전 관리"""
+    """모델 버전 관리 (캐싱 지원)"""
     
     def __init__(self, models_dir: str = "data/models"):
         self.models_dir = Path(models_dir)
         self.models_dir.mkdir(exist_ok=True)
         
-    def load_latest_model(self) -> Optional[Pipeline]:
-        """최신 모델 로드"""
+        # 한글 주석: 모델 캐싱을 위한 변수들
+        self.cached_model = None
+        self.cached_model_path = None
+        self.last_check_time = None
+        
+    def load_latest_model(self, force_reload: bool = False) -> Optional[Pipeline]:
+        """최신 모델 로드 (캐싱 지원)"""
+        from datetime import datetime, timedelta
+        
         model_files = list(self.models_dir.glob("xgb_model_*.pkl"))
         
         if not model_files:
@@ -320,8 +359,21 @@ class ModelManager:
         # 한글 주석: 가장 최근 모델 선택
         latest_model = max(model_files, key=lambda x: x.stat().st_mtime)
         
+        # 한글 주석: 캐시된 모델이 있고 강제 리로드가 아닌 경우
+        if not force_reload and self.cached_model is not None:
+            # 한글 주석: 같은 모델이고 최근에 체크했다면 캐시 사용
+            if (self.cached_model_path == str(latest_model) and 
+                self.last_check_time and 
+                datetime.now() - self.last_check_time < timedelta(minutes=5)):
+                return self.cached_model
+        
         try:
+            # 한글 주석: 모델 로드 및 캐시 업데이트
             model = joblib.load(latest_model)
+            self.cached_model = model
+            self.cached_model_path = str(latest_model)
+            self.last_check_time = datetime.now()
+            
             logger.info(f"모델 로드 완료: {latest_model.name}")
             return model
         except Exception as e:

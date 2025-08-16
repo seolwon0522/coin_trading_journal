@@ -100,38 +100,41 @@ class BacktestDataProcessor:
     def _create_advanced_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """고급 피처 생성"""
         # 한글 주석: 시장 조건 피처
-        df['hour_of_day'] = df['timestamp'].dt.hour if 'timestamp' in df.columns else 12
-        df['day_of_week'] = df['timestamp'].dt.dayofweek if 'timestamp' in df.columns else 1
-        df['is_weekend'] = (df['day_of_week'] >= 5).astype(int) if 'day_of_week' in df.columns else 0
+        if 'timestamp' in df.columns:
+            df['hour_of_day'] = df['timestamp'].dt.hour
+            df['day_of_week'] = df['timestamp'].dt.dayofweek
+            df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
+        else:
+            df['hour_of_day'] = 12
+            df['day_of_week'] = 1
+            df['is_weekend'] = 0
         
         # 한글 주석: 변동성 피처 (가격 변동 기반)
         if 'entry_price' in df.columns and 'exit_price' in df.columns:
             df['price_change_pct'] = ((df['exit_price'] - df['entry_price']) / df['entry_price']) * 100
-            df['volatility'] = abs(df['price_change_pct'])
+            df['volatility'] = df['price_change_pct'].abs()
         else:
             df['volatility'] = 2.5  # 기본값
         
         # 한글 주석: 시장 조건 (단순화)
         df['market_condition'] = self._classify_market_condition(df)
         
-        # 한글 주석: 볼륨 프로파일 (기본값 설정)
-        df['volume_profile'] = np.random.uniform(0.5, 1.5, len(df))  # 임시 값
+        # 한글 주석: 볼륨 프로파일 (랜덤 제거, 결정적 기본값 사용)
+        if 'volume_profile' not in df.columns:
+            df['volume_profile'] = 1.0
         
         return df
     
     def _classify_market_condition(self, df: pd.DataFrame) -> pd.Series:
-        """시장 조건 분류"""
-        # 한글 주석: 간단한 시장 조건 분류 (실제로는 더 복잡한 로직 필요)
-        conditions = []
-        for _, row in df.iterrows():
-            if 'volatility' in row and row['volatility'] > 3.0:
-                conditions.append(2)  # 고변동성
-            elif 'volatility' in row and row['volatility'] < 1.0:
-                conditions.append(0)  # 저변동성
-            else:
-                conditions.append(1)  # 보통
-        
-        return pd.Series(conditions)
+        """시장 조건 분류 (벡터화)"""
+        if 'volatility' not in df.columns:
+            return pd.Series(np.ones(len(df), dtype=int))
+        vol = df['volatility'].values
+        # 기본값 1, 고/저 변동성 조건 덮어쓰기
+        cond = np.ones_like(vol, dtype=int)
+        cond[vol > 3.0] = 2
+        cond[vol < 1.0] = 0
+        return pd.Series(cond)
     
     def _create_target_variable(self, df: pd.DataFrame) -> pd.DataFrame:
         """타겟 변수 생성"""
@@ -141,9 +144,9 @@ class BacktestDataProcessor:
             # 한글 주석: 수익률 계산
             df[self.target_column] = (df['pnl'] / df['entry_price']) * 100
         else:
-            # 한글 주석: 기본 타겟 생성 (임시)
-            df[self.target_column] = np.random.normal(0.5, 2.0, len(df))
-            logger.warning("타겟 변수를 찾을 수 없어 임시 값을 생성했습니다")
+            # 한글 주석: 타겟 계산 불가 시 결측 처리 (랜덤 제거)
+            df[self.target_column] = np.nan
+            logger.warning("타겟 변수를 계산할 수 없어 해당 행을 학습에서 제외합니다")
         
         return df
     
@@ -161,15 +164,19 @@ class BacktestDataProcessor:
             for feature in missing_features:
                 df[feature] = self._get_default_value(feature)
         
-        # 한글 주석: 이상치 제거 (수익률 기준)
+        # 한글 주석: 이상치 제거 (수익률 기준) - 표본 충분할 때만 수행
         if self.target_column in df.columns:
-            q1 = df[self.target_column].quantile(0.05)
-            q3 = df[self.target_column].quantile(0.95)
-            initial_count = len(df)
-            df = df[(df[self.target_column] >= q1) & (df[self.target_column] <= q3)]
-            removed_count = initial_count - len(df)
-            if removed_count > 0:
-                logger.info(f"이상치 제거: {removed_count}건 ({removed_count/initial_count*100:.1f}%)")
+            try:
+                if len(df) >= 50:
+                    q1 = df[self.target_column].quantile(0.05)
+                    q3 = df[self.target_column].quantile(0.95)
+                    initial_count = len(df)
+                    df = df[(df[self.target_column] >= q1) & (df[self.target_column] <= q3)]
+                    removed_count = initial_count - len(df)
+                    if removed_count > 0:
+                        logger.info(f"이상치 제거: {removed_count}건 ({removed_count/initial_count*100:.1f}%)")
+            except Exception:
+                pass
         
         # 한글 주석: 결측값 처리
         df = df.dropna(subset=[self.target_column])
@@ -205,7 +212,12 @@ class BacktestDataProcessor:
             df['trade_id'] = [f"trade_{i}" for i in range(len(df))]
             save_cols = ['trade_id'] + feature_cols + target_cols
         
+        # 한글 주석: 타임스탬프 포함 저장 (시계열 분할용)
+        if 'timestamp' in df.columns and 'timestamp' not in save_cols:
+            save_cols = ['timestamp'] + save_cols
         final_df = df[save_cols].copy()
+        # 한글 주석: 저장 디렉토리 보장
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         final_df.to_csv(output_path, index=False)
         
         logger.info(f"훈련 데이터 저장: {output_path} ({len(final_df)}건, {len(feature_cols)}개 피처)")

@@ -483,22 +483,4 @@ class PerformanceMonitor:
                 'overfit_ratio': latest['overfit_ratio']
             }
         }
-    
-    def export_performance_report(self) -> str:
-        """
-        성능 리포트를 CSV 파일로 내보냅니다.
-        """
-        if not self.performance_history:
-            logger.info("내보낼 성능 기록이 없습니다.")
-            return None
-        
-        df = pd.DataFrame(self.performance_history)
-        output_dir = Path("data/reports")
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = output_dir / f"performance_report_{timestamp_str}.csv"
-        
-        df.to_csv(output_path, index=False, encoding='utf-8')
-        logger.info(f"성능 리포트 CSV 내보내기 완료: {output_path}")
-        return str(output_path)
+

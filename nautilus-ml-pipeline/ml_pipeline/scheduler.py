@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import yaml
-import pandas as pd
+# 한글 주석: 불필요한 import 제거 (최적화)
 from pathlib import Path
 
 from .performance_monitor import PerformanceMonitor
@@ -44,6 +44,11 @@ class MLScheduler:
         Returns:
             bool: 재훈련 필요 여부
         """
+        # 한글 주석: 쿨다운 기간 체크 (새로 추가)
+        if self._check_cooldown_period():
+            logger.info("재학습 쿨다운 기간 중 - 스킵")
+            return False
+            
         # 한글 주석: 긴급 재훈련 체크 (성능 급락)
         if self._check_emergency_retrain(current_performance):
             logger.warning("성능 급락 감지 - 긴급 재훈련 실행")
@@ -60,6 +65,17 @@ class MLScheduler:
             return True
             
         return False
+    
+    def _check_cooldown_period(self) -> bool:
+        """재학습 쿨다운 기간 체크"""
+        if self.last_retrain is None:
+            return False
+            
+        cooldown_hours = self.config['update_schedule'].get('retrain_cooldown_hours', 6)
+        time_since_last = datetime.now() - self.last_retrain
+        cooldown_period = timedelta(hours=cooldown_hours)
+        
+        return time_since_last < cooldown_period
     
     def _check_emergency_retrain(self, current_performance: Dict) -> bool:
         """긴급 재훈련 필요 여부 체크"""

@@ -1,0 +1,31 @@
+{
+  "execution_summary": {
+    "total_execution_time_hours": 0.07,
+    "total_trades_generated": 13,
+    "backtest_files_created": 13,
+    "model_trained": true,
+    "timestamp": "2025-08-16T18:16:18.990896"
+  },
+  "model_performance": {
+    "train_rmse": 0.007841593712714838,
+    "test_rmse": 0.01693557848507672,
+    "train_mae": 0.004481984514885345,
+    "test_mae": 0.005660648285762595,
+    "train_r2": 0.9999639767679142,
+    "test_r2": 0.9998329396796426,
+    "train_size": 80000,
+    "test_size": 20000,
+    "training_date": "2025-08-16T18:16:18.963964",
+    "overfit_ratio": 0.00013103708827155724,
+    "model_path": "data/models/xgb_model_20250816_181618.pkl"
+  },
+  "data_statistics": {
+    "total_backtest_files": 13,
+    "total_trades": 13,
+    "avg_trades_per_chunk": 1.0,
+    "data_coverage_days": 365
+  },
+  "recommendations": [
+    "거래 데이터가 부족합니다. 전략 임계값을 낮춰보세요."
+  ]
+}
