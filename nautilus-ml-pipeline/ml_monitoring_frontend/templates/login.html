@@ -15,6 +15,7 @@ endblock %} {% block content %}
           </div>
 
           <form method="POST">
+            {{ csrf_token() }}
             <div class="mb-3">
               <label for="username" class="form-label">
                 <i class="fas fa-user me-1"></i>사용자명
@@ -57,12 +58,12 @@ endblock %} {% block content %}
             </small>
           </div>
 
-          <!-- 개발 환경에서만 표시 -->
+          <!-- 개발 환경 안내 -->
           {% if config.DEBUG %}
           <div class="alert alert-info mt-3" role="alert">
             <small>
               <strong>개발 모드:</strong><br />
-              기본 계정: admin / admin123
+              환경 변수로 설정한 관리자 계정을 사용하세요.
             </small>
           </div>
           {% endif %}
