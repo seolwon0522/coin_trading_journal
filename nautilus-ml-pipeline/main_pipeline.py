@@ -151,11 +151,13 @@ class IntegratedMLPipeline:
         )
         
         # 한글 주석: 거래 수 업데이트 (파일에서 카운트)
-        if Path(result).exists():
+        if result and Path(result).exists():
             import pandas as pd
             df = pd.read_csv(result)
             self.total_trades += len(df)
             logger.info(f"새로운 거래: {len(df)}건, 총 누적: {self.total_trades}건")
+        elif not result:
+            logger.info("이번 백테스트에서는 거래가 발생하지 않았습니다")
 
         return result
 

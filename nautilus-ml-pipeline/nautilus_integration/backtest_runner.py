@@ -447,37 +447,17 @@ class NautilusBacktestRunner:
         except Exception as e:
             logger.warning(f"정책 자동 조정 실패: {e}")
 
-        # 한글 주석: 결과 저장 (CSV + 데이터베이스)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        results_file = f"data/backtest_results/backtest_{symbol}_{timestamp}.csv"
-        
+        # 한글 주석: 결과 저장 (거래가 있을 때만)
+        results_file = None
         if executed_trades:
-            # 기존 CSV 저장 (호환성 유지)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            results_file = f"data/backtest_results/backtest_{symbol}_{timestamp}.csv"
+            
+            # CSV 저장 (호환성 유지)
             self.data_collector.export_training_data(results_file)
+            logger.info(f"백테스트 결과 저장: {results_file} ({len(executed_trades)}건 거래)")
         else:
-            # 한글 주석: 거래가 없더라도 빈 파일을 만들어 다운스트림이 경로를 인지하도록 함
-            Path(results_file).parent.mkdir(parents=True, exist_ok=True)
-            # 한글 주석: 거래가 전혀 없을 경우 소량의 저위험 샘플 거래를 생성하여 파이프라인 테스트
-            sample = pd.DataFrame([
-                {
-                    'timestamp': datetime.now(),
-                    'symbol': symbol,
-                    'strategy_type': 'breakout',
-                    'entry_price': 100.0,
-                    'stop_loss': 98.0,
-                    'take_profit': 104.0,
-                    'strategy_score': 82.0,
-                    'confidence': 0.7,
-                    'risk_level': 'low',
-                    'exit_price': 102.0,
-                    'exit_timestamp': datetime.now() + timedelta(minutes=30),
-                    'pnl': 20.0,
-                    'return_pct': 2.0,
-                    'duration_minutes': 30,
-                    'exit_reason': 'timeout'
-                }
-            ])
-            sample.to_csv(results_file, index=False)
+            logger.info(f"실행된 거래가 없어 결과 파일을 생성하지 않습니다. (신호: {len(signals)}개, 거부: {len(rejected_signals)}개)")
         
         # 한글 주석: 데이터베이스에도 저장 (고성능 조회를 위해)
         try:
@@ -510,7 +490,10 @@ class NautilusBacktestRunner:
         if risk_metrics['needs_retraining']:
             logger.warning("  ⚠️  재학습 권장 조건 충족!")
         
-        logger.info(f"  - 결과 파일: {results_file}")
+        if results_file:
+            logger.info(f"  - 결과 파일: {results_file}")
+        else:
+            logger.info("  - 결과 파일: 생성되지 않음 (거래 없음)")
         
         return results_file
     

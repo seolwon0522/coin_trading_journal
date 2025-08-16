@@ -128,8 +128,8 @@ class YearLongBacktestRunner:
                     timeframe
                 )
                 
-                # 한글 주석: 결과 파일 기록
-                if Path(result_file).exists():
+                # 한글 주석: 결과 파일 기록 (거래가 있을 때만)
+                if result_file and Path(result_file).exists():
                     self.backtest_files.append(result_file)
                     
                     # 한글 주석: 거래 수 카운트
@@ -139,7 +139,7 @@ class YearLongBacktestRunner:
                     
                     logger.info(f"청크 #{chunk_num} 완료: {chunk_trades}건 거래, 누적 {self.total_trades}건")
                 else:
-                    logger.warning(f"청크 #{chunk_num} 결과 파일 없음: {result_file}")
+                    logger.info(f"청크 #{chunk_num} 구간 {current_date.strftime('%Y-%m-%d')} ~ {chunk_end.strftime('%Y-%m-%d')}: 거래 없음")
                 
                 # 한글 주석: 청크 간 휴식 (시스템 부하 방지)
                 await asyncio.sleep(2)
