@@ -8,6 +8,7 @@ data:
     - market_condition
     - volume_profile
   target: return_pct
+  min_samples: 5
   validation:
     min_train_size: 100
     test_size: 0.2
