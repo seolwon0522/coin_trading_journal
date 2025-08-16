@@ -164,7 +164,10 @@ class BacktestDatabaseManager:
             
             # 집계 통계 계산
             total_trades = int(len(df))
-            total_pnl = float(df['pnl'].sum()) if 'pnl' in df.columns else 0.0
+            if 'pnl' in df.columns:
+                total_pnl = float(round(df['pnl'].fillna(0).sum(), 6))
+            else:
+                total_pnl = 0.0
             if 'pnl' in df.columns and len(df['pnl']) > 0:
                 wr = (df['pnl'] > 0).mean()
                 win_rate = float(wr) if pd.notna(wr) else 0.0
@@ -219,7 +222,13 @@ class BacktestDatabaseManager:
                 # 개별 거래 데이터 저장 (배치 처리)
                 df_copy = df.copy()
                 df_copy['backtest_run_id'] = backtest_run_id
-                
+
+                # 가격 및 손익 컬럼 기본값/정밀도 처리
+                numeric_cols = ['entry_price', 'stop_loss', 'take_profit', 'exit_price', 'pnl']
+                for col in numeric_cols:
+                    if col in df_copy.columns:
+                        df_copy[col] = df_copy[col].fillna(0).round(6)
+
                 # 컬럼 매핑 및 타입 변환
                 column_mapping = {
                     'timestamp': 'timestamp',
