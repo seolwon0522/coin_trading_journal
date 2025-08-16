@@ -6,8 +6,9 @@
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import List, Optional
 import time
 
 from nautilus_integration.backtest_runner import run_nautilus_backtest
@@ -44,8 +45,8 @@ class IntegratedMLPipeline:
         self.total_trades = 0
         self.pipeline_runs = 0
         
-    async def run_full_pipeline(self, 
-                               symbol: str = "BTCUSDT", 
+    async def run_full_pipeline(self,
+                               symbol: str = "BTCUSDT",
                                backtest_days: int = 30,
                                force_retrain: bool = False):
         """
@@ -62,18 +63,49 @@ class IntegratedMLPipeline:
         start_time = time.time()
         self.pipeline_runs += 1
         
+        # 한글 주석: 실행 기간 및 청크 크기 설정
+        config = getattr(self.data_pipeline.processor, "config", {})
+        period_conf = config.get("pipeline", {})
+        start_str = period_conf.get("start_date")
+        end_str = period_conf.get("end_date")
+        chunk_days = int(period_conf.get("chunk_days", backtest_days))
+
+        if start_str and end_str:
+            start_dt = datetime.strptime(start_str, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_str, "%Y-%m-%d")
+        else:
+            end_dt = datetime.utcnow()
+            start_dt = end_dt - timedelta(days=backtest_days)
+
         logger.info(f"통합 파이프라인 시작 #{self.pipeline_runs}")
-        logger.info(f"심볼: {symbol}, 기간: {backtest_days}일")
-        
+        logger.info(
+            f"심볼: {symbol}, 기간: {start_dt.strftime('%Y-%m-%d')} ~ {end_dt.strftime('%Y-%m-%d')}, 청크: {chunk_days}일"
+        )
+
         try:
-            # 한글 주석: 1단계 - 노틸러스 백테스팅 실행
+            # 한글 주석: 1단계 - 청크별 노틸러스 백테스팅 실행
             logger.info("1단계: 노틸러스 백테스팅 실행")
-            backtest_result = await self._run_backtest_step(symbol, backtest_days)
-            
+            current_start = start_dt
+            result_files = []
+            while current_start < end_dt:
+                current_end = min(current_start + timedelta(days=chunk_days), end_dt)
+                days = max(1, (current_end - current_start).days)
+                logger.info(
+                    f"청크 실행: {current_start.strftime('%Y-%m-%d')} ~ {current_end.strftime('%Y-%m-%d')}"
+                )
+                result = await self._run_backtest_step(
+                    symbol, days, start_date=current_start, end_date=current_end
+                )
+                result_files.append(result)
+                current_start = current_end
+
+            # 한글 주석: 결과 통합
+            backtest_result = self._aggregate_backtest_results(result_files, start_dt, end_dt)
+
             # 한글 주석: 2단계 - 데이터 처리
             logger.info("2단계: 백테스팅 데이터 -> ML 훈련 데이터 변환")
             training_data_path = await self._run_data_processing_step()
-            
+
             # 한글 주석: 3단계 - 모델 훈련 결정
             logger.info("3단계: ML 모델 재훈련 판단")
             retrain_needed = await self._check_retrain_needed(force_retrain)
@@ -108,11 +140,15 @@ class IntegratedMLPipeline:
             logger.error(f"파이프라인 실패 #{self.pipeline_runs}: {e}")
             raise
     
-    async def _run_backtest_step(self, symbol: str, days: int) -> str:
+    async def _run_backtest_step(self, symbol: str, days: int,
+                                 start_date: Optional[datetime] = None,
+                                 end_date: Optional[datetime] = None) -> str:
         """백테스팅 단계 실행"""
         # 한글 주석: 노틸러스 백테스팅을 별도 스레드에서 실행
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, run_nautilus_backtest, symbol, days)
+        result = await loop.run_in_executor(
+            None, run_nautilus_backtest, symbol, days, start_date, end_date
+        )
         
         # 한글 주석: 거래 수 업데이트 (파일에서 카운트)
         if Path(result).exists():
@@ -120,8 +156,37 @@ class IntegratedMLPipeline:
             df = pd.read_csv(result)
             self.total_trades += len(df)
             logger.info(f"새로운 거래: {len(df)}건, 총 누적: {self.total_trades}건")
-        
+
         return result
+
+    def _aggregate_backtest_results(self, files: List[str],
+                                    start_date: datetime,
+                                    end_date: datetime) -> str:
+        """청크별 백테스트 결과를 하나의 파일로 통합"""
+        import pandas as pd
+
+        valid_files = [f for f in files if Path(f).exists()]
+        if not valid_files:
+            logger.warning("통합할 백테스트 파일이 없습니다")
+            return ""
+
+        dfs = [pd.read_csv(f) for f in valid_files]
+        combined = pd.concat(dfs, ignore_index=True)
+
+        output_dir = Path("data/backtest_results")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"backtest_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.csv"
+        final_path = output_dir / filename
+        combined.to_csv(final_path, index=False)
+
+        for f in valid_files:
+            try:
+                Path(f).unlink()
+            except Exception:
+                pass
+
+        logger.info(f"청크 결과 통합 저장: {final_path}")
+        return str(final_path)
     
     async def _run_data_processing_step(self) -> str:
         """데이터 처리 단계 실행"""

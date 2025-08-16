@@ -97,3 +97,7 @@ update_schedule:
     time: 02:00
   # 새로운 설정: 재학습 쿨다운
   retrain_cooldown_hours: 6 # 재학습 후 6시간 대기
+pipeline:
+  start_date: '2023-01-01'
+  end_date: '2023-03-01'
+  chunk_days: 30
