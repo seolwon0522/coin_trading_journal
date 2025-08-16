@@ -34,7 +34,10 @@ function setupAxiosInterceptors() {
       return;
     }
     // 일반 객체인 경우
-    config.headers = { ...(config.headers as any), Authorization: `Bearer ${token}` } as any;
+    config.headers = {
+      ...((config.headers as Record<string, unknown>) || {}),
+      Authorization: `Bearer ${token}`,
+    } as Record<string, string>;
   };
 
   // 요청 시 AccessToken 주입

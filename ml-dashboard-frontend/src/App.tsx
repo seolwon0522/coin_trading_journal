@@ -98,14 +98,14 @@ function App() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         setIsLoggedIn(true);
         loadDashboardData();
       } else {
         const error = await response.json();
         setLoginError(error.error || "로그인 실패");
       }
-    } catch (error) {
+    } catch {
       setLoginError("서버 연결 실패");
     }
   };

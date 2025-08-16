@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Code2,
   Shield,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,12 @@ export function Sidebar() {
       title: 'ML 모니터링',
       href: '/admin/ml-monitoring',
       icon: Shield,
+      adminOnly: true,
+    },
+    {
+      title: '자동매매 관리',
+      href: '/admin/auto-trading',
+      icon: Bot,
       adminOnly: true,
     },
   ];

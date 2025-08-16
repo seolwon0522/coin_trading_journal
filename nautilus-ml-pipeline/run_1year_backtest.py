@@ -311,6 +311,47 @@ class YearLongBacktestRunner:
             recommendations.append("모델 성능이 양호합니다. 실제 거래에 적용해보세요.")
         
         return recommendations
+    
+    def run_backtest_chunk(self, symbol: str = "BTCUSDT", days: int = 7, timeframe: str = "1m") -> str:
+        """
+        단일 청크 백테스트 실행 (동기 버전)
+        
+        Args:
+            symbol: 거래 심볼
+            days: 백테스트 기간 (일)
+            timeframe: 시간 프레임
+            
+        Returns:
+            결과 파일 경로
+        """
+        try:
+            from nautilus_integration.backtest_runner import NautilusBacktestRunner
+            from datetime import datetime, timedelta
+            
+            # 한글 주석: 백테스트 실행기 초기화
+            backtest_runner = NautilusBacktestRunner()
+            
+            # 한글 주석: 기간 설정 (현재 시점에서 과거로)
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            
+            logger.info(f"청크 백테스트 실행: {symbol}, {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}")
+            
+            # 한글 주석: 백테스트 실행
+            result_file = backtest_runner.run_backtest(
+                symbol=symbol,
+                days=days,
+                start_date=start_date,
+                end_date=end_date,
+                timeframe=timeframe
+            )
+            
+            logger.info(f"청크 백테스트 완료: {result_file}")
+            return result_file
+            
+        except Exception as e:
+            logger.error(f"청크 백테스트 실패: {e}")
+            return ""
 
 async def main():
     """메인 실행 함수"""
