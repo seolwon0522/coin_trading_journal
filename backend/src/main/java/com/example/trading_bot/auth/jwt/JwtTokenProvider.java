@@ -99,6 +99,9 @@ public class JwtTokenProvider {
 
     /**
      * 토큰 유효성 검사
+     * 
+     * @param token 검증할 JWT 토큰
+     * @return 토큰이 유효하면 true, 그렇지 않으면 false
      */
     public boolean validateToken(String token) {
         try {
@@ -107,25 +110,93 @@ public class JwtTokenProvider {
                     .build()
                     .parseSignedClaims(token);
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            log.error("Invalid JWT token: {}", e.getMessage());
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token is expired: {}", e.getMessage());
+            return false;
+        } catch (UnsupportedJwtException e) {
+            log.error("JWT token is unsupported: {}", e.getMessage());
+            return false;
+        } catch (MalformedJwtException e) {
+            log.error("JWT token is malformed: {}", e.getMessage());
+            return false;
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.error("JWT signature validation failed: {}", e.getMessage());
+            return false;
+        } catch (IllegalArgumentException e) {
+            log.error("JWT token compact of handler are invalid: {}", e.getMessage());
             return false;
         }
     }
 
+
     /**
-     * 토큰 만료 시간 확인
+     * 토큰 만료 상태를 확인하여 적절한 예외 처리를 위한 검증 결과 반환
+     * 
+     * @param token 검증할 JWT 토큰
+     * @return 토큰 검증 결과
      */
-    public Date getExpirationDateFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims.getExpiration();
+    public TokenValidationResult validateTokenWithResult(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token);
+            return TokenValidationResult.valid();
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT token is expired. Expiration: {}, Current time: {}", 
+                    e.getClaims().getExpiration(), new Date());
+            return TokenValidationResult.expired();
+        } catch (UnsupportedJwtException e) {
+            log.error("JWT token is unsupported: {}", e.getMessage());
+            return TokenValidationResult.invalid("Unsupported JWT token");
+        } catch (MalformedJwtException e) {
+            log.error("JWT token is malformed: {}", e.getMessage());
+            return TokenValidationResult.invalid("Malformed JWT token");
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.error("JWT signature validation failed: {}", e.getMessage());
+            return TokenValidationResult.invalid("Invalid JWT signature");
+        } catch (IllegalArgumentException e) {
+            log.error("JWT token compact of handler are invalid: {}", e.getMessage());
+            return TokenValidationResult.invalid("Invalid JWT token format");
+        }
     }
 
     /**
-     * 토큰 만료 여부 확인
+     * 토큰 검증 결과를 나타내는 내부 클래스
      */
-    public boolean isTokenExpired(String token) {
-        Date expiration = getExpirationDateFromToken(token);
-        return expiration.before(new Date());
+    public static class TokenValidationResult {
+        private final boolean valid;
+        private final boolean expired;
+        private final String errorMessage;
+
+        private TokenValidationResult(boolean valid, boolean expired, String errorMessage) {
+            this.valid = valid;
+            this.expired = expired;
+            this.errorMessage = errorMessage;
+        }
+
+        public static TokenValidationResult valid() {
+            return new TokenValidationResult(true, false, null);
+        }
+
+        public static TokenValidationResult expired() {
+            return new TokenValidationResult(false, true, "Token expired");
+        }
+
+        public static TokenValidationResult invalid(String errorMessage) {
+            return new TokenValidationResult(false, false, errorMessage);
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public boolean isExpired() {
+            return expired;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
     }
 }
