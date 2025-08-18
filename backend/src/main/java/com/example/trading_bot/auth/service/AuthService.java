@@ -156,7 +156,6 @@ public class AuthService {
     
     /**
      * 사용자 프로필 업데이트 (변경사항이 있을 때만)
-     * 상위 메서드에서 이미 트랜잭션이 시작되므로 @Transactional 제거
      */
     public void updateUserProfileIfNeeded(User user, String name, String profileImageUrl) {
         boolean needsUpdate = false;

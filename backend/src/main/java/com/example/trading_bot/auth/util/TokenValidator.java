@@ -3,6 +3,7 @@ package com.example.trading_bot.auth.util;
 import com.example.trading_bot.auth.entity.User;
 import com.example.trading_bot.auth.exception.AuthException;
 import com.example.trading_bot.auth.jwt.JwtTokenProvider;
+import com.example.trading_bot.auth.jwt.JwtTokenProvider.TokenValidationResult;
 import com.example.trading_bot.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +19,6 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class TokenValidator {
 
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
@@ -45,9 +44,16 @@ public class TokenValidator {
      * @throws AuthException 토큰이 유효하지 않거나 사용자를 찾을 수 없는 경우
      */
     public User validateTokenAndGetUserByToken(String token) {
-        if (!jwtTokenProvider.validateToken(token)) {
-            log.warn("Invalid token provided");
-            throw AuthException.invalidToken();
+        TokenValidationResult result = jwtTokenProvider.validateTokenWithResult(token);
+        
+        if (!result.isValid()) {
+            if (result.isExpired()) {
+                log.warn("Expired token provided");
+                throw AuthException.tokenExpired();
+            } else {
+                log.warn("Invalid token provided: {}", result.getErrorMessage());
+                throw AuthException.invalidToken();
+            }
         }
 
         Long userId = extractUserIdFromToken(token);
@@ -84,6 +90,19 @@ public class TokenValidator {
     }
 
     /**
+     * 토큰 검증 결과를 상세하게 반환 (만료 여부 구분 가능)
+     * 
+     * @param token JWT 토큰
+     * @return 토큰 검증 결과
+     */
+    public TokenValidationResult validateTokenWithDetail(String token) {
+        if (!StringUtils.hasText(token)) {
+            return TokenValidationResult.invalid("Token is empty or null");
+        }
+        return jwtTokenProvider.validateTokenWithResult(token);
+    }
+
+    /**
      * Authorization 헤더에서 Bearer 토큰 추출
      * 
      * @param authHeader Authorization 헤더 값
@@ -116,9 +135,16 @@ public class TokenValidator {
      * @throws AuthException 토큰이 유효하지 않거나 사용자를 찾을 수 없는 경우
      */
     public User validateRefreshTokenAndGetUser(String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            log.warn("Invalid refresh token provided");
-            throw AuthException.invalidToken();
+        TokenValidationResult result = jwtTokenProvider.validateTokenWithResult(refreshToken);
+        
+        if (!result.isValid()) {
+            if (result.isExpired()) {
+                log.warn("Expired refresh token provided");
+                throw AuthException.tokenExpired();
+            } else {
+                log.warn("Invalid refresh token provided: {}", result.getErrorMessage());
+                throw AuthException.invalidToken();
+            }
         }
 
         return userRepository.findByRefreshToken(refreshToken)
