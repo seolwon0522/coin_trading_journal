@@ -34,32 +34,49 @@ import {
 import { CoinAutocomplete } from '@/components/trades/coin-autocomplete';
 
 import { createTradeSchema, CreateTradeFormData } from '@/schemas/trade';
-import { useCreateTrade } from '@/hooks/use-trades';
+import { useCreateTrade, useUpdateTrade } from '@/hooks/use-trades';
+import { Trade } from '@/types/trade';
 import { cn } from '@/lib/utils';
 
 interface TradeFormProps {
   onSuccess?: () => void;
+  trade?: Trade;
 }
 
-export function TradeForm({ onSuccess }: TradeFormProps) {
+export function TradeForm({ onSuccess, trade }: TradeFormProps) {
   const [entryCalendarOpen, setEntryCalendarOpen] = useState(false);
   const [exitCalendarOpen, setExitCalendarOpen] = useState(false);
 
   const createTradeMutation = useCreateTrade();
+  const updateTradeMutation = useUpdateTrade();
 
   const form = useForm<CreateTradeFormData>({
     resolver: zodResolver(createTradeSchema),
-    defaultValues: {
-      symbol: '',
-      type: 'buy',
-      tradingType: 'breakout', // 기본값을 돌파매매로 설정
-      quantity: 0,
-      entryPrice: 0,
-      exitPrice: undefined,
-      entryTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      exitTime: '',
-      memo: '',
-    },
+    defaultValues: trade
+      ? {
+          symbol: trade.symbol,
+          type: trade.type,
+          tradingType: trade.tradingType,
+          quantity: trade.quantity,
+          entryPrice: trade.entryPrice,
+          exitPrice: trade.exitPrice,
+          entryTime: format(trade.entryTime, "yyyy-MM-dd'T'HH:mm"),
+          exitTime: trade.exitTime ? format(trade.exitTime, "yyyy-MM-dd'T'HH:mm") : '',
+          memo: trade.memo || '',
+          stopLoss: trade.stopLoss,
+          indicators: trade.indicators,
+        }
+      : {
+          symbol: '',
+          type: 'buy',
+          tradingType: 'breakout', // 기본값을 돌파매매로 설정
+          quantity: 0,
+          entryPrice: 0,
+          exitPrice: undefined,
+          entryTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+          exitTime: '',
+          memo: '',
+        },
   });
 
   const isBuyType = form.watch('type') === 'buy';
@@ -67,20 +84,23 @@ export function TradeForm({ onSuccess }: TradeFormProps) {
 
   const onSubmit = async (data: CreateTradeFormData) => {
     try {
-      await createTradeMutation.mutateAsync(data);
-
-      toast.success('매매 기록이 등록되었습니다!', {
-        description: `${data.symbol} ${data.type === 'buy' ? '매수' : '매도'} 기록이 추가되었습니다.`,
-      });
-
-      // 폼 초기화
-      form.reset();
-
-      // 콜백 실행
+      if (trade) {
+        await updateTradeMutation.mutateAsync({ id: trade.id, data });
+        toast.success('매매 기록이 수정되었습니다!', {
+          description: `${data.symbol} 기록이 업데이트되었습니다.`,
+        });
+      } else {
+        await createTradeMutation.mutateAsync(data);
+        toast.success('매매 기록이 등록되었습니다!', {
+          description: `${data.symbol} ${data.type === 'buy' ? '매수' : '매도'} 기록이 추가되었습니다.`,
+        });
+        form.reset();
+      }
       onSuccess?.();
     } catch (error) {
-      toast.error('매매 기록 등록 실패', {
-        description: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+      toast.error(trade ? '매매 기록 수정 실패' : '매매 기록 등록 실패', {
+        description:
+          error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
       });
     }
   };
@@ -88,9 +108,13 @@ export function TradeForm({ onSuccess }: TradeFormProps) {
   return (
     <div className="space-y-6 p-6 border rounded-lg bg-card">
       <div>
-        <h2 className="text-xl font-semibold">새 매매 기록 추가</h2>
+        <h2 className="text-xl font-semibold">
+          {trade ? '매매 기록 수정' : '새 매매 기록 추가'}
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          거래 정보를 입력하여 매매 기록을 등록하세요.
+          {trade
+            ? '기존 거래 정보를 수정하세요.'
+            : '거래 정보를 입력하여 매매 기록을 등록하세요.'}
         </p>
       </div>
 
@@ -420,8 +444,21 @@ export function TradeForm({ onSuccess }: TradeFormProps) {
           />
 
           {/* 제출 버튼 */}
-          <Button type="submit" className="w-full" disabled={createTradeMutation.isPending}>
-            {createTradeMutation.isPending ? (
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={trade ? updateTradeMutation.isPending : createTradeMutation.isPending}
+          >
+            {trade ? (
+              updateTradeMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  수정 중...
+                </>
+              ) : (
+                '매매 기록 수정'
+              )
+            ) : createTradeMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 등록 중...
