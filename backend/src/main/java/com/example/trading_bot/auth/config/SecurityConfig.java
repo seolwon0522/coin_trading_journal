@@ -59,6 +59,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/oauth2/**").permitAll()
                 
+                // Binance 연결 테스트 - 인증 불필요
+                .requestMatchers("/api/binance/test-connection").permitAll()
+                
                 // Swagger 문서 - 개발 환경에서만 허용
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()

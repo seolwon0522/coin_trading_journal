@@ -1,0 +1,1296 @@
+{
+  "info": {
+    "_postman_id": "crypto-trade-manager-2024",
+    "name": "CryptoTradeManager API Collection",
+    "description": "암호화폐 트레이딩 저널 및 Binance API 연동 테스트 컬렉션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "crypto-trade-v1"
+  },
+  "item": [
+    {
+      "name": "1. 인증 (Auth)",
+      "item": [
+        {
+          "name": "회원가입",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has user data\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test{{$timestamp}}@example.com\",\n    \"password\": \"Test1234!\",\n    \"name\": \"Test User {{$randomInt}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "새로운 사용자를 등록합니다. 이메일은 자동으로 유니크한 값이 생성됩니다."
+          },
+          "response": []
+        },
+        {
+          "name": "로그인",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has tokens\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('accessToken');",
+                  "    pm.expect(jsonData.data).to.have.property('refreshToken');",
+                  "    ",
+                  "    // 토큰을 환경 변수에 저장",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
+                  "        pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "        console.log(\"✅ Access Token saved to collection variables\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// 테스트용 계정 정보",
+                  "// 실제 사용시 자신의 계정 정보로 변경하세요",
+                  "pm.collectionVariables.set(\"testEmail\", \"test@example.com\");",
+                  "pm.collectionVariables.set(\"testPassword\", \"Test1234!\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{testEmail}}\",\n    \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "로그인하여 Access Token과 Refresh Token을 받습니다.\n토큰은 자동으로 컬렉션 변수에 저장됩니다."
+          },
+          "response": []
+        },
+        {
+          "name": "토큰 갱신",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Token refreshed successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    ",
+                  "    if (jsonData.data && jsonData.data.accessToken) {",
+                  "        pm.collectionVariables.set(\"accessToken\", jsonData.data.accessToken);",
+                  "        pm.collectionVariables.set(\"refreshToken\", jsonData.data.refreshToken);",
+                  "        console.log(\"✅ New tokens saved\");",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refreshToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Refresh Token을 사용하여 새로운 Access Token을 발급받습니다."
+          },
+          "response": []
+        },
+        {
+          "name": "내 정보 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get user info successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "현재 로그인한 사용자의 정보를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "로그아웃",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "로그아웃합니다."
+          },
+          "response": []
+        }
+      ],
+      "description": "사용자 인증 관련 API"
+    },
+    {
+      "name": "2. 거래 관리 (Trades)",
+      "item": [
+        {
+          "name": "거래 생성 (매수)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Trade created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    ",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set(\"lastTradeId\", jsonData.data.id);",
+                  "        console.log(\"✅ Trade ID saved: \" + jsonData.data.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"symbol\": \"BTCUSDT\",\n    \"type\": \"SPOT\",\n    \"side\": \"BUY\",\n    \"quantity\": 0.001,\n    \"price\": 45000,\n    \"fee\": 0.045,\n    \"feeAsset\": \"USDT\",\n    \"executedAt\": \"2024-01-15T10:30:00\",\n    \"strategy\": \"DCA\",\n    \"notes\": \"월간 정기 매수 - 테스트\",\n    \"stopLoss\": 43000,\n    \"takeProfit\": 50000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/trades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades"
+              ]
+            },
+            "description": "새로운 매수 거래를 수동으로 등록합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "거래 생성 (매도)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Sell trade created successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    ",
+                  "    // 매도 거래는 손익이 자동 계산됨",
+                  "    if (jsonData.data) {",
+                  "        console.log(\"Profit/Loss: \" + jsonData.data.profitLoss);",
+                  "        console.log(\"Profit/Loss %: \" + jsonData.data.profitLossPercentage);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"symbol\": \"BTCUSDT\",\n    \"type\": \"SPOT\",\n    \"side\": \"SELL\",\n    \"quantity\": 0.001,\n    \"price\": 48000,\n    \"fee\": 0.048,\n    \"feeAsset\": \"USDT\",\n    \"executedAt\": \"2024-01-20T15:45:00\",\n    \"strategy\": \"Take Profit\",\n    \"notes\": \"목표가 도달 매도\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/trades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades"
+              ]
+            },
+            "description": "매도 거래를 등록합니다. 손익이 자동으로 계산됩니다."
+          },
+          "response": []
+        },
+        {
+          "name": "거래 목록 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get trades list successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('content');",
+                  "    ",
+                  "    console.log(\"Total trades: \" + jsonData.data.totalElements);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades?page=0&size=20&sortBy=executedAt&direction=DESC",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0",
+                  "description": "페이지 번호 (0부터 시작)"
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "description": "페이지당 항목 수"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "executedAt",
+                  "description": "정렬 기준 필드"
+                },
+                {
+                  "key": "direction",
+                  "value": "DESC",
+                  "description": "정렬 방향 (ASC/DESC)"
+                }
+              ]
+            },
+            "description": "거래 목록을 페이지네이션과 함께 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "특정 거래 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get trade details successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('symbol');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/{{lastTradeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "{{lastTradeId}}"
+              ]
+            },
+            "description": "특정 ID의 거래 상세 정보를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "거래 수정",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"strategy\": \"DCA - Updated\",\n    \"notes\": \"수정된 메모입니다\",\n    \"stopLoss\": 42000,\n    \"takeProfit\": 52000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/{{lastTradeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "{{lastTradeId}}"
+              ]
+            },
+            "description": "기존 거래 정보를 수정합니다. 수동 입력한 거래만 수정 가능합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "거래 삭제",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/{{lastTradeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "{{lastTradeId}}"
+              ]
+            },
+            "description": "거래를 삭제합니다. 수동 입력한 거래만 삭제 가능합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "기간별 거래 조회",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/date-range?startDate=2024-01-01T00:00:00&endDate=2024-12-31T23:59:59&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "date-range"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "특정 기간의 거래를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "심볼별 거래 조회",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/symbol/BTCUSDT?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "symbol",
+                "BTCUSDT"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "특정 심볼의 거래를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "최근 거래 조회",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/recent?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "recent"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "최근 거래를 지정한 개수만큼 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "거래 심볼 목록",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/symbols",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "symbols"
+              ]
+            },
+            "description": "사용자가 거래한 모든 심볼 목록을 조회합니다."
+          },
+          "response": []
+        }
+      ],
+      "description": "거래 CRUD 및 조회 관련 API"
+    },
+    {
+      "name": "3. 통계 (Statistics)",
+      "item": [
+        {
+          "name": "기간별 통계",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get statistics successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('totalTrades');",
+                  "    pm.expect(jsonData.data).to.have.property('winRate');",
+                  "    pm.expect(jsonData.data).to.have.property('totalProfitLoss');",
+                  "    ",
+                  "    console.log(\"📊 Statistics Summary:\");",
+                  "    console.log(\"Total Trades: \" + jsonData.data.totalTrades);",
+                  "    console.log(\"Win Rate: \" + jsonData.data.winRate + \"%\");",
+                  "    console.log(\"Total P&L: \" + jsonData.data.totalProfitLoss);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/statistics?startDate=2024-01-01T00:00:00&endDate=2024-12-31T23:59:59",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "statistics"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59"
+                }
+              ]
+            },
+            "description": "지정한 기간의 거래 통계를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "월별 통계",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/statistics/monthly?year=2024&month=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "statistics",
+                "monthly"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024"
+                },
+                {
+                  "key": "month",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "특정 월의 거래 통계를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "연간 통계",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/statistics/yearly?year=2024",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "statistics",
+                "yearly"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024"
+                }
+              ]
+            },
+            "description": "특정 연도의 거래 통계를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "오늘 통계",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/statistics/today",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "statistics",
+                "today"
+              ]
+            },
+            "description": "오늘의 거래 통계를 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "이번 주 통계",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades/statistics/this-week",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "trades",
+                "statistics",
+                "this-week"
+              ]
+            },
+            "description": "이번 주의 거래 통계를 조회합니다."
+          },
+          "response": []
+        }
+      ],
+      "description": "거래 통계 및 분석 관련 API"
+    },
+    {
+      "name": "4. Binance 연동",
+      "item": [
+        {
+          "name": "연결 테스트",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Binance connection successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.a('number');",
+                  "    ",
+                  "    console.log(\"✅ Binance Server Time: \" + new Date(jsonData.data));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binance/test-connection",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binance",
+                "test-connection"
+              ]
+            },
+            "description": "Binance API 서버 연결을 테스트합니다. 인증이 필요없습니다."
+          },
+          "response": []
+        },
+        {
+          "name": "API 키 등록",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"API key registered successfully\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    ",
+                  "    if (jsonData.data && jsonData.data.id) {",
+                  "        pm.collectionVariables.set(\"apiKeyId\", jsonData.data.id);",
+                  "        console.log(\"✅ API Key ID saved: \" + jsonData.data.id);",
+                  "        console.log(\"Masked Key: \" + jsonData.data.maskedApiKey);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Binance Testnet API Keys",
+                  "// Get your own keys from: https://testnet.binance.vision/",
+                  "// WARNING: Never commit real API keys!",
+                  "",
+                  "// Replace with your actual keys",
+                  "pm.collectionVariables.set(\"binanceApiKey\", \"YOUR_API_KEY_HERE\");",
+                  "pm.collectionVariables.set(\"binanceSecretKey\", \"YOUR_SECRET_KEY_HERE\");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"apiKey\": \"{{binanceApiKey}}\",\n    \"secretKey\": \"{{binanceSecretKey}}\",\n    \"keyName\": \"Testnet Key\",\n    \"canTrade\": false,\n    \"canWithdraw\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/binance/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binance",
+                "api-keys"
+              ]
+            },
+            "description": "Binance API 키를 등록합니다.\n\n⚠️ 주의사항:\n1. Testnet 키 사용을 권장합니다\n2. 실제 키 사용시 IP 화이트리스트 설정 필수\n3. 거래 권한은 필요한 경우에만 활성화"
+          },
+          "response": []
+        },
+        {
+          "name": "API 키 목록 조회",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Get API keys successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "    ",
+                  "    if (jsonData.data.length > 0) {",
+                  "        console.log(\"Total API Keys: \" + jsonData.data.length);",
+                  "        jsonData.data.forEach(key => {",
+                  "            console.log(`- ${key.keyName}: ${key.maskedApiKey}`);",
+                  "        });",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binance/api-keys",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binance",
+                "api-keys"
+              ]
+            },
+            "description": "등록된 API 키 목록을 조회합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "거래 동기화",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Sync completed successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    ",
+                  "    console.log(\"✅ Synced \" + jsonData.data.syncedCount + \" trades\");",
+                  "    console.log(\"Symbol: \" + jsonData.data.symbol);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"apiKeyId\": {{apiKeyId}},\n    \"symbol\": \"BTCUSDT\",\n    \"startTime\": \"2024-01-01T00:00:00\",\n    \"endTime\": \"2024-01-31T23:59:59\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/binance/sync",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binance",
+                "sync"
+              ]
+            },
+            "description": "Binance에서 거래 내역을 동기화합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "전체 심볼 동기화 (비동기)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binance/sync/all?apiKeyId={{apiKeyId}}&startTime=2024-01-01T00:00:00&endTime=2024-01-31T23:59:59&symbols=BTCUSDT&symbols=ETHUSDT&symbols=BNBUSDT",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binance",
+                "sync",
+                "all"
+              ],
+              "query": [
+                {
+                  "key": "apiKeyId",
+                  "value": "{{apiKeyId}}"
+                },
+                {
+                  "key": "startTime",
+                  "value": "2024-01-01T00:00:00"
+                },
+                {
+                  "key": "endTime",
+                  "value": "2024-01-31T23:59:59"
+                },
+                {
+                  "key": "symbols",
+                  "value": "BTCUSDT"
+                },
+                {
+                  "key": "symbols",
+                  "value": "ETHUSDT"
+                },
+                {
+                  "key": "symbols",
+                  "value": "BNBUSDT"
+                }
+              ]
+            },
+            "description": "여러 심볼의 거래를 비동기로 동기화합니다."
+          },
+          "response": []
+        },
+        {
+          "name": "API 키 삭제",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/binance/api-keys/{{apiKeyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "binance",
+                "api-keys",
+                "{{apiKeyId}}"
+              ]
+            },
+            "description": "등록된 API 키를 삭제합니다."
+          },
+          "response": []
+        }
+      ],
+      "description": "Binance API 연동 관련 기능"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testEmail",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "testPassword",
+      "value": "Test1234!",
+      "type": "string"
+    },
+    {
+      "key": "lastTradeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "apiKeyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "binanceApiKey",
+      "value": "YOUR_API_KEY_HERE",
+      "type": "string"
+    },
+    {
+      "key": "binanceSecretKey",
+      "value": "YOUR_SECRET_KEY_HERE",
+      "type": "string"
+    }
+  ]
+}

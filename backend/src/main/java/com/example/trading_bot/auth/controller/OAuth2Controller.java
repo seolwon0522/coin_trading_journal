@@ -43,7 +43,7 @@ public class OAuth2Controller {
 
         String providerName = request.getProviderType().name();
         return ResponseEntity.ok(
-                ApiResponse.success(providerName + " 로그인이 완료되었습니다.", response)
+                ApiResponse.success(response, providerName + " 로그인이 완료되었습니다.")
         );
     }
 }

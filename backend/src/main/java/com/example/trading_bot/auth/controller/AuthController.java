@@ -29,7 +29,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
         User user = authService.registerLocalUser(request.getEmail(), request.getPassword(), request.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("회원가입이 완료되었습니다.", user));
+                .body(ApiResponse.success(user, "회원가입이 완료되었습니다."));
     }
 
     /**
@@ -38,7 +38,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.loginLocal(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(ApiResponse.success("로그인이 완료되었습니다.", response));
+        return ResponseEntity.ok(ApiResponse.success(response, "로그인이 완료되었습니다."));
     }
 
     /**
@@ -48,7 +48,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
             @RequestHeader("Authorization") String refreshToken) {
         TokenResponse response = authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(ApiResponse.success("토큰이 갱신되었습니다.", response));
+        return ResponseEntity.ok(ApiResponse.success(response, "토큰이 갱신되었습니다."));
     }
 
     /**
@@ -58,7 +58,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<User>> getCurrentUser(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         User user = authService.getCurrentUserFromToken(authHeader);
-        return ResponseEntity.ok(ApiResponse.success("사용자 정보를 조회했습니다.", user));
+        return ResponseEntity.ok(ApiResponse.success(user, "사용자 정보를 조회했습니다."));
     }
 
     /**
@@ -68,6 +68,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         authService.logoutFromToken(authHeader);
-        return ResponseEntity.ok(ApiResponse.success("로그아웃이 완료되었습니다.", null));
+        return ResponseEntity.ok(ApiResponse.success("로그아웃이 완료되었습니다."));
     }
 }
