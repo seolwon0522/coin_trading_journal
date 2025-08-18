@@ -62,3 +62,21 @@ jwt:
   secret: ${JWT_SECRET:mySecretKey12345678901234567890123456789012}
   expiration: 86400000 # 24 hours in milliseconds
   refresh-expiration: 604800000 # 7 days in milliseconds
+
+# Binance API 설정
+binance:
+  api:
+    testnet: true # 테스트넷 사용 (실제 서버: false)
+    base-url: https://api.binance.com
+    ws-base-url: wss://stream.binance.com:9443
+    testnet-base-url: https://testnet.binance.vision
+    testnet-ws-base-url: wss://testnet.binance.vision
+    connect-timeout: 10000
+    read-timeout: 10000
+    retry-max-attempts: 3
+    retry-delay: 1000
+
+# 암호화 설정
+crypto:
+  secret-key: ${CRYPTO_SECRET_KEY:mySecretKey123!@#}
+  salt: ${CRYPTO_SALT:mySalt456$%^}
