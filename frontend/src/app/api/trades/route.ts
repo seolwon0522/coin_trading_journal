@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createTradeSchema } from '@/schemas/trade';
 import { z } from 'zod';
+import type { Trade } from '@/types/trade';
 import {
   computeStrategyScore,
   computeForbiddenPoints,
@@ -17,23 +18,32 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-  // Backend proxy (preferred). 실패(404/오류) 시 로컬 fallback으로 전환
-  if (BACKEND_BASE_URL) {
-    try {
-      const qs = searchParams.toString();
-      const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/trades${qs ? `?${qs}` : ''}`;
-      const resp = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+    // Backend proxy (preferred). 실패(404/오류) 시 로컬 fallback으로 전환
+    if (BACKEND_BASE_URL) {
+      try {
+        const qs = searchParams.toString();
+        // 한글 주석: 스프링 백엔드 매핑은 `/api/trades` 이므로 해당 경로로 프록시
+        const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/api/trades${qs ? `?${qs}` : ''}`;
+        const authHeader = request.headers.get('authorization');
+        const resp = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+        });
 
-      if (resp.ok) {
-        const data = await resp.json();
-        return NextResponse.json(data, { status: resp.status });
+        if (resp.ok) {
+          const data = await resp.json();
+          return NextResponse.json(data, { status: resp.status });
+        }
+
+        console.warn(
+          `BACKEND proxy GET /trades failed with status ${resp.status}. Falling back to local.`
+        );
+      } catch (err) {
+        console.warn('BACKEND proxy GET /trades error. Falling back to local.', err);
       }
-
-      console.warn(`BACKEND proxy GET /trades failed with status ${resp.status}. Falling back to local.`);
-    } catch (err) {
-      console.warn('BACKEND proxy GET /trades error. Falling back to local.', err);
     }
-  }
 
     // Fallback: local in-memory list
     const symbol = searchParams.get('symbol');
@@ -73,26 +83,33 @@ export async function POST(request: NextRequest) {
     // 입력 검증 (프론트 API에서는 최소 검증만 수행)
     const validatedData = createTradeSchema.parse(body);
 
-  // Backend proxy (preferred). 실패(404/오류) 시 로컬 fallback으로 전환
-  if (BACKEND_BASE_URL) {
-    try {
-      const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/trades`;
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validatedData),
-      });
+    // Backend proxy (preferred). 실패(404/오류) 시 로컬 fallback으로 전환
+    if (BACKEND_BASE_URL) {
+      try {
+        // 한글 주석: 스프링 백엔드 매핑은 `/api/trades`
+        const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/api/trades`;
+        const authHeader = request.headers.get('authorization');
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+          body: JSON.stringify(validatedData),
+        });
 
-      if (resp.ok) {
-        const data = await resp.json();
-        return NextResponse.json(data, { status: resp.status });
+        if (resp.ok) {
+          const data = await resp.json();
+          return NextResponse.json(data, { status: resp.status });
+        }
+
+        console.warn(
+          `BACKEND proxy POST /trades failed with status ${resp.status}. Falling back to local.`
+        );
+      } catch (err) {
+        console.warn('BACKEND proxy POST /trades error. Falling back to local.', err);
       }
-
-      console.warn(`BACKEND proxy POST /trades failed with status ${resp.status}. Falling back to local.`);
-    } catch (err) {
-      console.warn('BACKEND proxy POST /trades error. Falling back to local.', err);
     }
-  }
 
     // Fallback: local compute + in-memory store
     const newTrade: Trade = {
