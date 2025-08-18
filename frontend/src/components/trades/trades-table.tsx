@@ -23,11 +23,20 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
-import { useRecentTrades } from '@/hooks/use-trades';
+import { useRecentTrades, useDeleteTrade } from '@/hooks/use-trades';
+import { TradeForm } from '@/components/trades/trade-form';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Trade } from '@/types/trade';
 import { ForbiddenRuleViolation } from '@/types/forbidden-rules';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 // 손익 포맷팅 함수
 function formatPnL(pnl: number | undefined): string {
@@ -244,6 +253,21 @@ interface TradesTableProps {
 export function TradesTable({ selectedMonth }: TradesTableProps) {
   const { data, isLoading, error } = useRecentTrades();
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const deleteTradeMutation = useDeleteTrade();
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTradeMutation.mutateAsync(id);
+      toast.success('매매 기록이 삭제되었습니다.');
+      setSelectedTrade(null);
+    } catch (err) {
+      toast.error('매매 기록 삭제 실패', {
+        description:
+          err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.',
+      });
+    }
+  };
 
   // 선택된 월의 거래만 필터링
   const filteredTrades =
@@ -368,110 +392,149 @@ export function TradesTable({ selectedMonth }: TradesTableProps) {
       )}
 
       {/* 상세 모달 */}
-      <Dialog open={!!selectedTrade} onOpenChange={(open) => !open && setSelectedTrade(null)}>
+      <Dialog
+        open={!!selectedTrade}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTrade(null);
+            setIsEditing(false);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>거래 상세 정보</DialogTitle>
+            <DialogTitle>{isEditing ? '거래 수정' : '거래 상세 정보'}</DialogTitle>
           </DialogHeader>
           {selectedTrade && (
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-muted-foreground">종목</span>
-                  <div className="font-medium">{selectedTrade.symbol}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">유형</span>
-                  <div>
-                    <Badge
-                      variant={selectedTrade.type === 'buy' ? 'default' : 'destructive'}
-                      className="gap-1"
-                    >
-                      {selectedTrade.type === 'buy' ? '매수' : '매도'}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">매매유형</span>
-                  <div className="font-medium">
-                    {getTradingTypeLabel(selectedTrade.tradingType)}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">수량</span>
-                  <div className="font-mono">{selectedTrade.quantity}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">진입가</span>
-                  <div className="font-mono">${formatPrice(selectedTrade.entryPrice)}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">청산가</span>
-                  <div className="font-mono">
-                    {selectedTrade.exitPrice ? `$${formatPrice(selectedTrade.exitPrice)}` : '-'}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">진입시간</span>
-                  <div>{format(selectedTrade.entryTime, 'yyyy-MM-dd HH:mm', { locale: ko })}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">청산시간</span>
-                  <div>
-                    {selectedTrade.exitTime
-                      ? format(selectedTrade.exitTime, 'yyyy-MM-dd HH:mm', { locale: ko })
-                      : '-'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-muted-foreground">메모</span>
-                  <div className="whitespace-pre-wrap">{selectedTrade.memo || '-'}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">금기룰</span>
-                  <div className="mt-1">
-                    <ForbiddenViolationsBadges
-                      orientation="horizontal"
-                      violations={selectedTrade.forbiddenViolations}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {selectedTrade.strategyScore && (
-                <div>
-                  <span className="text-muted-foreground">전략 점수</span>
-                  <div className="mt-1">
-                    <div className="font-medium">
-                      총점: {selectedTrade.strategyScore.totalScore}점
+            isEditing ? (
+              <TradeForm
+                trade={selectedTrade}
+                onSuccess={() => {
+                  setIsEditing(false);
+                  setSelectedTrade(null);
+                }}
+              />
+            ) : (
+              <>
+                <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-muted-foreground">종목</span>
+                      <div className="font-medium">{selectedTrade.symbol}</div>
                     </div>
-                    <div className="mt-2 space-y-1">
-                      {selectedTrade.strategyScore.criteria.map((c) => (
-                        <div key={c.code} className="flex items-center justify-between text-xs">
-                          <span>
-                            {c.description} ({Math.round(c.weight * 100)}%)
-                          </span>
-                          <span className={cn('font-medium', c.ratio > 0 ? 'text-green-600' : 'text-red-600')}>
-                            {c.ratio > 0 ? `+${Math.round(c.weight * 100)}` : '+0'}
-                          </span>
+                    <div>
+                      <span className="text-muted-foreground">유형</span>
+                      <div>
+                        <Badge
+                          variant={selectedTrade.type === 'buy' ? 'default' : 'destructive'}
+                          className="gap-1"
+                        >
+                          {selectedTrade.type === 'buy' ? '매수' : '매도'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">매매유형</span>
+                      <div className="font-medium">
+                        {getTradingTypeLabel(selectedTrade.tradingType)}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">수량</span>
+                      <div className="font-mono">{selectedTrade.quantity}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">진입가</span>
+                      <div className="font-mono">${formatPrice(selectedTrade.entryPrice)}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">청산가</span>
+                      <div className="font-mono">
+                        {selectedTrade.exitPrice ? `$${formatPrice(selectedTrade.exitPrice)}` : '-'}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">진입시간</span>
+                      <div>{format(selectedTrade.entryTime, 'yyyy-MM-dd HH:mm', { locale: ko })}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">청산시간</span>
+                      <div>
+                        {selectedTrade.exitTime
+                          ? format(selectedTrade.exitTime, 'yyyy-MM-dd HH:mm', { locale: ko })
+                          : '-'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-muted-foreground">메모</span>
+                      <div className="whitespace-pre-wrap">{selectedTrade.memo || '-'}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">금기룰</span>
+                      <div className="mt-1">
+                        <ForbiddenViolationsBadges
+                          orientation="horizontal"
+                          violations={selectedTrade.forbiddenViolations}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedTrade.strategyScore && (
+                    <div>
+                      <span className="text-muted-foreground">전략 점수</span>
+                      <div className="mt-1">
+                        <div className="font-medium">
+                          총점: {selectedTrade.strategyScore.totalScore}점
                         </div>
-                      ))}
+                        <div className="mt-2 space-y-1">
+                          {selectedTrade.strategyScore.criteria.map((c) => (
+                            <div key={c.code} className="flex items-center justify-between text-xs">
+                              <span>
+                                {c.description} ({Math.round(c.weight * 100)}%)
+                              </span>
+                              <span className={cn('font-medium', c.ratio > 0 ? 'text-green-600' : 'text-red-600')}>
+                                {c.ratio > 0 ? `+${Math.round(c.weight * 100)}` : '+0'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {selectedTrade.finalScore !== undefined && (
-                <div className="border-t pt-3">
-                  <div className="text-sm">
-                    최종 점수: <span className="font-semibold">{selectedTrade.finalScore}점</span>
-                  </div>
+                  {selectedTrade.finalScore !== undefined && (
+                    <div className="border-t pt-3">
+                      <div className="text-sm">
+                        최종 점수: <span className="font-semibold">{selectedTrade.finalScore}점</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+                <DialogFooter className="mt-4">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                    수정
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(selectedTrade.id)}
+                    disabled={deleteTradeMutation.isPending}
+                  >
+                    {deleteTradeMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 삭제 중...
+                      </>
+                    ) : (
+                      '삭제'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </>
+            )
           )}
         </DialogContent>
       </Dialog>
