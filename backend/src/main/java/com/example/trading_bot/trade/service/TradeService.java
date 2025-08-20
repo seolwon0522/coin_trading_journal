@@ -10,7 +10,9 @@ import com.example.trading_bot.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,13 +34,7 @@ public class TradeService {
     
     @Transactional
     public TradeResponse createManualTrade(Long userId, CreateTradeRequest request) {
-        log.info("Creating manual trade for user: {}", userId);
-        
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new BusinessException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
-        
-        // 총 금액 계산
-        BigDecimal totalAmount = calculateTotalAmount(request.getQuantity(), request.getPrice());
+        User user = findUserOrThrow(userId);
         
         Trade trade = Trade.builder()
             .user(user)
@@ -47,7 +43,7 @@ public class TradeService {
             .side(request.getSide())
             .quantity(request.getQuantity())
             .price(request.getPrice())
-            .totalAmount(totalAmount)
+            .totalAmount(request.getQuantity().multiply(request.getPrice()))
             .fee(request.getFee())
             .feeAsset(request.getFeeAsset())
             .status(TradeStatus.EXECUTED)
@@ -59,162 +55,108 @@ public class TradeService {
             .takeProfit(request.getTakeProfit())
             .build();
         
-        // 리스크 리워드 비율 계산
-        if (request.getStopLoss() != null && request.getTakeProfit() != null) {
-            BigDecimal riskRewardRatio = calculateRiskRewardRatio(
-                request.getPrice(), 
-                request.getStopLoss(), 
-                request.getTakeProfit()
-            );
-            trade.setRiskRewardRatio(riskRewardRatio);
-        }
+        updateRiskRewardRatio(trade);
         
-        // 매도인 경우 손익 계산
         if (request.getSide() == TradeSide.SELL) {
             profitCalculator.calculateProfitLoss(trade, userId);
         }
         
-        Trade savedTrade = tradeRepository.save(trade);
-        log.info("Trade created successfully with id: {}", savedTrade.getId());
-        
-        return TradeResponse.from(savedTrade);
+        return TradeResponse.from(tradeRepository.save(trade));
     }
     
     @Transactional
     public TradeResponse updateTrade(Long userId, Long tradeId, UpdateTradeRequest request) {
-        log.info("Updating trade {} for user: {}", tradeId, userId);
+        Trade trade = findUserTradeOrThrow(userId, tradeId);
+        validateManualTrade(trade);
         
-        Trade trade = tradeRepository.findByIdAndUserId(tradeId, userId)
-            .orElseThrow(() -> new BusinessException("거래를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
+        // 일괄 업데이트 - null이 아닌 값만 적용
+        updateFieldIfPresent(request.getStrategy(), trade::setStrategy);
+        updateFieldIfPresent(request.getNotes(), trade::setNotes);
+        updateFieldIfPresent(request.getStopLoss(), trade::setStopLoss);
+        updateFieldIfPresent(request.getTakeProfit(), trade::setTakeProfit);
+        updateFieldIfPresent(request.getFee(), trade::setFee);
+        updateFieldIfPresent(request.getFeeAsset(), trade::setFeeAsset);
         
-        // 수동 입력된 거래만 수정 가능
-        if (trade.getSource() != TradeSource.MANUAL) {
-            throw new BusinessException("수동으로 입력한 거래만 수정할 수 있습니다", HttpStatus.FORBIDDEN);
-        }
+        updateRiskRewardRatio(trade);
         
-        // 업데이트 필드
-        if (request.getStrategy() != null) {
-            trade.setStrategy(request.getStrategy());
-        }
-        if (request.getNotes() != null) {
-            trade.setNotes(request.getNotes());
-        }
-        if (request.getStopLoss() != null) {
-            trade.setStopLoss(request.getStopLoss());
-        }
-        if (request.getTakeProfit() != null) {
-            trade.setTakeProfit(request.getTakeProfit());
-        }
-        if (request.getFee() != null) {
-            trade.setFee(request.getFee());
-        }
-        if (request.getFeeAsset() != null) {
-            trade.setFeeAsset(request.getFeeAsset());
-        }
-        
-        // 리스크 리워드 비율 재계산
-        if (trade.getStopLoss() != null && trade.getTakeProfit() != null) {
-            BigDecimal riskRewardRatio = calculateRiskRewardRatio(
-                trade.getPrice(), 
-                trade.getStopLoss(), 
-                trade.getTakeProfit()
-            );
-            trade.setRiskRewardRatio(riskRewardRatio);
-        }
-        
-        Trade updatedTrade = tradeRepository.save(trade);
-        log.info("Trade {} updated successfully", tradeId);
-        
-        return TradeResponse.from(updatedTrade);
+        return TradeResponse.from(tradeRepository.save(trade));
     }
     
     @Transactional
     public void deleteTrade(Long userId, Long tradeId) {
-        log.info("Deleting trade {} for user: {}", tradeId, userId);
-        
-        Trade trade = tradeRepository.findByIdAndUserId(tradeId, userId)
-            .orElseThrow(() -> new BusinessException("거래를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
-        
-        // 수동 입력된 거래만 삭제 가능
-        if (trade.getSource() != TradeSource.MANUAL) {
-            throw new BusinessException("수동으로 입력한 거래만 삭제할 수 있습니다", HttpStatus.FORBIDDEN);
-        }
-        
+        Trade trade = findUserTradeOrThrow(userId, tradeId);
+        validateManualTrade(trade);
         tradeRepository.delete(trade);
-        log.info("Trade {} deleted successfully", tradeId);
     }
     
     public TradeResponse getTrade(Long userId, Long tradeId) {
-        Trade trade = tradeRepository.findByIdAndUserId(tradeId, userId)
-            .orElseThrow(() -> new BusinessException("거래를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
-        
-        return TradeResponse.from(trade);
+        return TradeResponse.from(findUserTradeOrThrow(userId, tradeId));
     }
     
     public Page<TradeResponse> getUserTrades(Long userId, Pageable pageable) {
-        Page<Trade> trades = tradeRepository.findByUserId(userId, pageable);
-        return trades.map(TradeResponse::from);
+        return tradeRepository.findByUserId(userId, pageable)
+            .map(TradeResponse::from);
     }
     
     public Page<TradeResponse> getUserTradesByDateRange(
-        Long userId, 
-        LocalDateTime startDate, 
-        LocalDateTime endDate, 
-        Pageable pageable
+        Long userId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable
     ) {
-        Page<Trade> trades = tradeRepository.findByUserIdAndExecutedAtBetween(
-            userId, startDate, endDate, pageable
-        );
-        return trades.map(TradeResponse::from);
+        return tradeRepository.findByUserIdAndExecutedAtBetween(userId, startDate, endDate, pageable)
+            .map(TradeResponse::from);
     }
     
-    public Page<TradeResponse> getUserTradesBySymbol(
-        Long userId, 
-        String symbol, 
-        Pageable pageable
-    ) {
-        Page<Trade> trades = tradeRepository.findByUserIdAndSymbol(
-            userId, symbol.toUpperCase(), pageable
-        );
-        return trades.map(TradeResponse::from);
+    public Page<TradeResponse> getUserTradesBySymbol(Long userId, String symbol, Pageable pageable) {
+        return tradeRepository.findByUserIdAndSymbol(userId, symbol.toUpperCase(), pageable)
+            .map(TradeResponse::from);
     }
     
     public List<TradeResponse> getRecentTrades(Long userId, int limit) {
-        List<Trade> trades = tradeRepository.findTop10ByUserIdOrderByExecutedAtDesc(userId);
-        return trades.stream()
-            .limit(limit)
+        // Repository 메서드명 변경 제안: findTopNByUserIdOrderByExecutedAtDesc
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "executedAt"));
+        return tradeRepository.findByUserId(userId, pageable)
             .map(TradeResponse::from)
-            .collect(Collectors.toList());
+            .getContent();
     }
     
     public List<String> getUserSymbols(Long userId) {
         return tradeRepository.findDistinctSymbolsByUserId(userId);
     }
     
-    // 비즈니스 로직 메서드들
-    private BigDecimal calculateTotalAmount(BigDecimal quantity, BigDecimal price) {
-        if (quantity == null || price == null) {
-            return BigDecimal.ZERO;
-        }
-        return quantity.multiply(price);
+    // === Private Helper Methods ===
+    
+    private User findUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException("사용자를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
     }
     
-    private BigDecimal calculateRiskRewardRatio(
-        BigDecimal entryPrice, 
-        BigDecimal stopLoss, 
-        BigDecimal takeProfit
-    ) {
-        if (entryPrice == null || stopLoss == null || takeProfit == null) {
-            return null;
+    private Trade findUserTradeOrThrow(Long userId, Long tradeId) {
+        return tradeRepository.findByIdAndUserId(tradeId, userId)
+            .orElseThrow(() -> new BusinessException("거래를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
+    }
+    
+    private void validateManualTrade(Trade trade) {
+        if (trade.getSource() != TradeSource.MANUAL) {
+            throw new BusinessException("수동으로 입력한 거래만 수정/삭제 가능합니다", HttpStatus.FORBIDDEN);
+        }
+    }
+    
+    private void updateRiskRewardRatio(Trade trade) {
+        if (trade.getStopLoss() == null || trade.getTakeProfit() == null || trade.getPrice() == null) {
+            return;
         }
         
-        BigDecimal risk = entryPrice.subtract(stopLoss).abs();
-        BigDecimal reward = takeProfit.subtract(entryPrice).abs();
-        
+        BigDecimal risk = trade.getPrice().subtract(trade.getStopLoss()).abs();
         if (risk.compareTo(BigDecimal.ZERO) == 0) {
-            return null;
+            return;
         }
         
-        return reward.divide(risk, 4, RoundingMode.HALF_UP);
+        BigDecimal reward = trade.getTakeProfit().subtract(trade.getPrice()).abs();
+        trade.setRiskRewardRatio(reward.divide(risk, 4, RoundingMode.HALF_UP));
+    }
+    
+    private <T> void updateFieldIfPresent(T value, java.util.function.Consumer<T> setter) {
+        if (value != null) {
+            setter.accept(value);
+        }
     }
 }

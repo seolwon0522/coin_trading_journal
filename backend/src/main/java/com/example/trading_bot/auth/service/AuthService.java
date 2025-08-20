@@ -15,10 +15,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -26,9 +25,6 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenValidator tokenValidator;
 
-    /**
-     * 일반 회원가입
-     */
     @Transactional
     public User registerLocalUser(String email, String password, String name) {
         if (userRepository.existsByEmail(email)) {
@@ -47,9 +43,6 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    /**
-     * 일반 로그인
-     */
     @Transactional
     public LoginResponse loginLocal(String email, String password) {
         User user = userRepository.findByEmail(email)
@@ -62,9 +55,6 @@ public class AuthService {
         return generateTokenResponse(user);
     }
 
-    /**
-     * 토큰 갱신
-     */
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
         String refreshToken = tokenValidator.extractBearerToken(authHeader);
@@ -79,58 +69,48 @@ public class AuthService {
                 .build();
     }
 
-    /**
-     * 토큰으로부터 현재 사용자 정보 조회
-     */
-    @Transactional(readOnly = true)
     public User getCurrentUserFromToken(String authHeader) {
         return tokenValidator.validateTokenAndGetUser(authHeader);
     }
 
-    /**
-     * 토큰으로부터 로그아웃
-     */
     @Transactional
     public void logoutFromToken(String authHeader) {
         User user = tokenValidator.validateTokenAndGetUser(authHeader);
-        
         user.clearRefreshToken();
         userRepository.save(user);
     }
 
-    /**
-     * OAuth2 사용자 처리
-     * - 기존 사용자: 프로필 업데이트
-     * - 신규 사용자: 새로 생성
-     */
     @Transactional
     public LoginResponse processOAuth2User(String email, String name, String profileImageUrl,
                                            ProviderType providerType, String providerId) {
-        // 1. 사용자 찾기 또는 생성
-        User user = findOrCreateOAuth2User(email, name, profileImageUrl, providerType, providerId);
+        User user = userRepository.findByProviderTypeAndProviderId(providerType, providerId)
+                .orElseGet(() -> createOAuth2User(email, name, profileImageUrl, providerType, providerId));
         
-        // 2. 기존 사용자인 경우 프로필 업데이트 확인
-        if (isExistingUser(user, providerId)) {
-            updateUserProfileIfNeeded(user, name, profileImageUrl);
+        // 프로필 업데이트 (변경사항이 있을 경우만)
+        boolean updated = false;
+        if (name != null && !name.equals(user.getName())) {
+            user.updateName(name);
+            updated = true;
+        }
+        if (profileImageUrl != null && !profileImageUrl.equals(user.getProfileImageUrl())) {
+            user.updateProfileImageUrl(profileImageUrl);
+            updated = true;
+        }
+        if (updated) {
+            userRepository.save(user);
         }
         
-        // 3. 토큰 생성 및 반환
         return generateTokenResponse(user);
     }
 
-    /**
-     * 사용자 ID로 조회
-     */
-    @Transactional(readOnly = true)
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(AuthException::userNotFound);
     }
 
-    // Private 헬퍼 메서드들
+    // === Private Helper Methods ===
     
-
-    protected User createOAuth2User(String email, String name, String profileImageUrl,
+    private User createOAuth2User(String email, String name, String profileImageUrl,
                                   ProviderType providerType, String providerId) {
         User user = User.builder()
                 .email(email)
@@ -145,61 +125,7 @@ public class AuthService {
         return userRepository.save(user);
     }
 
-    /**
-     * OAuth2 사용자 찾기 또는 생성
-     */
-    private User findOrCreateOAuth2User(String email, String name, String profileImageUrl,
-                                        ProviderType providerType, String providerId) {
-        return userRepository.findByProviderTypeAndProviderId(providerType, providerId)
-                .orElseGet(() -> createOAuth2User(email, name, profileImageUrl, providerType, providerId));
-    }
-    
-    /**
-     * 사용자 프로필 업데이트 (변경사항이 있을 때만)
-     */
-    public void updateUserProfileIfNeeded(User user, String name, String profileImageUrl) {
-        boolean needsUpdate = false;
-        
-        // 이름 변경 확인
-        if (shouldUpdateName(user.getName(), name)) {
-            user.updateName(name);
-            needsUpdate = true;
-        }
-        
-        // 프로필 이미지 변경 확인
-        if (shouldUpdateProfileImage(user.getProfileImageUrl(), profileImageUrl)) {
-            user.updateProfileImageUrl(profileImageUrl);
-            needsUpdate = true;
-        }
-        
-        // 실제 변경사항이 있을 때만 DB 저장
-        if (needsUpdate) {
-            userRepository.save(user);
-        }
-    }
-    
-    /**
-     * 이름 업데이트 필요 여부 확인
-     */
-    private boolean shouldUpdateName(String currentName, String newName) {
-        return newName != null && !newName.equals(currentName);
-    }
-    
-    /**
-     * 프로필 이미지 업데이트 필요 여부 확인
-     */
-    private boolean shouldUpdateProfileImage(String currentImageUrl, String newImageUrl) {
-        return newImageUrl != null && !newImageUrl.equals(currentImageUrl);
-    }
-    
-    /**
-     * 기존 사용자 여부 확인
-     */
-    private boolean isExistingUser(User user, String providerId) {
-        return user.getProviderId() != null && user.getProviderId().equals(providerId);
-    }
-
-    protected LoginResponse generateTokenResponse(User user) {
+    private LoginResponse generateTokenResponse(User user) {
         String accessToken = jwtTokenProvider.createAccessToken(
                 user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());

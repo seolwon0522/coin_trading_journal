@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface TradeRepository extends JpaRepository<Trade, Long> {
@@ -111,4 +112,18 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
         TradeSource source,
         LocalDateTime after
     );
+    
+    // 성능 최적화용 - external ID만 조회
+    @Query("SELECT t.externalId FROM Trade t WHERE t.user.id = :userId AND t.source = :source AND t.externalId IS NOT NULL")
+    Set<String> findExternalIdsByUserIdAndSource(@Param("userId") Long userId, @Param("source") TradeSource source);
+    
+    // 손익 계산용 - 최근 매수 거래 조회
+    @Query("SELECT t FROM Trade t WHERE t.user.id = :userId AND t.symbol = :symbol " +
+           "AND t.side = 'BUY' AND t.executedAt BETWEEN :startDate AND :endDate " +
+           "ORDER BY t.executedAt DESC")
+    List<Trade> findRecentBuyTrades(@Param("userId") Long userId, 
+                                    @Param("symbol") String symbol,
+                                    @Param("startDate") LocalDateTime startDate,
+                                    @Param("endDate") LocalDateTime endDate,
+                                    Pageable pageable);
 }

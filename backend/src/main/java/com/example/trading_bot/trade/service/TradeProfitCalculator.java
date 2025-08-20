@@ -5,6 +5,8 @@ import com.example.trading_bot.trade.entity.TradeSide;
 import com.example.trading_bot.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -17,120 +19,101 @@ import java.util.List;
 @Slf4j
 public class TradeProfitCalculator {
     
+    private static final int PRICE_SCALE = 8;
+    private static final int PERCENTAGE_SCALE = 6;
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
+    
     private final TradeRepository tradeRepository;
     
     /**
-     * 매도 거래에 대한 손익 계산
-     * FIFO(First In First Out) 방식으로 평균 매수 가격을 계산
+     * 매도 거래에 대한 손익 계산 (평균 가격 방식)
      */
     public void calculateProfitLoss(Trade trade, Long userId) {
         if (trade.getSide() != TradeSide.SELL) {
             return;
         }
         
-        // 동일 심볼의 이전 매수 거래들 조회
-        List<Trade> previousBuyTrades = tradeRepository.findByUserIdAndSymbolAndExecutedAtBetween(
-            userId,
-            trade.getSymbol(),
-            LocalDateTime.now().minusYears(1), // 최근 1년 데이터
-            trade.getExecutedAt()
-        ).stream()
-            .filter(t -> t.getSide() == TradeSide.BUY)
-            .filter(t -> t.getExecutedAt().isBefore(trade.getExecutedAt()))
-            .toList();
+        // 최근 매수 거래들 조회 (DB에서 필터링하여 효율성 개선)
+        List<Trade> recentBuyTrades = tradeRepository.findRecentBuyTrades(
+            userId, 
+            trade.getSymbol(), 
+            trade.getExecutedAt().minusMonths(3), // 3개월로 제한
+            trade.getExecutedAt(),
+            PageRequest.of(0, 100) // 최대 100개로 제한
+        );
         
-        if (previousBuyTrades.isEmpty()) {
-            log.debug("No previous buy trades found for symbol: {}", trade.getSymbol());
+        if (recentBuyTrades.isEmpty()) {
             return;
         }
         
-        // 평균 매수 가격 계산 (가중 평균)
-        BigDecimal totalQuantity = BigDecimal.ZERO;
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        
-        for (Trade buyTrade : previousBuyTrades) {
-            BigDecimal quantity = buyTrade.getQuantity();
-            BigDecimal amount = buyTrade.getTotalAmount();
-            
-            totalQuantity = totalQuantity.add(quantity);
-            totalAmount = totalAmount.add(amount);
-        }
-        
-        if (totalQuantity.compareTo(BigDecimal.ZERO) == 0) {
+        BigDecimal averageEntryPrice = calculateWeightedAveragePrice(recentBuyTrades);
+        if (averageEntryPrice == null) {
             return;
         }
         
-        // 평균 매수 가격
-        BigDecimal averageEntryPrice = totalAmount.divide(totalQuantity, 8, RoundingMode.HALF_UP);
         trade.setAverageEntryPrice(averageEntryPrice);
         
-        // 손익 계산
+        // 손익 및 손익률 계산
         BigDecimal priceDiff = trade.getPrice().subtract(averageEntryPrice);
         BigDecimal profitLoss = priceDiff.multiply(trade.getQuantity());
         
-        // 수수료 차감
         if (trade.getFee() != null) {
             profitLoss = profitLoss.subtract(trade.getFee());
         }
         
         trade.setProfitLoss(profitLoss);
+        trade.setRealizedPnl(profitLoss);
         
         // 손익률 계산
         if (averageEntryPrice.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal profitLossPercentage = priceDiff
-                .divide(averageEntryPrice, 6, RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100"));
+                .divide(averageEntryPrice, PERCENTAGE_SCALE, RoundingMode.HALF_UP)
+                .multiply(HUNDRED);
             trade.setProfitLossPercentage(profitLossPercentage);
         }
-        
-        // 실현 손익 설정
-        trade.setRealizedPnl(profitLoss);
-        
-        log.debug("Profit/Loss calculated for trade {}: {} ({}%)", 
-            trade.getId(), 
-            profitLoss, 
-            trade.getProfitLossPercentage()
-        );
     }
     
-    /**
-     * 특정 기간의 총 손익 계산
-     */
     public BigDecimal calculateTotalProfitLoss(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
-        BigDecimal totalProfitLoss = tradeRepository.sumProfitLossByUserIdAndDateRange(
-            userId, startDate, endDate
-        );
-        return totalProfitLoss != null ? totalProfitLoss : BigDecimal.ZERO;
+        BigDecimal total = tradeRepository.sumProfitLossByUserIdAndDateRange(userId, startDate, endDate);
+        return total != null ? total : BigDecimal.ZERO;
     }
     
-    /**
-     * 승률 계산
-     */
     public BigDecimal calculateWinRate(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
         Long totalTrades = tradeRepository.countByUserIdAndDateRange(userId, startDate, endDate);
         if (totalTrades == null || totalTrades == 0) {
             return BigDecimal.ZERO;
         }
         
-        Long profitableTrades = tradeRepository.countProfitableTradesByUserIdAndDateRange(
-            userId, startDate, endDate
-        );
+        Long profitableTrades = tradeRepository.countProfitableTradesByUserIdAndDateRange(userId, startDate, endDate);
         if (profitableTrades == null) {
             return BigDecimal.ZERO;
         }
         
-        return new BigDecimal(profitableTrades)
-            .divide(new BigDecimal(totalTrades), 4, RoundingMode.HALF_UP)
-            .multiply(new BigDecimal("100"));
+        return BigDecimal.valueOf(profitableTrades)
+            .divide(BigDecimal.valueOf(totalTrades), 4, RoundingMode.HALF_UP)
+            .multiply(HUNDRED);
     }
     
-    /**
-     * 평균 수익률 계산
-     */
     public BigDecimal calculateAverageReturn(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
-        BigDecimal avgReturn = tradeRepository.averageProfitLossPercentageByUserIdAndDateRange(
-            userId, startDate, endDate
-        );
+        BigDecimal avgReturn = tradeRepository.averageProfitLossPercentageByUserIdAndDateRange(userId, startDate, endDate);
         return avgReturn != null ? avgReturn : BigDecimal.ZERO;
+    }
+    
+    // === Private Helper Methods ===
+    
+    private BigDecimal calculateWeightedAveragePrice(List<Trade> trades) {
+        BigDecimal totalQuantity = BigDecimal.ZERO;
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        
+        for (Trade trade : trades) {
+            totalQuantity = totalQuantity.add(trade.getQuantity());
+            totalAmount = totalAmount.add(trade.getTotalAmount());
+        }
+        
+        if (totalQuantity.compareTo(BigDecimal.ZERO) == 0) {
+            return null;
+        }
+        
+        return totalAmount.divide(totalQuantity, PRICE_SCALE, RoundingMode.HALF_UP);
     }
 }
