@@ -17,7 +17,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useRecentTrades } from '@/hooks/use-trades';
+import { useTrades } from '@/hooks/use-trades';
 import { BinanceCoinSelector } from '@/components/binance-coin-selector';
 
 // 간단한 통계 카드 컴포넌트
@@ -106,9 +106,9 @@ function QuickActionCard({
 
 // 최근 거래 요약 컴포넌트
 function RecentTradesSummary() {
-  const { data, isLoading } = useRecentTrades();
+  const { trades, loading } = useTrades();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div>
         <div className="bg-card p-6 rounded-lg border">
@@ -126,7 +126,7 @@ function RecentTradesSummary() {
     );
   }
 
-  const recentTrades = data?.trades.slice(0, 5) || [];
+  const recentTrades = trades?.slice(0, 5) || [];
 
   return (
     <div className="space-y-4.5">
@@ -162,23 +162,18 @@ function RecentTradesSummary() {
               <div className="flex items-center gap-3">
                 <div
                   className={`h-2 w-2 rounded-full ${
-                    trade.type === 'buy' ? 'bg-emerald-500' : 'bg-red-500'
+                    trade.side === 'BUY' ? 'bg-emerald-500' : 'bg-red-500'
                   }`}
                 />
                 <div>
                   <p className="font-medium text-sm">{trade.symbol}</p>
                   <p className="text-xs text-muted-foreground">
-                    {trade.type === 'buy' ? '매수' : '매도'} • {trade.quantity}
+                    {trade.side === 'BUY' ? '매수' : '매도'} • {trade.quantity}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium">${trade.entryPrice.toLocaleString()}</p>
-                {trade.pnl && (
-                  <p className={`text-xs ${trade.pnl > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {trade.pnl > 0 ? '+' : ''}${trade.pnl.toLocaleString()}
-                  </p>
-                )}
+                <p className="text-sm font-medium">${trade.price.toLocaleString()}</p>
               </div>
             </div>
           ))}
@@ -189,28 +184,16 @@ function RecentTradesSummary() {
 }
 
 export default function Dashboard() {
-  const { data: tradesData } = useRecentTrades();
+  const { trades, totalElements } = useTrades();
 
   // 간단한 통계 계산
-  const totalTrades = tradesData?.total || 0;
-  const recentTrades = tradesData?.trades || [];
-  const totalPnL = recentTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
-  const openPositions = recentTrades.filter((trade) => trade.status === 'open').length;
-
-  // 금기룰 위반 통계 계산
-  const violatedTrades = recentTrades.filter(
-    (trade) => trade.forbiddenViolations && trade.forbiddenViolations.length > 0
-  );
-  const totalViolations = violatedTrades.reduce(
-    (sum, trade) => sum + (trade.forbiddenViolations?.length || 0),
-    0
-  );
-  const totalPenaltyScore = violatedTrades.reduce(
-    (sum, trade) =>
-      sum + (trade.forbiddenViolations?.reduce((penalty, v) => penalty + v.score_penalty, 0) || 0),
-    0
-  );
-  const riskScore = totalTrades > 0 ? Math.max(0, 100 - totalPenaltyScore / totalTrades) : 100;
+  const totalTrades = totalElements || 0;
+  const recentTrades = trades || [];
+  const totalPnL = 0; // TODO: 실제 손익 계산 로직 추가
+  const openPositions = 0; // TODO: 실제 오픈 포지션 계산
+  const totalViolations = 0; // TODO: 위반 계산 로직 추가
+  const totalPenaltyScore = 0;
+  const riskScore = 100;
 
   return (
     <div className="min-h-full bg-background">

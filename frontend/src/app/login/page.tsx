@@ -14,11 +14,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useAuth } from '@/components/providers/auth-provider';
+import { signIn } from 'next-auth/react';
 import Script from 'next/script';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { authStorage } from '@/lib/auth-storage';
 
 // 로그인 폼 검증 스키마
 const loginSchema = z.object({
@@ -29,7 +28,6 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const { login, oauth2Login } = useAuth();
   const router = useRouter();
   const [googleLoading, setGoogleLoading] = React.useState(false);
 
@@ -40,35 +38,20 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      // 한글 주석: 관리자 계정 하드코딩 체크
-      if (values.email === 'admin@ml.com' && values.password === 'ml_admin_2025') {
-        // 관리자 계정으로 직접 로그인 처리 (백엔드 우회)
-        const adminUser = {
-          id: 999,
-          email: 'admin@ml.com',
-          name: 'ML 관리자',
-          role: 'ADMIN' as const,
-          isActive: true,
-          providerType: 'LOCAL' as const,
-        };
+      // NextAuth signIn 사용
+      const result = await signIn('credentials', {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
 
-        // 가짜 토큰 저장 (관리자용)
-        const fakeTokens = {
-          accessToken: 'admin_access_token_' + Date.now(),
-          refreshToken: 'admin_refresh_token_' + Date.now(),
-        };
-
-        // auth context 업데이트를 위해 수동으로 처리
-        authStorage.save(fakeTokens);
-
-        // 사용자 상태 직접 설정을 위해 window reload 사용
-        localStorage.setItem('admin_user', JSON.stringify(adminUser));
-        window.location.reload();
-        return;
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      await login(values);
-      router.replace('/');
+      // 로그인 성공 시 홈으로 이동
+      router.push('/');
+      router.refresh();
     } catch (error) {
       form.setError('root', {
         type: 'server',
@@ -244,7 +227,17 @@ export default function LoginPage() {
               const res = await AppleID.auth.signIn();
               const idToken = res?.authorization?.id_token;
               if (!idToken) throw new Error('Apple ID Token을 받지 못했습니다');
-              await oauth2Login('APPLE', idToken);
+              
+              // Apple 로그인 처리 (NextAuth 또는 백엔드 API 호출)
+              const result = await signIn('apple', {
+                idToken,
+                redirect: false,
+              });
+              
+              if (result?.error) {
+                throw new Error(result.error);
+              }
+              
               router.replace('/');
             } catch (e) {
               form.setError('root', {

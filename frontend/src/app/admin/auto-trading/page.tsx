@@ -9,9 +9,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Play,
   Square,
-  Pause,
-  TrendingUp,
-  TrendingDown,
   Activity,
   Bot,
   BarChart3,
@@ -78,7 +75,7 @@ export default function AutoTradingPage() {
   const [selectedBot, setSelectedBot] = useState<string>('main_bot');
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
   const [performanceSummary, setPerformanceSummary] = useState<PerformanceSummary | null>(null);
-  const [featureData, setFeatureData] = useState<any>(null);
+  // const [featureData, setFeatureData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,7 +90,7 @@ export default function AutoTradingPage() {
 
     fetchTradingBots();
     fetchPerformanceData(selectedBot);
-    fetchFeatureData(selectedBot);
+    // fetchFeatureData(selectedBot);
 
     // 5초마다 데이터 업데이트
     const interval = setInterval(() => {
@@ -130,12 +127,14 @@ export default function AutoTradingPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchFeatureData = async (botId: string) => {
     try {
       const response = await fetch(`${API_BASE}/trading/features/${botId}`);
       if (response.ok) {
         const data = await response.json();
-        setFeatureData(data);
+        // setFeatureData(data);
+        console.log('Feature data loaded:', data);
       }
     } catch (err) {
       console.error('피처 데이터 로드 실패:', err);

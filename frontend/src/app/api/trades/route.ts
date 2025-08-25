@@ -63,11 +63,16 @@ export async function GET(request: NextRequest) {
     );
     const paginatedTrades = filteredTrades.slice(offset, offset + limit);
 
+    // 백엔드와 동일한 ApiResponse 형식으로 래핑
     return NextResponse.json({
-      trades: paginatedTrades,
-      total: filteredTrades.length,
-      page: Math.floor(offset / limit) + 1,
-      limit,
+      success: true,
+      data: {
+        trades: paginatedTrades,
+        total: filteredTrades.length,
+        page: Math.floor(offset / limit) + 1,
+        limit,
+      },
+      message: '거래 목록을 성공적으로 조회했습니다',
     });
   } catch (error) {
     console.error('거래 조회 에러:', error);

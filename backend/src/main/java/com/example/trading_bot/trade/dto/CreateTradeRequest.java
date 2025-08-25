@@ -2,58 +2,44 @@ package com.example.trading_bot.trade.dto;
 
 import com.example.trading_bot.trade.entity.TradeSide;
 import com.example.trading_bot.trade.entity.TradeType;
+import com.example.trading_bot.trade.entity.TradingStrategy;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class CreateTradeRequest {
     
-    @NotBlank(message = "심볼은 필수입니다")
-    @Size(max = 20, message = "심볼은 20자 이내여야 합니다")
+    @NotBlank
     private String symbol;
     
-    @NotNull(message = "거래 타입은 필수입니다")
+    @NotNull
     private TradeType type;
     
-    @NotNull(message = "거래 방향은 필수입니다")
+    @NotNull
     private TradeSide side;
     
-    @NotNull(message = "수량은 필수입니다")
-    @DecimalMin(value = "0.00000001", message = "수량은 0보다 커야 합니다")
+    @NotNull
+    @Positive
     private BigDecimal quantity;
     
-    @NotNull(message = "가격은 필수입니다")
-    @DecimalMin(value = "0.00000001", message = "가격은 0보다 커야 합니다")
+    @NotNull
+    @Positive
     private BigDecimal price;
     
-    @DecimalMin(value = "0", message = "수수료는 0 이상이어야 합니다")
-    private BigDecimal fee;
-    
-    @Size(max = 20, message = "수수료 자산은 20자 이내여야 합니다")
-    private String feeAsset;
-    
-    @NotNull(message = "체결 시간은 필수입니다")
-    @PastOrPresent(message = "체결 시간은 현재 시간 이전이어야 합니다")
+    @NotNull
     private LocalDateTime executedAt;
     
-    @Size(max = 50, message = "전략명은 50자 이내여야 합니다")
-    private String strategy;
-    
-    @Size(max = 1000, message = "메모는 1000자 이내여야 합니다")
+    // 선택 필드
+    private BigDecimal fee;
+    private String feeAsset;
     private String notes;
-    
-    @DecimalMin(value = "0", message = "손절가는 0 이상이어야 합니다")
+    private String strategy;
     private BigDecimal stopLoss;
-    
-    @DecimalMin(value = "0", message = "익절가는 0 이상이어야 합니다")
     private BigDecimal takeProfit;
+    private TradingStrategy tradingStrategy;
+    private LocalDateTime entryTime;
+    private LocalDateTime exitTime;
 }

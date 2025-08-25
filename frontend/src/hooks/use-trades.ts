@@ -1,120 +1,103 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  UseQueryResult,
-  UseMutationResult,
-} from '@tanstack/react-query';
-import { tradesApi } from '@/lib/api/trades-api';
-import { Trade, TradesResponse, CreateTradeRequest, TradeFilters } from '@/types/trade';
+import { useState, useEffect, useCallback } from 'react';
+import { tradesApi, Trade, PageResponse } from '@/lib/api/trades-api';
 
-// 쿼리 키 상수
-export const TRADES_QUERY_KEYS = {
-  all: ['trades'] as const,
-  list: (filters?: TradeFilters) => ['trades', 'list', filters] as const,
-  detail: (id: string) => ['trades', 'detail', id] as const,
-} as const;
+export function useTrades() {
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(20);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-// 거래 목록 조회 hook
-export function useTrades(filters?: TradeFilters): UseQueryResult<TradesResponse, Error> {
-  return useQuery({
-    queryKey: TRADES_QUERY_KEYS.list(filters),
-    queryFn: () => tradesApi.getTrades(filters),
-    staleTime: 30 * 1000, // 30초
-    refetchOnWindowFocus: false,
-    retry: 2,
-  });
-}
+  // 거래 목록 조회
+  const fetchTrades = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await tradesApi.getTrades(page, size);
+      setTrades(response.content);
+      setTotalElements(response.totalElements);
+      setTotalPages(response.totalPages);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch trades');
+      console.error('Error fetching trades:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, size]);
 
-// 최근 거래 10건 조회 hook
-export function useRecentTrades(): UseQueryResult<TradesResponse, Error> {
-  return useTrades({
-    limit: 10,
-    sortBy: 'entryTime',
-    sortOrder: 'desc',
-  });
-}
+  // 거래 생성
+  const createTrade = async (trade: Trade) => {
+    setError(null);
+    
+    try {
+      const newTrade = await tradesApi.createTrade(trade);
+      await fetchTrades(); // 목록 새로고침
+      return newTrade;
+    } catch (err: any) {
+      setError(err.message || 'Failed to create trade');
+      throw err;
+    }
+  };
 
-// 거래 등록 mutation hook
-export function useCreateTrade(): UseMutationResult<Trade, Error, CreateTradeRequest> {
-  const queryClient = useQueryClient();
+  // 거래 수정
+  const updateTrade = async (id: number, trade: Trade) => {
+    setError(null);
+    
+    try {
+      const updatedTrade = await tradesApi.updateTrade(id, trade);
+      await fetchTrades(); // 목록 새로고침
+      return updatedTrade;
+    } catch (err: any) {
+      setError(err.message || 'Failed to update trade');
+      throw err;
+    }
+  };
 
-  return useMutation({
-    mutationFn: tradesApi.createTrade,
-    onSuccess: (newTrade) => {
-      // 거래 목록 쿼리 무효화하여 자동 갱신
-      queryClient.invalidateQueries({
-        queryKey: TRADES_QUERY_KEYS.all,
-      });
+  // 거래 삭제
+  const deleteTrade = async (id: number) => {
+    setError(null);
+    
+    try {
+      await tradesApi.deleteTrade(id);
+      await fetchTrades(); // 목록 새로고침
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete trade');
+      throw err;
+    }
+  };
 
-      // 새 거래를 기존 캐시에 optimistically 추가
-      queryClient.setQueriesData<TradesResponse>({ queryKey: TRADES_QUERY_KEYS.all }, (oldData) => {
-        if (!oldData) return oldData;
+  // 페이지 변경
+  const changePage = (newPage: number) => {
+    setPage(newPage);
+  };
 
-        return {
-          ...oldData,
-          trades: [newTrade, ...oldData.trades.slice(0, oldData.limit - 1)],
-          total: oldData.total + 1,
-        };
-      });
-    },
-    onError: (error) => {
-      console.error('거래 등록 실패:', error);
-    },
-  });
-}
+  // 페이지 크기 변경
+  const changeSize = (newSize: number) => {
+    setSize(newSize);
+    setPage(0); // 페이지 크기 변경 시 첫 페이지로
+  };
 
-// 거래 수정 mutation hook (향후 확장용)
-export function useUpdateTrade(): UseMutationResult<
-  Trade,
-  Error,
-  { id: string; data: Partial<CreateTradeRequest> }
-> {
-  const queryClient = useQueryClient();
+  // 페이지 변경 시 자동 조회
+  useEffect(() => {
+    fetchTrades();
+  }, [fetchTrades]);
 
-  return useMutation({
-    mutationFn: ({ id, data }) => tradesApi.updateTrade(id, data),
-    onSuccess: (updatedTrade) => {
-      // 관련 쿼리들 무효화
-      queryClient.invalidateQueries({
-        queryKey: TRADES_QUERY_KEYS.all,
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: TRADES_QUERY_KEYS.detail(updatedTrade.id),
-      });
-    },
-    onError: (error) => {
-      console.error('거래 수정 실패:', error);
-    },
-  });
-}
-
-// 거래 삭제 mutation hook (향후 확장용)
-export function useDeleteTrade(): UseMutationResult<void, Error, string> {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tradesApi.deleteTrade,
-    onSuccess: (_, deletedId) => {
-      // 삭제된 거래를 캐시에서 제거
-      queryClient.setQueriesData<TradesResponse>({ queryKey: TRADES_QUERY_KEYS.all }, (oldData) => {
-        if (!oldData) return oldData;
-
-        return {
-          ...oldData,
-          trades: oldData.trades.filter((trade) => trade.id !== deletedId),
-          total: oldData.total - 1,
-        };
-      });
-
-      // 관련 쿼리들 무효화
-      queryClient.invalidateQueries({
-        queryKey: TRADES_QUERY_KEYS.all,
-      });
-    },
-    onError: (error) => {
-      console.error('거래 삭제 실패:', error);
-    },
-  });
+  return {
+    trades,
+    loading,
+    error,
+    page,
+    size,
+    totalElements,
+    totalPages,
+    refresh: fetchTrades,
+    createTrade,
+    updateTrade,
+    deleteTrade,
+    changePage,
+    changeSize,
+  };
 }

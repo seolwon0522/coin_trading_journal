@@ -1,21 +1,31 @@
 import { ForbiddenRuleViolation } from './forbidden-rules';
 import { TradeIndicators, StrategyScoreResult } from './strategy-scoring';
+import Decimal from 'decimal.js';
 
 // 거래 관련 타입 정의
 export interface Trade {
-  id: string;
+  id: number;  // Backend Long 타입과 일치
   symbol: string; // 종목명
-  type: 'buy' | 'sell'; // 매수/매도
-  tradingType: 'breakout' | 'trend' | 'counter_trend'; // 매매 유형
-  quantity: number; // 수량
-  entryPrice: number; // 진입가
-  exitPrice?: number; // 청산가 (선택적)
+  
+  // Backend와 통일된 필드
+  side: 'BUY' | 'SELL'; // 매수/매도 (Backend TradeSide)
+  type: 'SPOT' | 'FUTURES' | 'MARGIN'; // 거래 타입 (Backend TradeType)
+  tradingStrategy: 'BREAKOUT' | 'TREND' | 'COUNTER_TREND' | 'SCALPING' | 'SWING' | 'POSITION'; // 전략 타입 (Backend TradingStrategy)
+  
+  // 정밀도가 중요한 숫자 필드는 Decimal 타입 사용
+  quantity: Decimal; // 수량
+  entryPrice: Decimal; // 진입가
+  exitPrice?: Decimal; // 청산가 (선택적)
   entryTime: Date; // 진입 시간
   exitTime?: Date; // 청산 시간 (선택적)
-  memo?: string; // 메모
-  pnl?: number; // 손익 (계산됨)
+  notes?: string; // 메모 (Backend와 통일: notes)
+  profitLoss?: Decimal; // 손익 (Backend와 통일: profitLoss)
+  profitLossPercentage?: Decimal; // 손익률 (Backend와 통일: profitLossPercentage)
   status: 'open' | 'closed'; // 거래 상태
-  stopLoss?: number; // 손절가
+  stopLoss?: Decimal; // 손절가
+  takeProfit?: Decimal; // 익절가
+  totalAmount?: Decimal; // 총액
+  fee?: Decimal; // 수수료
 
   // 전략 채점 관련
   indicators?: TradeIndicators; // 입력 인디케이터
@@ -30,20 +40,28 @@ export interface Trade {
   updatedAt: Date;
 }
 
-// 새 거래 생성 시 사용하는 타입
+// 새 거래 생성 시 사용하는 타입 (백엔드 CreateTradeRequest와 일치)
 export interface CreateTradeRequest {
+  // 필수 필드
   symbol: string;
-  type: 'buy' | 'sell';
-  tradingType: 'breakout' | 'trend' | 'counter_trend';
+  type: 'SPOT' | 'FUTURES' | 'MARGIN'; // 거래 타입
+  side: 'BUY' | 'SELL'; // 매수/매도
   quantity: number;
-  entryPrice: number;
-  exitPrice?: number;
-  entryTime: string; // ISO string
-  exitTime?: string; // ISO string
-  memo?: string;
-  stopLoss?: number; // 손절가
+  price: number; // 진입가격
+  executedAt: string; // 체결 시간 (필수) - ISO string
+  
+  // 선택 필드
+  tradingStrategy?: 'BREAKOUT' | 'TREND' | 'COUNTER_TREND' | 'SCALPING' | 'SWING' | 'POSITION';
+  fee?: number;
+  feeAsset?: string;
+  notes?: string; // 메모
+  strategy?: string; // 전략명
+  stopLoss?: number;
+  takeProfit?: number;
+  entryTime?: string; // 진입 시간 (선택) - ISO string
+  exitTime?: string; // 청산 시간 (선택) - ISO string
 
-  // 전략 채점 입력 (선택)
+  // 전략 채점 입력 (프론트엔드 전용)
   indicators?: TradeIndicators;
 }
 
@@ -58,11 +76,12 @@ export interface TradesResponse {
 // 거래 필터링/정렬 옵션
 export interface TradeFilters {
   symbol?: string;
-  type?: 'buy' | 'sell';
+  side?: 'BUY' | 'SELL'; // Backend와 통일
+  type?: 'SPOT' | 'FUTURES' | 'MARGIN'; // 거래 타입 필터
   status?: 'open' | 'closed';
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: 'entryTime' | 'symbol' | 'pnl';
+  sortBy?: 'entryTime' | 'symbol' | 'profitLoss';  // Backend와 통일
   sortOrder?: 'asc' | 'desc';
   limit?: number;
   offset?: number;

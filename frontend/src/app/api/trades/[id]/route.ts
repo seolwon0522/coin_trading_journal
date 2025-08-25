@@ -13,15 +13,16 @@ const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
 // 개별 거래 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await request.json();
     const validatedData = createTradeSchema.partial().parse(body);
 
     if (BACKEND_BASE_URL) {
       try {
-        const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/trades/${params.id}`;
+        const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/trades/${id}`;
         const resp = await fetch(url, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -32,14 +33,14 @@ export async function PUT(
           return NextResponse.json(data, { status: resp.status });
         }
         console.warn(
-          `BACKEND proxy PUT /trades/${params.id} failed with status ${resp.status}. Falling back to local.`
+          `BACKEND proxy PUT /trades/${id} failed with status ${resp.status}. Falling back to local.`
         );
       } catch (err) {
         console.warn('BACKEND proxy PUT /trades error. Falling back to local.', err);
       }
     }
 
-    const index = trades.findIndex((t) => t.id === params.id);
+    const index = trades.findIndex((t) => t.id === id);
     if (index === -1)
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
 
@@ -85,31 +86,32 @@ export async function PUT(
 // 개별 거래 삭제
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     if (BACKEND_BASE_URL) {
       try {
-        const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/trades/${params.id}`;
+        const url = `${BACKEND_BASE_URL.replace(/\/$/, '')}/trades/${id}`;
         const resp = await fetch(url, { method: 'DELETE' });
         if (resp.ok) {
           return NextResponse.json(null, { status: resp.status });
         }
         console.warn(
-          `BACKEND proxy DELETE /trades/${params.id} failed with status ${resp.status}. Falling back to local.`
+          `BACKEND proxy DELETE /trades/${id} failed with status ${resp.status}. Falling back to local.`
         );
       } catch (err) {
         console.warn('BACKEND proxy DELETE /trades error. Falling back to local.', err);
       }
     }
 
-    const index = trades.findIndex((t) => t.id === params.id);
+    const index = trades.findIndex((t) => t.id === id);
     if (index === -1)
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
 
     trades.splice(index, 1);
     return NextResponse.json(null);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: '거래 삭제에 실패했습니다' },
       { status: 500 }
