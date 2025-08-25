@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { useRecentTrades } from '@/hooks/use-trades';
+import { useTrades } from '@/hooks/use-trades';
 import { useAuth } from '@/components/providers/auth-provider';
 
 // 사이드바 메뉴 아이템 타입
@@ -32,12 +32,12 @@ interface SidebarItem {
 // 사이드바 컴포넌트
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: tradesData } = useRecentTrades();
+  const { trades, totalElements } = useTrades();
   const { user } = useAuth();
 
   // 동적 데이터 계산
-  const totalTrades = tradesData?.total || 0;
-  const openPositions = tradesData?.trades?.filter((trade) => trade.status === 'open').length || 0;
+  const totalTrades = totalElements || 0;
+  const openPositions = 0; // TODO: 실제 오픈 포지션 계산 로직 추가
 
   // 사이드바 메뉴 데이터 (동적 데이터 포함)
   const sidebarItems: SidebarItem[] = [

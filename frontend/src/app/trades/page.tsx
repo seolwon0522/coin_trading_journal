@@ -7,7 +7,7 @@ import { format, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { TradeForm } from '@/components/trades/trade-form';
+import { TradeFormV2 } from '@/components/trades/trade-form-v2';
 import { TradesTable } from '@/components/trades/trades-table';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -120,7 +120,7 @@ export default function TradesPage() {
         </div>
 
         {/* 입력 폼 (조건부 렌더링) */}
-        {showForm && <TradeForm onSuccess={handleFormSuccess} />}
+        {showForm && <TradeFormV2 onSuccess={handleFormSuccess} />}
 
         {/* 거래 테이블 */}
         <TradesTable selectedMonth={selectedMonth} />

@@ -76,7 +76,19 @@ public class Trade extends BaseTimeEntity {
     @Column(length = 50)
     private String strategy;
     
-    // Calculated fields for analytics
+    // 거래 전략 타입 - Frontend의 tradingType과 통일
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trading_strategy", length = 20)
+    private TradingStrategy tradingStrategy;
+    
+    // 진입/청산 시간 필드
+    @Column(name = "entry_time")
+    private LocalDateTime entryTime;
+    
+    @Column(name = "exit_time")
+    private LocalDateTime exitTime;
+    
+    // 분석용 계산 필드
     @Column(precision = 20, scale = 8)
     private BigDecimal profitLoss;
     
@@ -89,7 +101,7 @@ public class Trade extends BaseTimeEntity {
     @Column(precision = 20, scale = 8)
     private BigDecimal realizedPnl;
     
-    // Risk management fields
+    // 리스크 관리 필드
     @Column(precision = 20, scale = 8)
     private BigDecimal stopLoss;
     

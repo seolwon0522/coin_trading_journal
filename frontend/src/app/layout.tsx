@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { MainLayout } from '@/components/layout/main-layout';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { Providers } from './providers';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -30,19 +31,21 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <QueryProvider>
-            <AuthProvider>
-              <MainLayout>{children}</MainLayout>
-              <ToastProvider />
-            </AuthProvider>
-          </QueryProvider>
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <QueryProvider>
+              <AuthProvider>
+                <MainLayout>{children}</MainLayout>
+                <ToastProvider />
+              </AuthProvider>
+            </QueryProvider>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

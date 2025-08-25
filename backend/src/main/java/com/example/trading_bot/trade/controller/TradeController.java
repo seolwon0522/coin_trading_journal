@@ -39,6 +39,9 @@ public class TradeController {
         @Valid @RequestBody CreateTradeRequest request
     ) {
         log.info("Creating trade for user: {}", userPrincipal.getId());
+        log.debug("Trade request data: {}", request);
+        log.debug("Received executedAt: {}", request.getExecutedAt());
+        
         TradeResponse response = tradeService.createManualTrade(userPrincipal.getId(), request);
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(response, "거래가 성공적으로 생성되었습니다"));
@@ -89,7 +92,13 @@ public class TradeController {
         Sort.Direction sortDirection = Sort.Direction.fromString(direction);
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
         
-        Page<TradeResponse> response = tradeService.getUserTrades(userPrincipal.getId(), pageable);
+        // 개발 환경: 인증 없이 접근 시 모든 거래 표시
+        Page<TradeResponse> response;
+        if (userPrincipal == null) {
+            response = tradeService.getAllTrades(pageable);
+        } else {
+            response = tradeService.getUserTrades(userPrincipal.getId(), pageable);
+        }
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     

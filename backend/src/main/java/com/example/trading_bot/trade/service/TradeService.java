@@ -51,6 +51,9 @@ public class TradeService {
             .executedAt(request.getExecutedAt())
             .notes(request.getNotes())
             .strategy(request.getStrategy())
+            .tradingStrategy(request.getTradingStrategy())
+            .entryTime(request.getEntryTime() != null ? request.getEntryTime() : request.getExecutedAt())
+            .exitTime(request.getExitTime())
             .stopLoss(request.getStopLoss())
             .takeProfit(request.getTakeProfit())
             .build();
@@ -95,6 +98,12 @@ public class TradeService {
     
     public Page<TradeResponse> getUserTrades(Long userId, Pageable pageable) {
         return tradeRepository.findByUserId(userId, pageable)
+            .map(TradeResponse::from);
+    }
+    
+    // 개발 환경용: 모든 거래 조회
+    public Page<TradeResponse> getAllTrades(Pageable pageable) {
+        return tradeRepository.findAll(pageable)
             .map(TradeResponse::from);
     }
     

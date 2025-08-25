@@ -34,8 +34,8 @@ import {
 import { CoinAutocomplete } from '@/components/trades/coin-autocomplete';
 
 import { createTradeSchema, CreateTradeFormData } from '@/schemas/trade';
-import { useCreateTrade, useUpdateTrade } from '@/hooks/use-trades';
-import { Trade } from '@/types/trade';
+import { useTrades } from '@/hooks/use-trades';
+import { Trade } from '@/lib/api/trades-api';
 import { cn } from '@/lib/utils';
 
 interface TradeFormProps {
@@ -47,8 +47,8 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
   const [entryCalendarOpen, setEntryCalendarOpen] = useState(false);
   const [exitCalendarOpen, setExitCalendarOpen] = useState(false);
 
-  const createTradeMutation = useCreateTrade();
-  const updateTradeMutation = useUpdateTrade();
+  const { createTrade, updateTrade } = useTrades();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateTradeFormData>({
     resolver: zodResolver(createTradeSchema),
@@ -70,12 +70,14 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
           symbol: '',
           type: 'buy',
           tradingType: 'breakout', // 기본값을 돌파매매로 설정
-          quantity: 0,
-          entryPrice: 0,
+          quantity: undefined as any, // 초기값을 undefined로 설정
+          entryPrice: undefined as any, // 초기값을 undefined로 설정
           exitPrice: undefined,
           entryTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
           exitTime: '',
           memo: '',
+          stopLoss: undefined,
+          indicators: undefined,
         },
   });
 
@@ -83,14 +85,27 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
   const hasExitPrice = !!form.watch('exitPrice');
 
   const onSubmit = async (data: CreateTradeFormData) => {
+    setIsSubmitting(true);
     try {
+      // TODO: API 타입 맞추기 필요
+      const apiData: any = {
+        symbol: data.symbol,
+        type: data.type === 'buy' ? 'BUY' : 'SELL',
+        side: data.type === 'buy' ? 'BUY' : 'SELL',
+        quantity: data.quantity,
+        price: data.entryPrice,
+        executedAt: data.entryTime,
+        notes: data.memo,
+        stopLoss: data.stopLoss,
+      };
+      
       if (trade) {
-        await updateTradeMutation.mutateAsync({ id: trade.id, data });
+        await updateTrade(trade.id, apiData);
         toast.success('매매 기록이 수정되었습니다!', {
           description: `${data.symbol} 기록이 업데이트되었습니다.`,
         });
       } else {
-        await createTradeMutation.mutateAsync(data);
+        await createTrade(apiData);
         toast.success('매매 기록이 등록되었습니다!', {
           description: `${data.symbol} ${data.type === 'buy' ? '매수' : '매도'} 기록이 추가되었습니다.`,
         });
@@ -102,6 +117,8 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
         description:
           error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -220,7 +237,10 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
                       step="0.00001"
                       placeholder="0.00000"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === '' ? undefined : parseFloat(value));
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -240,7 +260,10 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
                       step="0.01"
                       placeholder="0.00"
                       {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === '' ? undefined : parseFloat(value));
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -447,24 +470,15 @@ export function TradeForm({ onSuccess, trade }: TradeFormProps) {
           <Button
             type="submit"
             className="w-full"
-            disabled={trade ? updateTradeMutation.isPending : createTradeMutation.isPending}
+            disabled={isSubmitting}
           >
-            {trade ? (
-              updateTradeMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  수정 중...
-                </>
-              ) : (
-                '매매 기록 수정'
-              )
-            ) : createTradeMutation.isPending ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                등록 중...
+                {trade ? '수정 중...' : '등록 중...'}
               </>
             ) : (
-              '매매 기록 등록'
+              trade ? '매매 기록 수정' : '매매 기록 등록'
             )}
           </Button>
         </form>
