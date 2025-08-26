@@ -1,68 +1,52 @@
 package com.example.trading_bot.trade.dto;
 
-import com.example.trading_bot.trade.entity.*;
+import com.example.trading_bot.trade.entity.Trade;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TradeResponse {
     
     private Long id;
     private String symbol;
-    private TradeType type;
-    private TradeSide side;
-    private BigDecimal quantity;
-    private BigDecimal price;
-    private LocalDateTime executedAt;
-    
-    // 선택 필드
-    private BigDecimal fee;
-    private String feeAsset;
-    private String notes;
-    private String strategy;
-    private BigDecimal stopLoss;
-    private BigDecimal takeProfit;
-    private TradingStrategy tradingStrategy;
+    private String side;
+    private BigDecimal entryPrice;
+    private BigDecimal entryQuantity;
     private LocalDateTime entryTime;
+    private BigDecimal exitPrice;
+    private BigDecimal exitQuantity;
     private LocalDateTime exitTime;
+    private BigDecimal pnl;
+    private BigDecimal pnlPercent;
+    private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // 계산 필드
-    private BigDecimal totalAmount;
-    private BigDecimal profitLoss;
-    private BigDecimal profitLossPercentage;
-    
-    // 상태
-    private TradeStatus status;
-    private TradeSource source;
-    
+    // Entity to DTO 변환 메서드
     public static TradeResponse from(Trade trade) {
-        TradeResponse response = new TradeResponse();
-        response.setId(trade.getId());
-        response.setSymbol(trade.getSymbol());
-        response.setType(trade.getType());
-        response.setSide(trade.getSide());
-        response.setQuantity(trade.getQuantity());
-        response.setPrice(trade.getPrice());
-        response.setExecutedAt(trade.getExecutedAt());
-        response.setFee(trade.getFee());
-        response.setFeeAsset(trade.getFeeAsset());
-        response.setNotes(trade.getNotes());
-        response.setStrategy(trade.getStrategy());
-        response.setStopLoss(trade.getStopLoss());
-        response.setTakeProfit(trade.getTakeProfit());
-        response.setTradingStrategy(trade.getTradingStrategy());
-        response.setEntryTime(trade.getEntryTime());
-        response.setExitTime(trade.getExitTime());
-        response.setCreatedAt(trade.getCreatedAt());
-        response.setUpdatedAt(trade.getUpdatedAt());
-        response.setTotalAmount(trade.getTotalAmount());
-        response.setProfitLoss(trade.getProfitLoss());
-        response.setProfitLossPercentage(trade.getProfitLossPercentage());
-        response.setStatus(trade.getStatus());
-        response.setSource(trade.getSource());
-        return response;
+        return TradeResponse.builder()
+                .id(trade.getId())
+                .symbol(trade.getSymbol())
+                .side(trade.getSide())
+                .entryPrice(trade.getEntryPrice())
+                .entryQuantity(trade.getEntryQuantity())
+                .entryTime(trade.getEntryTime())
+                .exitPrice(trade.getExitPrice())
+                .exitQuantity(trade.getExitQuantity())
+                .exitTime(trade.getExitTime())
+                .pnl(trade.getPnl())
+                .pnlPercent(trade.getPnlPercent())
+                .notes(trade.getNotes())
+                .createdAt(trade.getCreatedAt())
+                .updatedAt(trade.getUpdatedAt())
+                .build();
     }
 }
