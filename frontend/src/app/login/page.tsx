@@ -14,10 +14,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { signIn } from 'next-auth/react';
 import Script from 'next/script';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/providers/auth-provider';
 
 // 로그인 폼 검증 스키마
 const loginSchema = z.object({
@@ -29,6 +29,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, oauth2Login } = useAuth();
   const [googleLoading, setGoogleLoading] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -38,16 +39,11 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      // NextAuth signIn 사용
-      const result = await signIn('credentials', {
+      // AuthProvider의 login 함수 사용
+      await login({
         email: values.email,
         password: values.password,
-        redirect: false,
       });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
 
       // 로그인 성공 시 홈으로 이동
       router.push('/');
@@ -228,15 +224,8 @@ export default function LoginPage() {
               const idToken = res?.authorization?.id_token;
               if (!idToken) throw new Error('Apple ID Token을 받지 못했습니다');
               
-              // Apple 로그인 처리 (NextAuth 또는 백엔드 API 호출)
-              const result = await signIn('apple', {
-                idToken,
-                redirect: false,
-              });
-              
-              if (result?.error) {
-                throw new Error(result.error);
-              }
+              // Apple 로그인 처리 (AuthProvider의 oauth2Login 사용)
+              await oauth2Login('APPLE', idToken);
               
               router.replace('/');
             } catch (e) {

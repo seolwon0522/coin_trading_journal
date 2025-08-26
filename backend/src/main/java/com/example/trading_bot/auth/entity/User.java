@@ -1,6 +1,7 @@
 package com.example.trading_bot.auth.entity;
 
 import com.example.trading_bot.common.entity.BaseTimeEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, unique = true, length = 320)
     private String email;
 
+    @JsonIgnore
     @Column(length = 255)
     private String password;
 
@@ -33,6 +35,7 @@ public class User extends BaseTimeEntity {
     @Column(name = "provider_type", nullable = false)
     private ProviderType providerType;
 
+    @JsonIgnore
     @Column(name = "provider_id")
     private String providerId;
 
@@ -43,6 +46,7 @@ public class User extends BaseTimeEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    @JsonIgnore
     @Column(name = "refresh_token", length = 500)
     private String refreshToken;
 
