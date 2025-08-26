@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
- * Spring Security 설정 - 개발 환경용 간단한 설정
+ * Spring Security 설정 - JWT 기반 인증 및 유저별 데이터 격리
  */
 @Configuration
 @EnableWebSecurity
@@ -53,18 +53,13 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             
-            // 엔드포인트 권한 설정 - 개발 환경용 간단한 설정
+            // 엔드포인트 권한 설정
             .authorizeHttpRequests(authz -> authz
                 // 인증 관련 엔드포인트
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/oauth2/**").permitAll()
                 
-                // 거래 관련 API - 개발 중에는 인증 없이 접근 가능
-                .requestMatchers("/api/trades/**").permitAll()
-                .requestMatchers("/api/statistics/**").permitAll()
-                .requestMatchers("/api/market/**").permitAll()
-                
-                // Binance 관련 API
+                // Binance 관련 API (공개 데이터)
                 .requestMatchers("/api/binance/**").permitAll()
                 
                 // Swagger 문서
@@ -77,10 +72,12 @@ public class SecurityConfig {
                 // 헬스체크 엔드포인트
                 .requestMatchers("/actuator/health").permitAll()
                 
-                // 개발 중에는 모든 GET 요청 허용
-                .requestMatchers("GET", "/api/**").permitAll()
+                // 거래 관련 API - 인증 필수
+                .requestMatchers("/api/trades/**").authenticated()
+                .requestMatchers("/api/statistics/**").authenticated()
+                .requestMatchers("/api/market/**").authenticated()
                 
-                // 그 외 요청은 인증 필요 (POST, PUT, DELETE 등의 쓰기 작업)
+                // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )
             
