@@ -65,14 +65,22 @@ export default function TradesPage() {
 
       {/* 거래 등록 다이얼로그 */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>새 거래 등록</DialogTitle>
+        <DialogContent className="sm:max-w-3xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              새 거래 등록
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              거래 정보를 입력하여 포트폴리오에 추가하세요.
+            </p>
           </DialogHeader>
-          <TradeForm
-            onSubmit={handleFormSubmit}
-            onCancel={() => setShowForm(false)}
-          />
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <TradeForm
+              onSubmit={handleFormSubmit}
+              onCancel={() => setShowForm(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
