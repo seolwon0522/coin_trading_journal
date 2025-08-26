@@ -19,13 +19,19 @@ import {
 } from '@/components/ui/dialog';
 import { TradeForm } from './TradeForm';
 import { useTrades } from '@/hooks/use-trades';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Edit, Trash2, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function TradesTable() {
+interface TradesTableProps {
+  currency: 'USD' | 'KRW';
+}
+
+export function TradesTable({ currency }: TradesTableProps) {
+  const { usdToKrw, formatKRW } = useExchangeRate();
   const {
     trades,
     loading,
@@ -56,6 +62,25 @@ export function TradesTable() {
   const handleDelete = async (id: number) => {
     if (confirm('정말 삭제하시겠습니까?')) {
       await deleteTrade(id);
+    }
+  };
+
+  // 통화 포맷팅 함수
+  const formatCurrency = (value: number): string => {
+    if (currency === 'USD') {
+      return `$${value.toLocaleString()}`;
+    } else {
+      return formatKRW(usdToKrw(value));
+    }
+  };
+
+  // 손익 포맷팅 함수
+  const formatPnl = (value: number): string => {
+    const prefix = value > 0 ? '+' : '';
+    if (currency === 'USD') {
+      return `${prefix}$${Math.abs(value).toLocaleString()}`;
+    } else {
+      return `${prefix}${formatKRW(usdToKrw(Math.abs(value)))}`;
     }
   };
 
@@ -100,7 +125,9 @@ export function TradesTable() {
               <TableHead className="text-right">진입가</TableHead>
               <TableHead className="text-right">수량</TableHead>
               <TableHead className="text-right">청산가</TableHead>
-              <TableHead className="text-right">손익</TableHead>
+              <TableHead className="text-right">
+                손익 ({currency})
+              </TableHead>
               <TableHead>진입시간</TableHead>
               <TableHead className="text-right">작업</TableHead>
             </TableRow>
@@ -114,29 +141,43 @@ export function TradesTable() {
                     {trade.side === 'BUY' ? '매수' : '매도'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">{trade.entryPrice.toLocaleString()}</TableCell>
-                <TableCell className="text-right">{trade.entryQuantity.toLocaleString()}</TableCell>
-                <TableCell className="text-right">
-                  {trade.exitPrice ? trade.exitPrice.toLocaleString() : '-'}
+                <TableCell className="text-right font-mono">
+                  {formatCurrency(trade.entryPrice)}
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  {trade.entryQuantity.toLocaleString()}
+                </TableCell>
+                <TableCell className="text-right font-mono">
+                  {trade.exitPrice ? formatCurrency(trade.exitPrice) : '-'}
                 </TableCell>
                 <TableCell className="text-right">
                   {trade.pnl !== null && trade.pnl !== undefined ? (
                     <div className="flex items-center justify-end gap-1">
                       {trade.pnl > 0 ? (
-                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        <TrendingUp className="h-3 w-3 text-green-500" />
                       ) : trade.pnl < 0 ? (
-                        <TrendingDown className="h-4 w-4 text-red-500" />
+                        <TrendingDown className="h-3 w-3 text-red-500" />
                       ) : null}
-                      <span className={trade.pnl > 0 ? 'text-green-500' : trade.pnl < 0 ? 'text-red-500' : ''}>
-                        {trade.pnl.toLocaleString()}
-                        {trade.pnlPercent && ` (${trade.pnlPercent.toFixed(2)}%)`}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className={`font-mono text-sm ${
+                          trade.pnl > 0 ? 'text-green-600' : trade.pnl < 0 ? 'text-red-600' : 'text-muted-foreground'
+                        }`}>
+                          {formatPnl(trade.pnl)}
+                        </span>
+                        {trade.pnlPercent && (
+                          <span className={`text-xs ${
+                            trade.pnl > 0 ? 'text-green-500' : trade.pnl < 0 ? 'text-red-500' : 'text-muted-foreground'
+                          }`}>
+                            ({trade.pnl > 0 ? '+' : ''}{trade.pnlPercent.toFixed(2)}%)
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     '-'
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-sm">
                   {format(new Date(trade.entryTime), 'MM-dd HH:mm', { locale: ko })}
                 </TableCell>
                 <TableCell className="text-right">
@@ -197,17 +238,19 @@ export function TradesTable() {
 
       {/* 수정 다이얼로그 */}
       <Dialog open={!!editingTrade} onOpenChange={(open) => !open && setEditingTrade(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-3xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle>거래 수정</DialogTitle>
           </DialogHeader>
-          {editingTrade && (
-            <TradeForm
-              trade={editingTrade}
-              onSubmit={handleUpdate}
-              onCancel={() => setEditingTrade(null)}
-            />
-          )}
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            {editingTrade && (
+              <TradeForm
+                trade={editingTrade}
+                onSubmit={handleUpdate}
+                onCancel={() => setEditingTrade(null)}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
