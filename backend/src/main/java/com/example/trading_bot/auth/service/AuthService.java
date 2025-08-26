@@ -57,15 +57,23 @@ public class AuthService {
 
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
-        String refreshToken = tokenValidator.extractBearerToken(authHeader);
-        User user = tokenValidator.validateRefreshTokenAndGetUser(refreshToken);
-
+        String oldRefreshToken = tokenValidator.extractBearerToken(authHeader);
+        
+        // 기존 refresh token으로 사용자 조회 및 검증
+        User user = tokenValidator.validateRefreshTokenAndGetUser(oldRefreshToken);
+        
+        // 새로운 토큰 쌍 생성 (Rolling Refresh Token 전략)
         String newAccessToken = jwtTokenProvider.createAccessToken(
                 user.getId(), user.getEmail(), user.getRole().name());
-
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+        
+        // DB에 새로운 refresh token 저장
+        user.updateRefreshToken(newRefreshToken);
+        userRepository.save(user);
+        
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(refreshToken)
+                .refreshToken(newRefreshToken)
                 .build();
     }
 

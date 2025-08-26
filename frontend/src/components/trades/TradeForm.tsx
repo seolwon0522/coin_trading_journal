@@ -7,16 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { BinanceSymbolSelector } from './BinanceSymbolSelector';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
 import {
   CalendarIcon,
   Clock,
@@ -55,6 +55,8 @@ const parseNumber = (value: string): number => {
 
 export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
   const [loading, setLoading] = useState(false);
+  const [currency, setCurrency] = useState<'USD' | 'KRW'>('USD');
+  const { usdToKrw, formatKRW } = useExchangeRate();
   const [formData, setFormData] = useState<TradeRequest>({
     symbol: trade?.symbol || '',
     side: trade?.side || 'BUY',
@@ -90,6 +92,15 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
     });
   }, [formData.entryPrice, formData.entryQuantity, formData.exitPrice, formData.exitQuantity]);
 
+  // 통화 표시 형식 함수
+  const formatCurrency = (value: number): string => {
+    if (currency === 'USD') {
+      return `$${formatNumber(value)}`;
+    } else {
+      return formatKRW(usdToKrw(value));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -100,7 +111,7 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
         icon: <CheckCircle2 className="h-4 w-4" />,
       });
       onCancel(); // 성공 시 폼 닫기
-    } catch (error) {
+    } catch {
       toast.error('거래 저장에 실패했습니다.', {
         icon: <AlertCircle className="h-4 w-4" />,
       });
@@ -175,7 +186,27 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
 
         <Separator />
 
-        {/* 진입 & 청산 정보 - 가로 배치 */}
+        {/* 통화 선택 및 진입 & 청산 정보 */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium">거래 정보</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">표시 통화:</span>
+            <ToggleGroup
+              type="single"
+              value={currency}
+              onValueChange={(value: 'USD' | 'KRW') => value && setCurrency(value)}
+              className="h-7"
+            >
+              <ToggleGroupItem value="USD" className="h-6 px-2 text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white min-w-[50px] flex items-center justify-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                <span>USD</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="KRW" className="h-6 px-2 text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white min-w-[50px] flex items-center justify-center">
+                <span>₩ KRW</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* 진입 정보 */}
           <div className="space-y-2">
@@ -271,7 +302,7 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
                 <div className="p-2 bg-muted rounded-md flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">진입 총액</span>
                   <span className="text-sm font-semibold font-mono">
-                    ${formatNumber(calculations.entryTotal)}
+                    {formatCurrency(calculations.entryTotal)}
                   </span>
                 </div>
               )}
@@ -372,7 +403,7 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
                   <div className="p-2 bg-muted rounded-md flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">청산 총액</span>
                     <span className="text-sm font-semibold font-mono">
-                      ${formatNumber(calculations.exitTotal)}
+                      {formatCurrency(calculations.exitTotal)}
                     </span>
                   </div>
                   <div className={cn(
@@ -388,7 +419,7 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
                         "text-sm font-semibold font-mono",
                         calculations.profit >= 0 ? "text-green-600" : "text-red-600"
                       )}>
-                        {calculations.profit >= 0 ? '+' : ''}{formatNumber(calculations.profit)}
+                        {calculations.profit >= 0 ? '+' : ''}{formatCurrency(calculations.profit)}
                       </span>
                       <Badge 
                         variant={calculations.profit >= 0 ? "default" : "destructive"} 

@@ -135,6 +135,7 @@ public class TokenValidator {
      * @throws AuthException 토큰이 유효하지 않거나 사용자를 찾을 수 없는 경우
      */
     public User validateRefreshTokenAndGetUser(String refreshToken) {
+        // 토큰 형식 및 유효성 검증
         TokenValidationResult result = jwtTokenProvider.validateTokenWithResult(refreshToken);
         
         if (!result.isValid()) {
@@ -146,10 +147,18 @@ public class TokenValidator {
                 throw AuthException.invalidToken();
             }
         }
+        
+        // 토큰에서 userId 추출 (디버깅용)
+        Long userId = extractUserIdFromToken(refreshToken);
+        log.debug("Looking for user with refresh token, userId from token: {}", userId);
 
+        // DB에서 refresh token으로 사용자 조회
         return userRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> {
-                    log.warn("User not found with refresh token");
+                    // 더 상세한 로그 메시지
+                    log.warn("User not found with refresh token. Token userId: {}. " + 
+                            "Possible causes: token was rotated, user logged out, or logged in from another device", 
+                            userId);
                     return AuthException.refreshTokenNotFound();
                 });
     }
