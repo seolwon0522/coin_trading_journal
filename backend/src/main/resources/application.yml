@@ -55,6 +55,7 @@ logging:
   level:
     org.springframework.security: DEBUG
     com.example.trading_bot: DEBUG
+    com.example.trading_bot.auth: DEBUG
 
 # CORS 설정
 cors:

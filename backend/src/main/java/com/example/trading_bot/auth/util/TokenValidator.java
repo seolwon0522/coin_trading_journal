@@ -138,10 +138,14 @@ public class TokenValidator {
             }
         }
 
+        // 토큰에서 userId 추출하여 로그에 포함
+        Long userId = extractUserIdFromToken(refreshToken);
+        
         // DB에서 refresh token으로 사용자 조회
         return userRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> {
-                    log.warn("User not found with refresh token. Possible causes: token was rotated, user logged out, or logged in from another device");
+                    log.warn("User not found with refresh token. User ID from token: {}, Token length: {}. Possible causes: token was rotated, user logged out, or logged in from another device", 
+                            userId, refreshToken.length());
                     return AuthException.refreshTokenNotFound();
                 });
     }

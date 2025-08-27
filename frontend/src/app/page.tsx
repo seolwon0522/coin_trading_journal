@@ -195,6 +195,40 @@ export default function Dashboard() {
   const totalPenaltyScore = 0;
   const riskScore = 100;
 
+  // 토큰 갱신 테스트 함수 (임시)
+  const testTokenRefresh = async () => {
+    try {
+      const refreshToken = localStorage.getItem('ctj_refresh_token');
+      console.log('Current Refresh Token:', refreshToken);
+      
+      const response = await fetch('http://localhost:8080/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${refreshToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      
+      const data = await response.json();
+      console.log('Token Refresh Response:', data);
+      
+      if (data.success) {
+        alert('토큰 갱신 성공!');
+        // 새 토큰 저장
+        if (data.data?.accessToken && data.data?.refreshToken) {
+          localStorage.setItem('ctj_access_token', data.data.accessToken);
+          localStorage.setItem('ctj_refresh_token', data.data.refreshToken);
+        }
+      } else {
+        alert('토큰 갱신 실패: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      alert('토큰 갱신 오류: ' + error);
+    }
+  };
+
   return (
     <div className="min-h-full bg-background">
       {/* 페이지 헤더 */}
@@ -210,6 +244,14 @@ export default function Dashboard() {
                 <Clock className="h-3 w-3" />
                 실시간 업데이트
               </Badge>
+              {/* 임시 토큰 갱신 테스트 버튼 */}
+              <Button 
+                onClick={testTokenRefresh}
+                variant="outline"
+                size="sm"
+              >
+                토큰 갱신 테스트
+              </Button>
             </div>
           </div>
         </div>
