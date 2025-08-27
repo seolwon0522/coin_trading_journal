@@ -64,16 +64,13 @@ public class User extends BaseTimeEntity {
     }
 
     /**
-     * Refresh Token 업데이트 (보안 검증 포함)
+     * Refresh Token 업데이트
      * 
-     * @param refreshToken 새로운 refresh token
-     * @throws IllegalArgumentException 토큰이 null이거나 빈 문자열인 경우
+     * 로그인 시에는 새로운 토큰을, 로그아웃 시에는 null을 설정합니다.
+     * 
+     * @param refreshToken 새로운 refresh token 또는 null (로그아웃 시)
      */
     public void updateRefreshToken(String refreshToken) {
-        // null이 들어올 수 있음 (로그아웃 시)
-        if (refreshToken != null && refreshToken.trim().isEmpty()) {
-            throw new IllegalArgumentException("Refresh token cannot be empty");
-        }
         this.refreshToken = refreshToken;
     }
 

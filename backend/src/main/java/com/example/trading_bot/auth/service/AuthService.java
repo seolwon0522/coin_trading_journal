@@ -9,6 +9,7 @@ import com.example.trading_bot.auth.exception.AuthException;
 import com.example.trading_bot.auth.exception.UserAlreadyExistsException;
 import com.example.trading_bot.auth.jwt.JwtTokenProvider;
 import com.example.trading_bot.auth.repository.UserRepository;
+import com.example.trading_bot.auth.util.TokenExtractor;
 import com.example.trading_bot.auth.util.TokenValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenValidator tokenValidator;
+    private final TokenExtractor tokenExtractor;
+    
+    @org.springframework.beans.factory.annotation.Value("${jwt.access-token-validity-in-seconds}")
+    private long accessTokenValidityInSeconds;
 
     @Transactional
     public User registerLocalUser(String email, String password, String name) {
@@ -57,7 +62,7 @@ public class AuthService {
 
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
-        String oldRefreshToken = tokenValidator.extractBearerToken(authHeader);
+        String oldRefreshToken = tokenExtractor.extractBearerToken(authHeader);
         
         // 기존 refresh token으로 사용자 조회 및 검증
         User user = tokenValidator.validateRefreshTokenAndGetUser(oldRefreshToken);
@@ -74,6 +79,7 @@ public class AuthService {
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
+                .expiresIn(accessTokenValidityInSeconds)
                 .build();
     }
 
@@ -202,6 +208,7 @@ public class AuthService {
         return LoginResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .expiresIn(accessTokenValidityInSeconds)
                 .user(user)
                 .build();
     }
