@@ -103,16 +103,6 @@ public class TokenValidator {
     }
 
     /**
-     * Authorization 헤더에서 Bearer 토큰 추출
-     * 
-     * @param authHeader Authorization 헤더 값
-     * @return Bearer 토큰 또는 null
-     */
-    public String extractBearerToken(String authHeader) {
-        return tokenExtractor.extractBearerToken(authHeader);
-    }
-
-    /**
      * 사용자 ID로 사용자 조회
      * 
      * @param userId 사용자 ID
@@ -147,18 +137,11 @@ public class TokenValidator {
                 throw AuthException.invalidToken();
             }
         }
-        
-        // 토큰에서 userId 추출 (디버깅용)
-        Long userId = extractUserIdFromToken(refreshToken);
-        log.debug("Looking for user with refresh token, userId from token: {}", userId);
 
         // DB에서 refresh token으로 사용자 조회
         return userRepository.findByRefreshToken(refreshToken)
                 .orElseThrow(() -> {
-                    // 더 상세한 로그 메시지
-                    log.warn("User not found with refresh token. Token userId: {}. " + 
-                            "Possible causes: token was rotated, user logged out, or logged in from another device", 
-                            userId);
+                    log.warn("User not found with refresh token. Possible causes: token was rotated, user logged out, or logged in from another device");
                     return AuthException.refreshTokenNotFound();
                 });
     }

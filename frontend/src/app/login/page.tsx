@@ -116,24 +116,8 @@ export default function LoginPage() {
           </form>
         </Form>
 
-        {/* 관리자 빠른 로그인 */}
-        <div className="mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full text-xs"
-            onClick={() => {
-              form.setValue('email', 'admin@ml.com');
-              form.setValue('password', 'ml_admin_2025');
-            }}
-          >
-            관리자 계정으로 빠른 로그인
-          </Button>
-        </div>
-
         {/* 구분선 */}
-        <div className="my-4 text-center text-sm text-muted-foreground">또는</div>
+        <div className="my-6 text-center text-sm text-muted-foreground">또는</div>
 
         {/* Google 로그인 버튼 (FedCM 비활성화: 직접 OAuth2 리다이렉트) */}
         <Button
