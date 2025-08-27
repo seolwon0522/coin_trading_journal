@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Plus, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { TradeForm } from '@/components/trades/TradeForm';
+import { TradeForm } from '@/components/trades/TradeForm/index';
 import { TradesTable } from '@/components/trades/TradesTable';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ExchangeRateBadge } from '@/components/ui/exchange-rate-badge';

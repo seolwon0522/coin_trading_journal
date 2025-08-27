@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { formatNumber, parseNumber } from '@/lib/utils/number-format';
 import { useExchangeRate } from '@/hooks/use-exchange-rate';
 import {
   CalendarIcon,
@@ -34,24 +35,18 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+/**
+ * 거래 정보 입력/수정 폼 컴포넌트
+ * 
+ * @param trade - 수정 모드일 때 기존 거래 데이터
+ * @param onSubmit - 폼 제출 핸들러
+ * @param onCancel - 취소 핸들러
+ */
 interface TradeFormProps {
   trade?: Trade;
   onSubmit: (data: TradeRequest) => Promise<void>;
   onCancel: () => void;
 }
-
-// 숫자 포맷팅 함수
-const formatNumber = (value: number | undefined): string => {
-  if (!value) return '';
-  return new Intl.NumberFormat('ko-KR', {
-    maximumFractionDigits: 8,
-  }).format(value);
-};
-
-// 숫자 파싱 함수
-const parseNumber = (value: string): number => {
-  return parseFloat(value.replace(/,/g, '')) || 0;
-};
 
 export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
   const [loading, setLoading] = useState(false);

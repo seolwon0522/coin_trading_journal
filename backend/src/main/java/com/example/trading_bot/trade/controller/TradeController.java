@@ -17,6 +17,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 거래(Trade) 관련 REST API 컨트롤러
+ * 
+ * @author CryptoTradeManager
+ * @since 1.0.0
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/trades")
@@ -26,7 +32,11 @@ public class TradeController {
     private final TradeService tradeService;
     
     /**
-     * 거래 생성
+     * 새로운 거래 생성
+     * 
+     * @param userPrincipal 인증된 사용자 정보
+     * @param request 거래 생성 요청 DTO
+     * @return 생성된 거래 정보
      */
     @PostMapping
     public ResponseEntity<ApiResponse<TradeResponse>> createTrade(
@@ -42,6 +52,11 @@ public class TradeController {
     
     /**
      * 거래 수정
+     * 
+     * @param userPrincipal 인증된 사용자 정보
+     * @param tradeId 수정할 거래 ID
+     * @param request 거래 수정 요청 DTO
+     * @return 수정된 거래 정보
      */
     @PutMapping("/{tradeId}")
     public ResponseEntity<ApiResponse<TradeResponse>> updateTrade(
@@ -57,6 +72,10 @@ public class TradeController {
     
     /**
      * 거래 삭제
+     * 
+     * @param userPrincipal 인증된 사용자 정보
+     * @param tradeId 삭제할 거래 ID
+     * @return 삭제 완료 응답
      */
     @DeleteMapping("/{tradeId}")
     public ResponseEntity<ApiResponse<Void>> deleteTrade(
@@ -71,6 +90,10 @@ public class TradeController {
     
     /**
      * 거래 단건 조회
+     * 
+     * @param userPrincipal 인증된 사용자 정보
+     * @param tradeId 조회할 거래 ID
+     * @return 거래 상세 정보
      */
     @GetMapping("/{tradeId}")
     public ResponseEntity<ApiResponse<TradeResponse>> getTrade(
@@ -83,6 +106,13 @@ public class TradeController {
     
     /**
      * 거래 목록 조회 - 인증된 유저의 거래만 반환
+     * 
+     * @param userPrincipal 인증된 사용자 정보
+     * @param page 페이지 번호 (기본값: 0)
+     * @param size 페이지 크기 (기본값: 20)
+     * @param sortBy 정렬 기준 (기본값: entryTime)
+     * @param direction 정렬 방향 (기본값: DESC)
+     * @return 페이징된 거래 목록
      */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<TradeResponse>>> getTrades(
