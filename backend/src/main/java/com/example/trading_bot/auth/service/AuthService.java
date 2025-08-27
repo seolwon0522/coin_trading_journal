@@ -12,10 +12,12 @@ import com.example.trading_bot.auth.repository.UserRepository;
 import com.example.trading_bot.auth.util.TokenExtractor;
 import com.example.trading_bot.auth.util.TokenValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -63,6 +65,10 @@ public class AuthService {
     @Transactional
     public TokenResponse refreshToken(String authHeader) {
         String oldRefreshToken = tokenExtractor.extractBearerToken(authHeader);
+        
+        // 디버깅용 로그 추가
+        log.debug("Refresh token request - authHeader: {}", authHeader);
+        log.debug("Extracted refresh token: {}", oldRefreshToken);
         
         // 기존 refresh token으로 사용자 조회 및 검증
         User user = tokenValidator.validateRefreshTokenAndGetUser(oldRefreshToken);
