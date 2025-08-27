@@ -88,29 +88,37 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    /**
+     * OAuth2 사용자 처리 (로그인/회원가입)
+     * 기존 사용자는 프로필 업데이트, 신규 사용자는 생성
+     * 
+     * @param email 사용자 이메일
+     * @param name 사용자 이름
+     * @param profileImageUrl 프로필 이미지 URL
+     * @param providerType OAuth2 제공자 타입
+     * @param providerId OAuth2 제공자별 사용자 ID
+     * @return 로그인 응답 (토큰 포함)
+     */
     @Transactional
     public LoginResponse processOAuth2User(String email, String name, String profileImageUrl,
                                            ProviderType providerType, String providerId) {
-        User user = userRepository.findByProviderTypeAndProviderId(providerType, providerId)
-                .orElseGet(() -> createOAuth2User(email, name, profileImageUrl, providerType, providerId));
+        // 기존 사용자 조회 또는 신규 생성
+        User user = findOrCreateOAuth2User(providerType, providerId, email, name, profileImageUrl);
         
-        // 프로필 업데이트 (변경사항이 있을 경우만)
-        boolean updated = false;
-        if (name != null && !name.equals(user.getName())) {
-            user.updateName(name);
-            updated = true;
-        }
-        if (profileImageUrl != null && !profileImageUrl.equals(user.getProfileImageUrl())) {
-            user.updateProfileImageUrl(profileImageUrl);
-            updated = true;
-        }
-        if (updated) {
-            userRepository.save(user);
-        }
+        // 프로필 정보 업데이트 (필요한 경우)
+        updateUserProfileIfChanged(user, name, profileImageUrl);
         
+        // 토큰 생성 및 응답
         return generateTokenResponse(user);
     }
 
+    /**
+     * 사용자 ID로 조회
+     * 
+     * @param userId 사용자 ID
+     * @return 사용자 엔티티
+     * @throws AuthException 사용자를 찾을 수 없는 경우
+     */
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(AuthException::userNotFound);
@@ -118,6 +126,56 @@ public class AuthService {
 
     // === Private Helper Methods ===
     
+    /**
+     * OAuth2 사용자 조회 또는 생성
+     */
+    private User findOrCreateOAuth2User(ProviderType providerType, String providerId, 
+                                        String email, String name, String profileImageUrl) {
+        return userRepository.findByProviderTypeAndProviderId(providerType, providerId)
+                .orElseGet(() -> createOAuth2User(email, name, profileImageUrl, providerType, providerId));
+    }
+    
+    /**
+     * 사용자 프로필 변경사항 확인 및 업데이트
+     */
+    private void updateUserProfileIfChanged(User user, String name, String profileImageUrl) {
+        boolean hasChanges = false;
+        
+        // 이름 변경 확인
+        if (hasNameChanged(user, name)) {
+            user.updateName(name);
+            hasChanges = true;
+        }
+        
+        // 프로필 이미지 변경 확인
+        if (hasProfileImageChanged(user, profileImageUrl)) {
+            user.updateProfileImageUrl(profileImageUrl);
+            hasChanges = true;
+        }
+        
+        // 변경사항이 있을 경우에만 저장
+        if (hasChanges) {
+            userRepository.save(user);
+        }
+    }
+    
+    /**
+     * 이름 변경 여부 확인
+     */
+    private boolean hasNameChanged(User user, String newName) {
+        return newName != null && !newName.equals(user.getName());
+    }
+    
+    /**
+     * 프로필 이미지 변경 여부 확인
+     */
+    private boolean hasProfileImageChanged(User user, String newImageUrl) {
+        return newImageUrl != null && !newImageUrl.equals(user.getProfileImageUrl());
+    }
+    
+    /**
+     * 신규 OAuth2 사용자 생성
+     */
     private User createOAuth2User(String email, String name, String profileImageUrl,
                                   ProviderType providerType, String providerId) {
         User user = User.builder()

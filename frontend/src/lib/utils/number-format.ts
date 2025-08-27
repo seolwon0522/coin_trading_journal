@@ -1,6 +1,15 @@
 /**
  * 암호화폐 거래에서 사용하는 숫자 포맷팅 유틸리티
+ * 
+ * @module utils/number-format
+ * @description 숫자 포맷팅, 파싱, 통화 변환 관련 유틸리티 함수 모음
  */
+
+interface FormatOptions {
+  locale?: string;
+  maximumFractionDigits?: number;
+  minimumFractionDigits?: number;
+}
 
 /**
  * 숫자를 지수 표기법 없이 문자열로 변환
@@ -73,4 +82,68 @@ export function formatDisplayNumber(value: number | undefined | null, decimals: 
   const formatted = value.toFixed(decimals);
   // 불필요한 뒤쪽 0 제거
   return formatted.replace(/\.?0+$/, '');
+}
+
+/**
+ * 로케일 기반 숫자 포맷팅 (TradeForm에서 사용)
+ * 
+ * @param value 포맷할 숫자
+ * @param options 포맷 옵션
+ * @returns 포맷된 문자열
+ */
+export function formatNumber(value: number | undefined, options?: FormatOptions): string {
+  if (!value && value !== 0) return '';
+  
+  const defaultOptions: FormatOptions = {
+    locale: 'ko-KR',
+    maximumFractionDigits: 8,
+    ...options
+  };
+  
+  return new Intl.NumberFormat(defaultOptions.locale, {
+    maximumFractionDigits: defaultOptions.maximumFractionDigits,
+    minimumFractionDigits: defaultOptions.minimumFractionDigits,
+  }).format(value);
+}
+
+/**
+ * 포맷된 문자열을 숫자로 파싱 (콤마 제거)
+ * 
+ * @param value 파싱할 문자열
+ * @returns 파싱된 숫자 또는 0
+ */
+export function parseNumber(value: string): number {
+  if (!value) return 0;
+  // 콤마 제거 후 파싱
+  return parseFloat(value.replace(/,/g, '')) || 0;
+}
+
+/**
+ * KRW 통화 포맷팅
+ * 
+ * @param value 포맷할 원화 금액
+ * @returns 포맷된 원화 문자열
+ */
+export function formatKRW(value: number): string {
+  return new Intl.NumberFormat('ko-KR', {
+    style: 'currency',
+    currency: 'KRW',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/**
+ * USD 통화 포맷팅
+ * 
+ * @param value 포맷할 달러 금액
+ * @param decimals 소수점 자릿수 (기본값: 2)
+ * @returns 포맷된 달러 문자열
+ */
+export function formatUSD(value: number, decimals: number = 2): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
 }
