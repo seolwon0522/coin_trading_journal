@@ -90,6 +90,16 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 필수 필드 검증
+    if (!formData.symbol || !formData.entryPrice || !formData.entryQuantity || !formData.entryTime) {
+      toast.error('필수 항목을 모두 입력해주세요.', {
+        icon: <AlertCircle className="h-4 w-4" />,
+        description: '심볼, 진입가격, 진입수량, 진입시간은 필수입니다.',
+      });
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -98,9 +108,11 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
         icon: <CheckCircle2 className="h-4 w-4" />,
       });
       onCancel(); // 성공 시 폼 닫기
-    } catch {
+    } catch (error) {
+      console.error('Trade submission error:', error);
       toast.error('거래 저장에 실패했습니다.', {
         icon: <AlertCircle className="h-4 w-4" />,
+        description: error instanceof Error ? error.message : '입력값을 확인해주세요.',
       });
     } finally {
       setLoading(false);

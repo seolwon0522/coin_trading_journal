@@ -55,8 +55,7 @@ export async function GET(request: NextRequest) {
       filteredTrades = filteredTrades.filter((t) =>
         t.symbol.toLowerCase().includes(symbol.toLowerCase())
       );
-    if (type) filteredTrades = filteredTrades.filter((t) => t.type === type);
-    if (status) filteredTrades = filteredTrades.filter((t) => t.status === status);
+    if (type) filteredTrades = filteredTrades.filter((t) => t.side === (type === 'buy' ? 'BUY' : 'SELL'));
 
     filteredTrades.sort(
       (a, b) => new Date(b.entryTime).getTime() - new Date(a.entryTime).getTime()
@@ -118,33 +117,23 @@ export async function POST(request: NextRequest) {
 
     // Fallback: local compute + in-memory store
     const newTrade: Trade = {
-      id: Date.now().toString(), // 실제로는 UUID 사용 권장
+      id: Date.now(), // Use numeric ID
       symbol: validatedData.symbol,
-      type: validatedData.type,
-      tradingType: validatedData.tradingType,
-      quantity: validatedData.quantity,
+      side: validatedData.side || 'BUY',
       entryPrice: validatedData.entryPrice,
+      entryQuantity: validatedData.entryQuantity,
+      entryTime: new Date(validatedData.entryTime).toISOString(),
       exitPrice: validatedData.exitPrice,
-      entryTime: new Date(validatedData.entryTime),
-      exitTime: validatedData.exitTime ? new Date(validatedData.exitTime) : undefined,
-      memo: validatedData.memo,
-      stopLoss: validatedData.stopLoss,
-      indicators: validatedData.indicators,
-      status: validatedData.exitPrice ? 'closed' : 'open',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      exitQuantity: validatedData.exitQuantity,
+      exitTime: validatedData.exitTime ? new Date(validatedData.exitTime).toISOString() : undefined,
+      notes: validatedData.notes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    newTrade.pnl = calculatePnL(newTrade);
-
-    const strategyScore = computeStrategyScore(newTrade, validatedData.indicators);
-    if (strategyScore) newTrade.strategyScore = strategyScore;
-
-    const forbiddenPoints = computeForbiddenPoints(newTrade, trades, 100000);
-    newTrade.forbiddenPenalty = TOTAL_FORBIDDEN_POINTS - forbiddenPoints;
-
-    const base = strategyScore?.totalScore ?? 0;
-    newTrade.finalScore = base + forbiddenPoints;
+    const pnlData = calculatePnL(newTrade);
+    newTrade.pnl = pnlData.pnl;
+    newTrade.pnlPercent = pnlData.pnlPercent;
 
     trades.unshift(newTrade);
 

@@ -121,3 +121,8 @@ pids
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# CCPM (Claude Code PM)
+.claude/epics/
+.claude/prds/*.tmp
+.claude/context/*.cache

@@ -40,32 +40,26 @@ export async function PUT(
       }
     }
 
-    const index = trades.findIndex((t) => t.id === id);
+    const index = trades.findIndex((t) => t.id === parseInt(id));
     if (index === -1)
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
 
     const existing = trades[index];
-    const updated = {
+    const updated: any = {
       ...existing,
       ...validatedData,
       entryTime: validatedData.entryTime
-        ? new Date(validatedData.entryTime)
+        ? new Date(validatedData.entryTime).toISOString()
         : existing.entryTime,
       exitTime: validatedData.exitTime
-        ? new Date(validatedData.exitTime)
+        ? new Date(validatedData.exitTime).toISOString()
         : existing.exitTime,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
 
-    updated.pnl = calculatePnL(updated);
-    updated.status = updated.exitPrice ? 'closed' : existing.status;
-
-    const strategyScore = computeStrategyScore(updated, updated.indicators);
-    if (strategyScore) updated.strategyScore = strategyScore;
-    const forbiddenPoints = computeForbiddenPoints(updated, trades, 100000);
-    updated.forbiddenPenalty = TOTAL_FORBIDDEN_POINTS - forbiddenPoints;
-    const base = strategyScore?.totalScore ?? 0;
-    updated.finalScore = base + forbiddenPoints;
+    const pnlData = calculatePnL(updated);
+    updated.pnl = pnlData.pnl;
+    updated.pnlPercent = pnlData.pnlPercent;
 
     trades[index] = updated;
     return NextResponse.json(updated);
@@ -105,7 +99,7 @@ export async function DELETE(
       }
     }
 
-    const index = trades.findIndex((t) => t.id === id);
+    const index = trades.findIndex((t) => t.id === parseInt(id));
     if (index === -1)
       return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
 

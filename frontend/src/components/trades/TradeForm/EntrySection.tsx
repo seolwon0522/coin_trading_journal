@@ -3,14 +3,10 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateTimeInput } from '@/components/ui/datetime-input';
 import { formatNumber, parseNumber } from '@/lib/utils/number-format';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { CalendarIcon, Clock, TrendingUp, DollarSign, Hash } from 'lucide-react';
+import { TrendingUp, DollarSign, Hash } from 'lucide-react';
+import { TradeRequest } from '@/types/trade';
 
 /**
  * 진입 정보 섹션 컴포넌트
@@ -31,7 +27,7 @@ interface EntrySectionProps {
   entryTime: string;
   entryTotal: number;
   formatCurrency: (value: number) => string;
-  onFieldChange: (field: string, value: any) => void;
+  onFieldChange: (field: keyof TradeRequest | string, value: any) => void;
   onSetCurrentTime: () => void;
 }
 
@@ -91,47 +87,12 @@ export function EntrySection({
         </div>
 
         {/* 진입 시간 */}
-        <div className="space-y-1">
-          <Label htmlFor="entryTime" className="text-xs">
-            <CalendarIcon className="h-3 w-3 inline mr-1" />
-            진입 시간 *
-          </Label>
-          <div className="flex gap-1">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left font-normal h-8 text-sm",
-                    !entryTime && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-3 w-3" />
-                  {entryTime
-                    ? format(new Date(entryTime), "yy.MM.dd HH:mm", { locale: ko })
-                    : "날짜 선택"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={entryTime ? new Date(entryTime) : undefined}
-                  onSelect={(date) => date && onFieldChange('entryTime', date.toISOString())}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onSetCurrentTime}
-            >
-              <Clock className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+        <DateTimeInput
+          value={entryTime}
+          onChange={(value) => onFieldChange('entryTime', value)}
+          label="진입 시간"
+          required
+        />
 
         {/* 진입 총액 */}
         {entryTotal > 0 && (

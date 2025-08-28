@@ -170,6 +170,7 @@ export function BinanceSymbolSelector({
   return (
     <>
       <Button
+        type="button"
         variant="outline"
         onClick={() => setOpen(true)}
         className={`justify-between ${className}`}

@@ -24,12 +24,14 @@ export interface AuthUser {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  expiresIn: number;  // Access token 만료 시간 (초 단위)
   user: AuthUser;
 }
 
 export interface TokenResponse {
   accessToken: string;
   refreshToken: string;
+  expiresIn: number;  // Access token 만료 시간 (초 단위)
 }
 
 // 요청 DTO 타입

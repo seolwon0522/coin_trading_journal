@@ -37,8 +37,8 @@ export function useExchangeRate() {
           const cacheTime = new Date(parsed.lastUpdate).getTime();
           const now = new Date().getTime();
           
-          // 1시간 이내의 캐시는 그대로 사용
-          if (now - cacheTime < 3600000) {
+          // 30분 이내의 캐시는 그대로 사용 (업데이트 주기와 일치)
+          if (now - cacheTime < 30 * 60 * 1000) {
             setExchangeRate(parsed);
             setLoading(false);
             return;
