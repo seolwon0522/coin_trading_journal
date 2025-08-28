@@ -11,78 +11,63 @@ export const createTradeSchema = z.object({
     .min(1, '종목명을 입력해주세요')
     .max(20, '종목명은 20자 이하로 입력해주세요'),
 
-  type: z.enum(['SPOT', 'FUTURES', 'MARGIN'], {
-    errorMap: () => ({ message: '거래 타입을 선택해주세요' }),
-  }),
-
   side: z.enum(['BUY', 'SELL'], {
     errorMap: () => ({ message: '매수/매도를 선택해주세요' }),
   }),
 
-  quantity: z
+  entryPrice: z
     .number({
-      required_error: '수량을 입력해주세요',
+      required_error: '진입 가격을 입력해주세요',
       invalid_type_error: '올바른 숫자를 입력해주세요',
     })
-    .positive('수량은 0보다 커야 합니다')
+    .positive('진입 가격은 0보다 커야 합니다'),
+
+  entryQuantity: z
+    .number({
+      required_error: '진입 수량을 입력해주세요',
+      invalid_type_error: '올바른 숫자를 입력해주세요',
+    })
+    .positive('진입 수량은 0보다 커야 합니다')
     .max(1000000, '수량이 너무 큽니다'),
 
-  price: z
-    .number({
-      required_error: '가격을 입력해주세요',
-      invalid_type_error: '올바른 숫자를 입력해주세요',
-    })
-    .positive('가격은 0보다 커야 합니다'),
-
-  executedAt: z
+  entryTime: z
     .string()
-    .min(1, '체결 시간을 선택해주세요'),
+    .min(1, '진입 시간을 선택해주세요'),
 
   // ===== 선택 필드 =====
-  tradingStrategy: z
-    .enum(['BREAKOUT', 'TREND', 'COUNTER_TREND', 'SCALPING', 'SWING', 'POSITION'], {
-      errorMap: () => ({ message: '거래 전략을 선택해주세요' }),
-    })
-    .optional(),
-
-  fee: z
+  exitPrice: z
     .number({
       invalid_type_error: '올바른 숫자를 입력해주세요',
     })
-    .min(0, '수수료는 0 이상이어야 합니다')
+    .positive('청산 가격은 0보다 커야 합니다')
     .optional(),
 
-  feeAsset: z
-    .string()
-    .max(20, '수수료 자산은 20자 이하로 입력해주세요')
+  exitQuantity: z
+    .number({
+      invalid_type_error: '올바른 숫자를 입력해주세요',
+    })
+    .positive('청산 수량은 0보다 커야 합니다')
+    .max(1000000, '수량이 너무 큽니다')
     .optional(),
+
+  exitTime: z.string().optional(),
 
   notes: z
     .string()
     .max(1000, '메모는 1000자 이하로 입력해주세요')
     .optional(),
 
-  strategy: z
-    .string()
-    .max(50, '전략명은 50자 이하로 입력해주세요')
-    .optional(),
-
-  stopLoss: z
-    .number({
-      invalid_type_error: '올바른 숫자를 입력해주세요',
-    })
-    .positive('손절가는 0보다 커야 합니다')
-    .optional(),
-
-  takeProfit: z
-    .number({
-      invalid_type_error: '올바른 숫자를 입력해주세요',
-    })
-    .positive('익절가는 0보다 커야 합니다')
-    .optional(),
-
-  entryTime: z.string().optional(),
-  exitTime: z.string().optional(),
+  // Legacy fields for backward compatibility (will be removed)
+  type: z.enum(['SPOT', 'FUTURES', 'MARGIN']).optional(),
+  quantity: z.number().optional(),
+  price: z.number().optional(),
+  executedAt: z.string().optional(),
+  tradingStrategy: z.enum(['BREAKOUT', 'TREND', 'COUNTER_TREND', 'SCALPING', 'SWING', 'POSITION']).optional(),
+  fee: z.number().optional(),
+  feeAsset: z.string().optional(),
+  strategy: z.string().optional(),
+  stopLoss: z.number().optional(),
+  takeProfit: z.number().optional(),
 
   // 전략 채점 입력 인디케이터 (프론트엔드 전용)
   indicators: z

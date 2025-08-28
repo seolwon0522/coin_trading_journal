@@ -189,11 +189,11 @@ export default function Dashboard() {
   // 간단한 통계 계산
   const totalTrades = totalElements || 0;
   const recentTrades = trades || [];
-  const totalPnL = 0; // TODO: 실제 손익 계산 로직 추가
-  const openPositions = 0; // TODO: 실제 오픈 포지션 계산
-  const totalViolations = 0; // TODO: 위반 계산 로직 추가
-  const totalPenaltyScore = 0;
-  const riskScore = 100;
+  const totalPnL: number = 0; // TODO: 실제 손익 계산 로직 추가
+  const openPositions: number = 0; // TODO: 실제 오픈 포지션 계산
+  const totalViolations: number = 0; // TODO: 위반 계산 로직 추가
+  const totalPenaltyScore: number = 0;
+  const riskScore: number = 100;
 
   // 토큰 갱신 테스트 함수 (임시)
   const testTokenRefresh = async () => {

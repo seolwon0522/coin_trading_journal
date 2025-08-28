@@ -56,6 +56,13 @@ export function useTrades() {
    * @returns 생성된 거래 객체
    */
   const createTrade = async (data: TradeRequest) => {
+    // 필수 필드 검증 (프론트엔드 레벨)
+    if (!data.symbol || !data.entryPrice || !data.entryQuantity || !data.entryTime) {
+      const error = new Error('필수 입력값을 확인해주세요');
+      toast.error('필수 항목을 모두 입력해주세요');
+      throw error;
+    }
+
     try {
       const newTrade = await tradeApi.create(data);
       await loadTrades(page); // 목록 새로고침
@@ -63,7 +70,13 @@ export function useTrades() {
       return newTrade;
     } catch (err: unknown) {
       const message = extractErrorMessage(err);
-      toast.error(message);
+      console.error('Trade creation error:', err);
+      // 에러 메시지 개선
+      if (message.includes('입력값 검증') || message.includes('validation')) {
+        toast.error('입력값을 확인해주세요. 모든 필수 항목을 올바르게 입력했는지 확인하세요.');
+      } else {
+        toast.error(message);
+      }
       throw err;
     }
   };

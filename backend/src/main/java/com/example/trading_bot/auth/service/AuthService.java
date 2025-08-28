@@ -2,6 +2,7 @@ package com.example.trading_bot.auth.service;
 
 import com.example.trading_bot.auth.dto.LoginResponse;
 import com.example.trading_bot.auth.dto.TokenResponse;
+import com.example.trading_bot.auth.dto.UserDTO;
 import com.example.trading_bot.auth.entity.ProviderType;
 import com.example.trading_bot.auth.entity.Role;
 import com.example.trading_bot.auth.entity.User;
@@ -215,7 +216,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .expiresIn(accessTokenValidityInSeconds)
-                .user(user)
+                .user(UserDTO.from(user))
                 .build();
     }
 }

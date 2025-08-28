@@ -4,6 +4,7 @@ import com.example.trading_bot.auth.dto.LoginRequest;
 import com.example.trading_bot.auth.dto.LoginResponse;
 import com.example.trading_bot.auth.dto.RegisterRequest;
 import com.example.trading_bot.auth.dto.TokenResponse;
+import com.example.trading_bot.auth.dto.UserDTO;
 import com.example.trading_bot.auth.entity.User;
 import com.example.trading_bot.auth.service.AuthService;
 import com.example.trading_bot.common.dto.ApiResponse;
@@ -39,10 +40,10 @@ public class AuthController {
      * @return 생성된 사용자 정보
      */
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<User>> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest request) {
         User user = authService.registerLocalUser(request.getEmail(), request.getPassword(), request.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(user, "회원가입이 완료되었습니다."));
+                .body(ApiResponse.success(UserDTO.from(user), "회원가입이 완료되었습니다."));
     }
 
     /**
@@ -84,10 +85,10 @@ public class AuthController {
      * @return 현재 인증된 사용자 정보
      */
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<User>> getCurrentUser(
+    public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
         User user = authService.getCurrentUserFromToken(authHeader);
-        return ResponseEntity.ok(ApiResponse.success(user, "사용자 정보를 조회했습니다."));
+        return ResponseEntity.ok(ApiResponse.success(UserDTO.from(user), "사용자 정보를 조회했습니다."));
     }
 
     /**

@@ -3,15 +3,11 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateTimeInput } from '@/components/ui/datetime-input';
 import { formatNumber, parseNumber } from '@/lib/utils/number-format';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { CalendarIcon, Clock, TrendingDown, DollarSign, Hash } from 'lucide-react';
+import { TrendingDown, DollarSign, Hash } from 'lucide-react';
 import { ProfitDisplay } from './ProfitDisplay';
+import { TradeRequest } from '@/types/trade';
 
 /**
  * 청산 정보 섹션 컴포넌트
@@ -36,7 +32,7 @@ interface ExitSectionProps {
   profit: number;
   profitPercent: number;
   formatCurrency: (value: number) => string;
-  onFieldChange: (field: string, value: any) => void;
+  onFieldChange: (field: keyof TradeRequest | string, value: any) => void;
   onSetCurrentTime: () => void;
 }
 
@@ -97,47 +93,11 @@ export function ExitSection({
         </div>
 
         {/* 청산 시간 */}
-        <div className="space-y-1">
-          <Label htmlFor="exitTime" className="text-xs">
-            <CalendarIcon className="h-3 w-3 inline mr-1" />
-            청산 시간
-          </Label>
-          <div className="flex gap-1">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left font-normal h-8 text-sm",
-                    !exitTime && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-3 w-3" />
-                  {exitTime
-                    ? format(new Date(exitTime), "yy.MM.dd HH:mm", { locale: ko })
-                    : "날짜 선택"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={exitTime ? new Date(exitTime) : undefined}
-                  onSelect={(date) => onFieldChange('exitTime', date ? date.toISOString() : undefined)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onSetCurrentTime}
-            >
-              <Clock className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+        <DateTimeInput
+          value={exitTime || ''}
+          onChange={(value) => onFieldChange('exitTime', value)}
+          label="청산 시간"
+        />
 
         {/* 수익 계산 */}
         {exitTotal > 0 && (
