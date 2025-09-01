@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { User, Database, Keyboard, Bell } from 'lucide-react';
+import { User, Database, Key, Bell } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { ApiKeyManager } from '@/components/api-keys/ApiKeyManager';
 
 export default function SettingsPage() {
   const [nickname, setNickname] = useState('');
@@ -216,49 +217,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* 바이낸스 API 키 설정 */}
-        <section className="rounded-lg border bg-card text-card-foreground shadow-sm">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Keyboard className="h-5 w-5" /> 바이낸스 API 키
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              바이낸스 API 키를 입력하여 거래내역을 조회합니다.
-            </p>
-            <p className="text-sm text-blue-600 mt-2 bg-blue-50 p-3 rounded-md border border-blue-200">
-              🔒 <strong>보안 안내:</strong> 입력하신 API 키와 시크릿 키는 암호화되어 안전하게
-              저장되므로 걱정하지 마세요.
-            </p>
-          </div>
-
-          <div className="p-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="binance-api-key">API 키</Label>
-              <Input
-                id="binance-api-key"
-                type="password"
-                value={binanceApiKey}
-                onChange={(e) => setBinanceApiKey(e.target.value)}
-                placeholder="바이낸스 API 키를 입력하세요"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="binance-secret-key">시크릿 키</Label>
-              <Input
-                id="binance-secret-key"
-                type="password"
-                value={binanceSecretKey}
-                onChange={(e) => setBinanceSecretKey(e.target.value)}
-                placeholder="바이낸스 시크릿 키를 입력하세요"
-              />
-            </div>
-
-            <Button onClick={handleBinanceApiSave} className="mt-4">
-              API 키 저장
-            </Button>
-          </div>
-        </section>
+        {/* API 키 관리 */}
+        <ApiKeyManager />
       </div>
     </div>
   );

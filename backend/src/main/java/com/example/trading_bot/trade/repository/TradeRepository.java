@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,4 +20,11 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     
     // 사용자와 ID로 존재 확인
     boolean existsByIdAndUserId(Long id, Long userId);
+    
+    // Binance API 동기화 관련 메서드
+    boolean existsByUserIdAndExchangeTradeId(Long userId, String exchangeTradeId);
+    
+    List<Trade> findByUserIdAndExchangeIsNull(Long userId);
+    
+    List<Trade> findByUserIdAndExchangeNotNull(Long userId);
 }

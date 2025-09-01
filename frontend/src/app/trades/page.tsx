@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, BarChart3, TrendingUp, DollarSign, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { TradeForm } from '@/components/trades/TradeForm/index';
 import { TradesTable } from '@/components/trades/TradesTable';
+import { TradeSync } from '@/components/trades/TradeSync';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ExchangeRateBadge } from '@/components/ui/exchange-rate-badge';
 import {
@@ -18,6 +19,7 @@ import { useTrades } from '@/hooks/use-trades';
 
 export default function TradesPage() {
   const [showForm, setShowForm] = useState(false);
+  const [showSync, setShowSync] = useState(false);
   const [currency, setCurrency] = useState<'USD' | 'KRW'>('USD');
   const router = useRouter();
   const { createTrade } = useTrades();
@@ -81,6 +83,9 @@ export default function TradesPage() {
 
       {/* 메인 콘텐츠 */}
       <div className="p-6 space-y-6">
+        {/* 거래 동기화 섹션 */}
+        <TradeSync />
+        
         {/* 거래 테이블 */}
         <TradesTable currency={currency} />
       </div>

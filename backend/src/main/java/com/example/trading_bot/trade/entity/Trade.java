@@ -58,4 +58,26 @@ public class Trade extends BaseTimeEntity {
     
     @Column(columnDefinition = "TEXT")
     private String notes;
+    
+    // Binance API 동기화 관련 필드
+    @Column(length = 50)
+    private String exchange; // "BINANCE", "UPBIT" 등
+    
+    @Column(name = "exchange_trade_id", length = 100)
+    private String exchangeTradeId; // 거래소의 거래 ID (중복 체크용)
+    
+    @Column(precision = 20, scale = 8)
+    private BigDecimal commission; // 수수료
+    
+    @Column(length = 10)
+    private String commissionAsset; // 수수료 자산 (BTC, USDT 등)
+    
+    @Column
+    private Boolean isMaker; // 메이커 여부
+    
+    @Column(precision = 20, scale = 8)
+    private BigDecimal quoteQuantity; // Quote 자산 수량 (USDT 등)
+    
+    @Column(precision = 20, scale = 8)
+    private BigDecimal realizedPnl; // 실현 손익 (Binance 제공)
 }
