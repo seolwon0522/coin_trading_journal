@@ -2,6 +2,11 @@ spring:
   application:
     name: trading-bot
 
+  # Web 설정 - API 경로가 정적 리소스로 처리되지 않도록 설정
+  mvc:
+    throw-exception-if-no-handler-found: true  # 핸들러 없을 때 예외 발생
+    static-path-pattern: /static/**  # 정적 리소스는 /static/** 경로에서만 제공
+
   datasource:
     url: jdbc:postgresql://localhost:5432/trading_bot
     username: postgres
@@ -18,7 +23,7 @@ spring:
 
 # JWT 설정
 jwt:
-  secret: your-secret-key-here-make-it-long-enough-for-production-use-minimum-32-characters
+  secret: ${JWT_SECRET:ThisIsAVerySecureJWTSecretKeyForDevelopmentUse1234567890AbcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ} # 개발용 고정 JWT 키 (108자)
   access-token-validity-in-seconds: 1800
   refresh-token-validity-in-seconds: 604800
 
@@ -32,7 +37,7 @@ oauth2:
 # 암호화 설정
 crypto:
   secret:
-    key: ${CRYPTO_SECRET_KEY:} # 환경 변수로 설정, 없으면 자동 생성
+    key: ${CRYPTO_SECRET_KEY:3saXgsXn/tNN4CwUzOHLfy23f39UIT/W6uXD5N2HxeY=} # 개발용 고정 AES-256 키 (32바이트)
 
 # Binance API 설정
 binance:

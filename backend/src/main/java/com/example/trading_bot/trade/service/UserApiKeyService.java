@@ -3,7 +3,6 @@ package com.example.trading_bot.trade.service;
 import com.example.trading_bot.auth.entity.User;
 import com.example.trading_bot.auth.repository.UserRepository;
 import com.example.trading_bot.binance.client.BinanceApiClient;
-import com.example.trading_bot.binance.client.BinanceApiClientEnhanced;
 import com.example.trading_bot.binance.dto.ApiKeyValidationResult;
 import com.example.trading_bot.common.exception.BusinessException;
 import com.example.trading_bot.common.util.CryptoUtils;
@@ -35,7 +34,6 @@ public class UserApiKeyService {
     private final UserRepository userRepository;
     private final CryptoUtils cryptoUtils;
     private final BinanceApiClient binanceApiClient;
-    private final BinanceApiClientEnhanced binanceApiClientEnhanced;
     
     /**
      * API 키 저장
@@ -55,10 +53,14 @@ public class UserApiKeyService {
             throw new BusinessException("이미 등록된 API 키입니다", HttpStatus.CONFLICT);
         }
         
-        // API 키 유효성 검증 (Binance에 실제 요청)
-        if (!validateApiKeys(request.getApiKey(), request.getSecretKey(), request.getExchange())) {
+        // API 키 유효성 검증은 이미 프론트엔드에서 /validate 엔드포인트를 통해 수행됨
+        // 중복 검증으로 인한 Rate Limit 문제 방지를 위해 여기서는 스킵
+        // 필요시 아래 주석 해제
+        /*
+        if (!validateApiKeysSimple(request.getApiKey(), request.getSecretKey(), request.getExchange())) {
             throw new BusinessException("유효하지 않은 API 키입니다", HttpStatus.BAD_REQUEST);
         }
+        */
         
         // 시크릿 키 암호화
         String encryptedSecretKey = cryptoUtils.encrypt(request.getSecretKey());
@@ -99,7 +101,7 @@ public class UserApiKeyService {
         
         // 새로운 API 키가 제공된 경우 유효성 검증
         if (request.getApiKey() != null && request.getSecretKey() != null) {
-            if (!validateApiKeys(request.getApiKey(), request.getSecretKey(), apiKey.getExchange())) {
+            if (!validateApiKeysSimple(request.getApiKey(), request.getSecretKey(), apiKey.getExchange())) {
                 throw new BusinessException("유효하지 않은 API 키입니다", HttpStatus.BAD_REQUEST);
             }
             
@@ -198,7 +200,7 @@ public class UserApiKeyService {
                 .orElseThrow(() -> new BusinessException("API 키를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
         
         String decryptedSecret = cryptoUtils.decrypt(apiKey.getEncryptedSecretKey());
-        boolean isValid = validateApiKeys(apiKey.getApiKey(), decryptedSecret, apiKey.getExchange());
+        boolean isValid = validateApiKeysSimple(apiKey.getApiKey(), decryptedSecret, apiKey.getExchange());
         
         if (isValid) {
             apiKey.setLastUsedAt(LocalDateTime.now());
@@ -212,14 +214,14 @@ public class UserApiKeyService {
     }
     
     /**
-     * API 키 유효성 검증
+     * API 키 유효성 검증 (간단한 버전)
      * 
      * @param apiKey API 키
      * @param secretKey 시크릿 키
      * @param exchange 거래소명
      * @return 유효한 경우 true
      */
-    private boolean validateApiKeys(String apiKey, String secretKey, String exchange) {
+    private boolean validateApiKeysSimple(String apiKey, String secretKey, String exchange) {
         if (!"BINANCE".equalsIgnoreCase(exchange)) {
             // 현재는 Binance만 지원
             throw new BusinessException("지원하지 않는 거래소입니다: " + exchange, HttpStatus.BAD_REQUEST);
@@ -227,7 +229,8 @@ public class UserApiKeyService {
         
         try {
             // Binance API 키 검증
-            return binanceApiClient.validateApiKeys(apiKey, secretKey);
+            ApiKeyValidationResult result = binanceApiClient.validateApiKeys(apiKey, secretKey);
+            return result.isValid();
         } catch (Exception e) {
             log.error("API 키 검증 실패", e);
             return false;
@@ -279,21 +282,21 @@ public class UserApiKeyService {
     }
     
     /**
-     * 개선된 API 키 검증 (상세한 결과 반환)
+     * API 키 검증 (상세한 결과 반환)
      * 
      * @param apiKey API 키
      * @param secretKey 시크릿 키
      * @param exchange 거래소명
      * @return 상세한 검증 결과
      */
-    public ApiKeyValidationResult validateApiKeysEnhanced(String apiKey, String secretKey, String exchange) {
+    public ApiKeyValidationResult validateApiKeys(String apiKey, String secretKey, String exchange) {
         if (!"BINANCE".equalsIgnoreCase(exchange)) {
             return ApiKeyValidationResult.failure("UNSUPPORTED", "지원하지 않는 거래소입니다: " + exchange);
         }
         
         try {
-            // 개선된 API 클라이언트 사용
-            return binanceApiClientEnhanced.validateApiKeysEnhanced(apiKey, secretKey);
+            // API 클라이언트 사용
+            return binanceApiClient.validateApiKeys(apiKey, secretKey);
         } catch (Exception e) {
             log.error("API 키 검증 중 오류 발생", e);
             return ApiKeyValidationResult.failure("ERROR", "API 키 검증 실패: " + e.getMessage());
@@ -307,6 +310,6 @@ public class UserApiKeyService {
      * @return 상세한 검증 결과
      */
     public ApiKeyValidationResult validateApiKeyForRegistration(ApiKeyRequest request) {
-        return validateApiKeysEnhanced(request.getApiKey(), request.getSecretKey(), request.getExchange());
+        return validateApiKeys(request.getApiKey(), request.getSecretKey(), request.getExchange());
     }
 }

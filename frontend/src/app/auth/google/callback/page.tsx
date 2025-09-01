@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/providers/auth-provider';
 import { authStorage } from '@/lib/auth-storage';
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const params = useSearchParams();
   const router = useRouter();
   const { oauth2Login } = useAuth();
@@ -60,4 +60,18 @@ export default function GoogleCallbackPage() {
   );
 }
 
-
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-6">
+          <div className="w-full max-w-sm bg-card border rounded-lg p-6 text-center">
+            로딩 중...
+          </div>
+        </div>
+      }
+    >
+      <GoogleCallbackContent />
+    </Suspense>
+  );
+}

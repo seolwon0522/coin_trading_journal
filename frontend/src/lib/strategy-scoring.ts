@@ -107,28 +107,20 @@ export function scoreBreakoutStrategy(
   });
 
   // 3) 손실 제한 (손절폭 비율 낮을수록 만점)
+  // Trade 타입에 stopLoss 필드가 없으므로 indicators의 stopLossWithinLimit만 사용
   const pullbackMax = maxPoints(BREAKOUT_WEIGHTS.pullback_control);
   let pullbackRatio = 0;
   let pullbackScore = 0;
-  const within =
-    indicators.stopLossWithinLimit === true ||
-    (trade.stopLoss !== undefined &&
-      Math.abs(trade.entryPrice - trade.stopLoss) / trade.entryPrice <= 0.02);
-  if (trade.stopLoss !== undefined) {
-    const slRatio = Math.abs(trade.entryPrice - trade.stopLoss) / trade.entryPrice; // 0~
-    pullbackRatio = clamp(0.02 / Math.max(slRatio, 0.0001), 0, 1); // 2%면 1.0, 3%면 ~0.66
-    pullbackScore = scoreByThresholds(
-      1 - slRatio,
-      [
-        [1 - 0.02, pullbackMax],
-        [1 - 0.025, Math.round(pullbackMax * 0.8)],
-        [1 - 0.03, Math.round(pullbackMax * 0.6)],
-      ],
-      within ? Math.round(pullbackMax * 0.5) : 0
-    );
-  } else if (within) {
+  const within = indicators.stopLossWithinLimit === true;
+  
+  if (within) {
+    // stopLossWithinLimit가 true면 리스크 관리가 잘 되었다고 가정
     pullbackRatio = 1;
-    pullbackScore = pullbackMax * 1;
+    pullbackScore = pullbackMax;
+  } else {
+    // stopLossWithinLimit 정보가 없으면 중간 점수
+    pullbackRatio = 0.5;
+    pullbackScore = Math.round(pullbackMax * 0.5);
   }
   crits.push({
     code: 'pullback_control',
@@ -144,14 +136,22 @@ export function scoreBreakoutStrategy(
     0,
     TSP_INTERNAL
   );
-  return { strategy: 'breakout', totalScore, criteria: crits };
+  const maxPossibleScore = TSP_INTERNAL;
+  const scorePercentage = (totalScore / maxPossibleScore) * 100;
+  return { 
+    strategy: 'breakout', 
+    totalScore, 
+    maxPossibleScore,
+    scorePercentage,
+    criteria: crits 
+  };
 }
 
 export function scoreTrendStrategy(trade: Trade, indicators: TradeIndicators): StrategyScoreResult {
   const crits: StrategyCriterionScore[] = [];
 
   const alignMax = maxPoints(0.4);
-  const expected = trade.type === 'buy' ? 'up' : 'down';
+  const expected = trade.side === 'BUY' ? 'up' : 'down';
   const aligned = indicators.htfTrend === expected ? 1 : 0;
   crits.push({
     code: 'htf_alignment',
@@ -189,7 +189,15 @@ export function scoreTrendStrategy(trade: Trade, indicators: TradeIndicators): S
     0,
     TSP_INTERNAL
   );
-  return { strategy: 'trend', totalScore, criteria: crits };
+  const maxPossibleScore = TSP_INTERNAL;
+  const scorePercentage = (totalScore / maxPossibleScore) * 100;
+  return { 
+    strategy: 'trend', 
+    totalScore, 
+    maxPossibleScore,
+    scorePercentage,
+    criteria: crits 
+  };
 }
 
 export function scoreCounterTrendStrategy(
@@ -238,16 +246,28 @@ export function scoreCounterTrendStrategy(
     0,
     TSP_INTERNAL
   );
-  return { strategy: 'counter_trend', totalScore, criteria: crits };
+  const maxPossibleScore = TSP_INTERNAL;
+  const scorePercentage = (totalScore / maxPossibleScore) * 100;
+  return { 
+    strategy: 'counter_trend', 
+    totalScore, 
+    maxPossibleScore,
+    scorePercentage,
+    criteria: crits 
+  };
 }
 
 export function computeStrategyScore(
   trade: Trade,
-  indicators: TradeIndicators | undefined
+  indicators: TradeIndicators | undefined,
+  strategyType?: 'breakout' | 'trend' | 'counter_trend'
 ): StrategyScoreResult | null {
   if (!indicators) return null;
 
-  switch (trade.tradingType) {
+  // Since Trade doesn't have tradingType, use the optional parameter or default to breakout
+  const strategy = strategyType || 'breakout';
+  
+  switch (strategy) {
     case 'breakout':
       return scoreBreakoutStrategy(trade, indicators);
     case 'trend':

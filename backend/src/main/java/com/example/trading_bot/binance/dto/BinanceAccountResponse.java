@@ -48,9 +48,9 @@ public class BinanceAccountResponse {
         private String asset;
         
         @JsonProperty("free")
-        private BigDecimal free;
+        private String free;
         
         @JsonProperty("locked")
-        private BigDecimal locked;
+        private String locked;
     }
 }

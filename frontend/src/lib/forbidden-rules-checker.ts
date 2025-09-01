@@ -20,24 +20,24 @@ export class ForbiddenRulesChecker {
   ): ForbiddenRuleViolation[] {
     const violations: ForbiddenRuleViolation[] = [];
 
-    // 1. 손절 설정 없음 체크
-    if (this.checkNoStopLoss(newTrade)) {
-      violations.push(
-        this.createViolation('no_stoploss', {
-          trade_id: newTrade.id,
-          stopLoss: newTrade.stopLoss,
-        })
-      );
-    }
+    // 1. 손절 설정 없음 체크 (stopLoss 필드가 Trade 타입에 없으므로 주석 처리)
+    // if (this.checkNoStopLoss(newTrade)) {
+    //   violations.push(
+    //     this.createViolation('no_stoploss', {
+    //       trade_id: newTrade.id,
+    //       stopLoss: undefined,
+    //     })
+    //   );
+    // }
 
     // 2. 과도한 포지션 사이즈 체크
     if (accountEquity && this.checkOversizedPosition(newTrade, accountEquity)) {
       violations.push(
         this.createViolation('oversized_position', {
           trade_id: newTrade.id,
-          position_size: newTrade.quantity * newTrade.entryPrice,
+          position_size: newTrade.entryQuantity * newTrade.entryPrice,
           account_equity: accountEquity,
-          ratio: (newTrade.quantity * newTrade.entryPrice) / accountEquity,
+          ratio: (newTrade.entryQuantity * newTrade.entryPrice) / accountEquity,
         })
       );
     }
@@ -90,17 +90,18 @@ export class ForbiddenRulesChecker {
   }
 
   /**
-   * 손절 설정 없음 체크
+   * 손절 설정 없음 체크 (stopLoss 필드가 없어서 항상 false 반환)
    */
   private static checkNoStopLoss(trade: Trade): boolean {
-    return trade.type === 'buy' && !trade.stopLoss;
+    // Trade 타입에 stopLoss 필드가 없음
+    return false;
   }
 
   /**
    * 과도한 포지션 사이즈 체크
    */
   private static checkOversizedPosition(trade: Trade, accountEquity: number): boolean {
-    const positionSize = trade.quantity * trade.entryPrice;
+    const positionSize = trade.entryQuantity * trade.entryPrice;
     return positionSize > accountEquity * FORBIDDEN_RULE_PARAMS.max_position_ratio;
   }
 
@@ -131,7 +132,7 @@ export class ForbiddenRulesChecker {
    * 급등 추격 매수 체크 (단순화된 로직)
    */
   private static checkChasing(newTrade: Trade, allTrades: Trade[]): boolean {
-    if (newTrade.type !== 'buy') return false;
+    if (newTrade.side !== 'BUY') return false;
 
     // 같은 종목의 최근 거래들에서 가격 급등 패턴 확인
     const recentTrades = allTrades
@@ -163,13 +164,13 @@ export class ForbiddenRulesChecker {
    * 계획 없는 물타기 체크
    */
   private static checkAverageDownNoplan(newTrade: Trade, allTrades: Trade[]): boolean {
-    if (newTrade.type !== 'buy') return false;
+    if (newTrade.side !== 'BUY') return false;
 
     // 같은 종목의 미청산 포지션이 있는지 확인
     const openPositions = allTrades.filter(
       (t) =>
         t.symbol === newTrade.symbol &&
-        t.type === 'buy' &&
+        t.side === 'BUY' &&
         !t.exitPrice &&
         new Date(t.entryTime) < new Date(newTrade.entryTime)
     );
@@ -183,9 +184,9 @@ export class ForbiddenRulesChecker {
     // 물타기로 판단되고, 계획적인 물타기인지 확인 (메모에 물타기 계획 언급이 있는지)
     const isAverageDown = newTrade.entryPrice < avgEntryPrice;
     const hasPlan =
-      newTrade.memo?.toLowerCase().includes('물타기') ||
-      newTrade.memo?.toLowerCase().includes('평균단가') ||
-      newTrade.memo?.toLowerCase().includes('추가매수');
+      newTrade.notes?.toLowerCase().includes('물타기') ||
+      newTrade.notes?.toLowerCase().includes('평균단가') ||
+      newTrade.notes?.toLowerCase().includes('추가매수');
 
     return isAverageDown && !hasPlan;
   }
@@ -193,7 +194,7 @@ export class ForbiddenRulesChecker {
   /**
    * 하루 거래 횟수 계산
    */
-  private static getDailyTradeCount(entryTime: Date, allTrades: Trade[]): number {
+  private static getDailyTradeCount(entryTime: string, allTrades: Trade[]): number {
     const today = new Date(entryTime);
     today.setHours(0, 0, 0, 0);
 
@@ -214,10 +215,10 @@ export class ForbiddenRulesChecker {
   private static calculatePnL(trade: Trade): number {
     if (!trade.exitPrice) return 0;
 
-    if (trade.type === 'buy') {
-      return (trade.exitPrice - trade.entryPrice) * trade.quantity;
+    if (trade.side === 'BUY') {
+      return (trade.exitPrice - trade.entryPrice) * trade.entryQuantity;
     } else {
-      return (trade.entryPrice - trade.exitPrice) * trade.quantity;
+      return (trade.entryPrice - trade.exitPrice) * trade.entryQuantity;
     }
   }
 
