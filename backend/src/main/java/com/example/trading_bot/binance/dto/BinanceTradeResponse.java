@@ -24,10 +24,10 @@ public class BinanceTradeResponse {
     private BigDecimal price;
     
     @JsonProperty("qty")
-    private BigDecimal quantity;
+    private BigDecimal qty;
     
     @JsonProperty("quoteQty")
-    private BigDecimal quoteQuantity;
+    private BigDecimal quoteQty;
     
     @JsonProperty("commission")
     private BigDecimal commission;

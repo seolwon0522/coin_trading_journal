@@ -29,6 +29,20 @@ oauth2:
   apple:
     client-id: development-apple-client-id
 
+# 암호화 설정
+crypto:
+  secret:
+    key: ${CRYPTO_SECRET_KEY:} # 환경 변수로 설정, 없으면 자동 생성
+
+# Binance API 설정
+binance:
+  api:
+    base-url: https://api.binance.com
+    testnet-url: https://testnet.binance.vision
+    use-testnet: false
+    websocket-url: wss://stream.binance.com:9443
+    testnet-websocket-url: wss://testnet.binance.vision
+
 ---
 # 개발 환경 설정
 spring:
