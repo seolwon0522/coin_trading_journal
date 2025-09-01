@@ -119,7 +119,7 @@ export function TradeForm({ trade, onSubmit, onCancel }: TradeFormProps) {
     }
   };
 
-  const handleChange = (field: keyof TradeRequest, value: any) => {
+  const handleChange = (field: keyof TradeRequest | string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 

@@ -15,7 +15,7 @@ export const apiKeyApi = {
    * API 키 목록 조회
    */
   async getApiKeys(): Promise<ApiKey[]> {
-    const response = await apiClient.get<ApiResponse<ApiKey[]>>('/api-keys');
+    const response = await apiClient.get<ApiResponse<ApiKey[]>>('/api/api-keys');
     return response.data.data;
   },
 
@@ -24,7 +24,7 @@ export const apiKeyApi = {
    */
   async createApiKey(request: ApiKeyRequest): Promise<ApiKey> {
     const response = await apiClient.post<ApiResponse<ApiKey>>(
-      '/api-keys',
+      '/api/api-keys',
       request
     );
     return response.data.data;
@@ -35,7 +35,7 @@ export const apiKeyApi = {
    */
   async updateApiKey(keyId: number, request: Partial<ApiKeyRequest>): Promise<ApiKey> {
     const response = await apiClient.put<ApiResponse<ApiKey>>(
-      `/api-keys/${keyId}`,
+      `/api/api-keys/${keyId}`,
       request
     );
     return response.data.data;
@@ -45,7 +45,7 @@ export const apiKeyApi = {
    * API 키 삭제
    */
   async deleteApiKey(keyId: number): Promise<void> {
-    await apiClient.delete(`/api-keys/${keyId}`);
+    await apiClient.delete(`/api/api-keys/${keyId}`);
   },
 
   /**
@@ -53,7 +53,7 @@ export const apiKeyApi = {
    */
   async testApiKey(keyId: number): Promise<boolean> {
     const response = await apiClient.post<ApiResponse<boolean>>(
-      `/api-keys/${keyId}/test`
+      `/api/api-keys/${keyId}/test`
     );
     return response.data.data;
   },
@@ -63,7 +63,7 @@ export const apiKeyApi = {
    */
   async validateApiKey(request: ApiKeyRequest): Promise<boolean> {
     const response = await apiClient.post<ApiResponse<boolean>>(
-      '/api-keys/validate',
+      '/api/api-keys/validate',
       request
     );
     return response.data.data;
@@ -74,7 +74,7 @@ export const apiKeyApi = {
    */
   async getActiveApiKey(exchange: string): Promise<ApiKey> {
     const response = await apiClient.get<ApiResponse<ApiKey>>(
-      `/api-keys/active/${exchange}`
+      `/api/api-keys/active/${exchange}`
     );
     return response.data.data;
   },
@@ -89,7 +89,7 @@ export const tradeSyncApi = {
    */
   async syncBinanceTrades(request: TradeSyncRequest): Promise<TradeSyncResponse> {
     const response = await apiClient.post<ApiResponse<TradeSyncResponse>>(
-      '/trades/sync/binance',
+      '/api/trades/sync/binance',
       request
     );
     return response.data.data;
@@ -100,7 +100,7 @@ export const tradeSyncApi = {
    */
   async quickSync(): Promise<TradeSyncResponse> {
     const response = await apiClient.post<ApiResponse<TradeSyncResponse>>(
-      '/trades/sync/binance/quick'
+      '/api/trades/sync/binance/quick'
     );
     return response.data.data;
   },

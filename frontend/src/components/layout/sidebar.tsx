@@ -13,6 +13,7 @@ import {
   Code2,
   Shield,
   Bot,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,11 @@ export function Sidebar() {
       href: '/',
       icon: LayoutDashboard,
       badge: openPositions > 0 ? openPositions : undefined, // 진행 중인 포지션 수
+    },
+    {
+      title: '포트폴리오',
+      href: '/portfolio',
+      icon: Wallet,
     },
     {
       title: '매매기록',

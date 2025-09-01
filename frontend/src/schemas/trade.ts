@@ -12,20 +12,18 @@ export const createTradeSchema = z.object({
     .max(20, '종목명은 20자 이하로 입력해주세요'),
 
   side: z.enum(['BUY', 'SELL'], {
-    errorMap: () => ({ message: '매수/매도를 선택해주세요' }),
+    message: '매수/매도를 선택해주세요',
   }),
 
   entryPrice: z
     .number({
-      required_error: '진입 가격을 입력해주세요',
-      invalid_type_error: '올바른 숫자를 입력해주세요',
+      message: '올바른 숫자를 입력해주세요',
     })
     .positive('진입 가격은 0보다 커야 합니다'),
 
   entryQuantity: z
     .number({
-      required_error: '진입 수량을 입력해주세요',
-      invalid_type_error: '올바른 숫자를 입력해주세요',
+      message: '올바른 숫자를 입력해주세요',
     })
     .positive('진입 수량은 0보다 커야 합니다')
     .max(1000000, '수량이 너무 큽니다'),
@@ -37,14 +35,14 @@ export const createTradeSchema = z.object({
   // ===== 선택 필드 =====
   exitPrice: z
     .number({
-      invalid_type_error: '올바른 숫자를 입력해주세요',
+      message: '올바른 숫자를 입력해주세요',
     })
     .positive('청산 가격은 0보다 커야 합니다')
     .optional(),
 
   exitQuantity: z
     .number({
-      invalid_type_error: '올바른 숫자를 입력해주세요',
+      message: '올바른 숫자를 입력해주세요',
     })
     .positive('청산 수량은 0보다 커야 합니다')
     .max(1000000, '수량이 너무 큽니다')

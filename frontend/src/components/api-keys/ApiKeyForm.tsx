@@ -21,6 +21,7 @@ export function ApiKeyForm({ onSuccess }: ApiKeyFormProps) {
     secretKey: '',
     keyName: '',
     canTrade: false,
+    isActive: true,
   });
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -54,7 +55,16 @@ export function ApiKeyForm({ onSuccess }: ApiKeyFormProps) {
           secretKey: '',
           keyName: '',
           canTrade: false,
+          isActive: true,
         });
+      },
+      onError: (error: any) => {
+        console.error('API 키 등록 오류:', error);
+        const errorMessage = error?.response?.data?.message || 
+                           error?.response?.data?.error || 
+                           error?.message || 
+                           'API 키 등록 중 오류가 발생했습니다.';
+        setValidationError(errorMessage);
       },
     });
   };

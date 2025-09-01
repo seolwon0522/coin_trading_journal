@@ -77,6 +77,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/statistics/**").authenticated()
                 .requestMatchers("/api/market/**").authenticated()
                 
+                // API 키 관리 - 인증 필수
+                .requestMatchers("/api/api-keys/**").authenticated()
+                
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )
