@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { authStorage } from './auth-storage';
 
 // 심플한 API 클라이언트 설정
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
@@ -12,19 +13,15 @@ export const apiClient = axios.create({
   withCredentials: true, // 쿠키 전송을 위해 추가
 });
 
-// 토큰 자동 추가 (authStorage와 일치하게 수정)
+// Request interceptor - 로깅 전용 (토큰 추가는 auth-provider에서 처리)
 apiClient.interceptors.request.use(
   (config) => {
-    // authStorage와 동일한 키 사용
-    const token = typeof window !== 'undefined' ? localStorage.getItem('ctj_access_token') : null;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
     // 개발 환경 로깅
     if (process.env.NODE_ENV === 'development') {
+      const authHeader = config.headers.Authorization;
+      const hasToken = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, 
-        token ? '(with token)' : '(no token)');
+        hasToken ? '(with token)' : '(no token)');
     }
     
     return config;
@@ -66,9 +63,8 @@ apiClient.interceptors.response.use(
         isRedirecting = true;
         console.error('🔒 인증이 필요합니다. 로그인 페이지로 이동합니다.');
         
-        // 토큰 제거
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // 토큰 제거 (authStorage 사용)
+        authStorage.clear();
         
         // 로그인 페이지로 리다이렉트 (auth 관련 API 제외)
         if (!error.config?.url?.includes('/auth/')) {

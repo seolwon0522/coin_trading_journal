@@ -1,0 +1,38 @@
+{
+  "pm_system": {
+    "version": "1.0.0",
+    "initialized": true,
+    "github": {
+      "cli_installed": true,
+      "authenticated": true,
+      "sub_issue_extension": true
+    },
+    "project": {
+      "name": "CryptoTradeManager",
+      "repository": "coin_trading_journal",
+      "default_labels": [
+        "enhancement",
+        "bug",
+        "documentation",
+        "backend",
+        "frontend",
+        "ml",
+        "urgent",
+        "low-priority"
+      ]
+    },
+    "workflow": {
+      "default_templates": [
+        "epic",
+        "user-story",
+        "bug-report",
+        "feature-request"
+      ]
+    },
+    "directories": {
+      "templates": ".claude/pm/templates",
+      "projects": ".claude/pm/projects",
+      "workflows": ".claude/pm/workflows"
+    }
+  }
+}

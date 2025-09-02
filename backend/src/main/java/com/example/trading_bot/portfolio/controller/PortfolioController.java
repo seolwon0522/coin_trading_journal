@@ -3,64 +3,103 @@ package com.example.trading_bot.portfolio.controller;
 import com.example.trading_bot.auth.security.UserPrincipal;
 import com.example.trading_bot.common.dto.ApiResponse;
 import com.example.trading_bot.portfolio.dto.PortfolioBalanceResponse;
+import com.example.trading_bot.portfolio.dto.PortfolioResponse;
+import com.example.trading_bot.portfolio.dto.PortfolioSummaryResponse;
+import com.example.trading_bot.portfolio.dto.UpdateBuyPriceRequest;
+import com.example.trading_bot.portfolio.service.PortfolioManagementService;
 import com.example.trading_bot.portfolio.service.PortfolioService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 포트폴리오 관리 REST 컨트롤러
- * 사용자의 자산 정보를 조회하고 관리하는 엔드포인트를 제공합니다.
- */
-@Slf4j
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/portfolio")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Portfolio Management", description = "포트폴리오 관리 API")
 public class PortfolioController {
     
+    private final PortfolioManagementService portfolioManagementService;
     private final PortfolioService portfolioService;
     
     /**
-     * 포트폴리오 잔고 조회
-     * 
-     * @param userPrincipal 인증된 사용자 정보
-     * @return 포트폴리오 잔고 정보
+     * 실시간 잔고 조회 (Binance API)
      */
     @GetMapping("/balance")
-    @Operation(summary = "포트폴리오 잔고 조회", description = "사용자의 Binance 계정 잔고를 조회합니다")
     public ResponseEntity<ApiResponse<PortfolioBalanceResponse>> getBalance(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
-        log.info("포트폴리오 잔고 조회 요청: userId={}", userPrincipal.getId());
+        Long userId = userPrincipal.getId();
+        PortfolioBalanceResponse balance = portfolioService.getUserBalance(userId);
         
-        PortfolioBalanceResponse balance = portfolioService.getUserBalance(userPrincipal.getId());
-        
-        return ResponseEntity.ok(ApiResponse.success(balance, "포트폴리오 조회 성공"));
+        return ResponseEntity.ok(ApiResponse.success(balance, "잔고 조회 성공"));
     }
     
     /**
-     * 포트폴리오 새로고침
-     * 
-     * @param userPrincipal 인증된 사용자 정보
-     * @return 새로고침된 포트폴리오 정보
+     * 포트폴리오 조회 (DB)
      */
-    @PostMapping("/refresh")
-    @Operation(summary = "포트폴리오 새로고침", description = "포트폴리오 정보를 강제로 새로고침합니다")
-    public ResponseEntity<ApiResponse<PortfolioBalanceResponse>> refreshBalance(
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<PortfolioResponse>>> getPortfolio(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
-        log.info("포트폴리오 새로고침 요청: userId={}", userPrincipal.getId());
+        Long userId = userPrincipal.getId();
+        List<PortfolioResponse> portfolio = portfolioManagementService.getUserPortfolio(userId);
         
-        // 현재는 단순히 재조회 (추후 캐싱 구현 시 캐시 무효화 로직 추가)
-        PortfolioBalanceResponse balance = portfolioService.getUserBalance(userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.success(portfolio, "포트폴리오 조회 성공"));
+    }
+    
+    /**
+     * 포트폴리오 요약 정보 조회
+     */
+    @GetMapping("/summary")
+    public ResponseEntity<ApiResponse<PortfolioSummaryResponse>> getPortfolioSummary(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
-        return ResponseEntity.ok(ApiResponse.success(balance, "포트폴리오 새로고침 완료"));
+        Long userId = userPrincipal.getId();
+        PortfolioSummaryResponse summary = portfolioManagementService.getPortfolioSummary(userId);
+        
+        return ResponseEntity.ok(ApiResponse.success(summary, "포트폴리오 요약 조회 성공"));
+    }
+    
+    /**
+     * 포트폴리오 동기화
+     */
+    @PostMapping("/sync")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> syncPortfolio(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        Long userId = userPrincipal.getId();
+        Map<String, Object> result = portfolioManagementService.syncPortfolio(userId);
+        
+        return ResponseEntity.ok(ApiResponse.success(result, "포트폴리오 동기화 완료"));
+    }
+    
+    /**
+     * 평균 매수가 업데이트
+     */
+    @PutMapping("/buy-price")
+    public ResponseEntity<ApiResponse<PortfolioResponse>> updateBuyPrice(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestBody UpdateBuyPriceRequest request) {
+        
+        Long userId = userPrincipal.getId();
+        PortfolioResponse updated = portfolioManagementService.updateBuyPrice(userId, request);
+        
+        return ResponseEntity.ok(ApiResponse.success(updated, "평균 매수가 업데이트 성공"));
+    }
+    
+    /**
+     * 현재가 업데이트
+     */
+    @PostMapping("/update-prices")
+    public ResponseEntity<ApiResponse<Void>> updateCurrentPrices(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        Long userId = userPrincipal.getId();
+        portfolioManagementService.updateCurrentPrices(userId);
+        
+        return ResponseEntity.ok(ApiResponse.success(null, "현재가 업데이트 완료"));
     }
 }

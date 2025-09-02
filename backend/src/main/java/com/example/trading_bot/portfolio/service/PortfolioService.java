@@ -40,11 +40,11 @@ public class PortfolioService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     
-    private static final BigDecimal MIN_VALUE_THRESHOLD = new BigDecimal("1"); // 1 USDT 미만은 제외
+    private static final BigDecimal MIN_VALUE_THRESHOLD = BigDecimal.ZERO; // 모든 자산 표시
     
     /**
      * 사용자의 포트폴리오 잔고 조회
-     * 
+     *
      * @param userId 사용자 ID
      * @return 포트폴리오 잔고 정보
      */
@@ -86,9 +86,9 @@ public class PortfolioService {
             // 비중 계산
             calculateAllocations(balances, totalValueUsdt);
             
-            // 가치가 있는 자산만 필터링 및 정렬
+            // 0보다 큰 모든 자산 표시 및 정렬
             List<AssetBalance> significantBalances = balances.stream()
-                    .filter(b -> b.getValueUsdt().compareTo(MIN_VALUE_THRESHOLD) > 0)
+                    .filter(b -> b.getValueUsdt().compareTo(BigDecimal.ZERO) > 0)
                     .sorted((a, b) -> b.getValueUsdt().compareTo(a.getValueUsdt()))
                     .collect(Collectors.toList());
             

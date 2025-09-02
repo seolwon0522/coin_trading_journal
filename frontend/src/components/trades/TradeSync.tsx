@@ -160,7 +160,7 @@ export function TradeSync() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              • 빠른 동기화: 최근 24시간 거래 내역
+              • 빠른 동기화: 최근 24시간 주문 내역 (보유 자산 자동 감지)
               <br />
               • 고급 설정: 기간 및 심볼 선택 가능
             </div>
@@ -303,6 +303,14 @@ function SyncResult({ result }: { result: any }) {
             <div className="font-medium mb-2">
               동기화 결과 ({format(new Date(result.syncTime), 'HH:mm:ss')})
             </div>
+            
+            {/* 메시지 표시 */}
+            {result.message && (
+              <div className="mb-2 text-sm font-medium">
+                {result.message}
+              </div>
+            )}
+            
             <div className="space-y-1 text-sm">
               <div>• 처리된 거래: {result.totalProcessed}개</div>
               <div>• 새로 추가: {result.newTrades}개</div>

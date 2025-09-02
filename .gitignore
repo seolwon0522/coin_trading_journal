@@ -126,3 +126,8 @@ pids
 .claude/epics/
 .claude/prds/*.tmp
 .claude/context/*.cache
+
+# PM System
+.claude/pm/projects/*.cache
+.claude/pm/workflows/temp/
+.claude/pm/state.json
