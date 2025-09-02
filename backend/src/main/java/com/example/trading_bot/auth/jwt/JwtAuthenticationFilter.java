@@ -3,6 +3,7 @@ package com.example.trading_bot.auth.jwt;
 import com.example.trading_bot.auth.exception.AuthException;
 import com.example.trading_bot.auth.security.UserPrincipal;
 import com.example.trading_bot.auth.service.CustomUserDetailsService;
+import com.example.trading_bot.auth.util.TokenExtractor;
 import com.example.trading_bot.auth.util.TokenValidator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -30,6 +31,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenValidator tokenValidator;
+    private final TokenExtractor tokenExtractor;
     private final CustomUserDetailsService userDetailsService;
 
     @Override
@@ -37,7 +39,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                   HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
         try {
-            String token = extractTokenFromRequest(request);
+            String authHeader = request.getHeader("Authorization");
+            String token = tokenExtractor.extractTokenSafely(authHeader);
             
             if (StringUtils.hasText(token) && tokenValidator.isValidToken(token)) {
                 // 토큰에서 사용자 ID 추출
@@ -68,18 +71,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         filterChain.doFilter(request, response);
-    }
-    
-    /**
-     * 요청 헤더에서 JWT 토큰 추출
-     */
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        
-        return null;
     }
 }

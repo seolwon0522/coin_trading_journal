@@ -46,4 +46,7 @@ public class TradeSyncResponse {
     // 마지막 동기화 시간
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastSyncTime;
+    
+    // 동기화 결과 메시지
+    private String message;
 }

@@ -231,6 +231,167 @@ public class BinanceApiClient {
     }
     
     /**
+     * 모든 주문 내역 조회 (현물 매수 포함)
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param symbol 거래 심볼
+     * @param startTime 시작 시간 (밀리초)
+     * @param endTime 종료 시간 (밀리초)
+     * @param limit 조회 개수 제한
+     * @return 주문 내역 목록
+     */
+    public List<Map<String, Object>> getAllOrders(
+        String apiKey,
+        String secretKey,
+        String symbol,
+        Long startTime,
+        Long endTime,
+        Integer limit
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크
+            if (!checkRateLimit(10)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("symbol", symbol);
+            if (startTime != null) params.put("startTime", startTime);
+            if (endTime != null) params.put("endTime", endTime);
+            if (limit != null) params.put("limit", Math.min(limit, 1000));
+            
+            String response = executeSignedRequest(
+                "/api/v3/allOrders",
+                HttpMethod.GET,
+                params,
+                apiKey,
+                secretKey,
+                10
+            );
+            
+            return objectMapper.readValue(response, new TypeReference<List<Map<String, Object>>>() {});
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (Exception e) {
+            log.error("주문 내역 조회 실패: symbol={}", symbol, e);
+            throw new BinanceApiException(
+                "주문 내역 조회 실패",
+                "ORDER_FETCH_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 계정 잔고 조회 (보유 중인 자산 목록)
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @return 잔고가 있는 자산 목록
+     */
+    public List<Map<String, Object>> getAccountBalances(String apiKey, String secretKey) throws BinanceApiException {
+        try {
+            BinanceAccountResponse account = getAccountInfo(apiKey, secretKey);
+            
+            // 잔고가 0이 아닌 자산만 필터링
+            List<Map<String, Object>> balances = new ArrayList<>();
+            if (account.getBalances() != null) {
+                for (BinanceAccountResponse.Balance balance : account.getBalances()) {
+                    double free = Double.parseDouble(balance.getFree());
+                    double locked = Double.parseDouble(balance.getLocked());
+                    
+                    if (free > 0 || locked > 0) {
+                        Map<String, Object> balanceMap = new HashMap<>();
+                        balanceMap.put("asset", balance.getAsset());
+                        balanceMap.put("free", free);
+                        balanceMap.put("locked", locked);
+                        balanceMap.put("total", free + locked);
+                        balances.add(balanceMap);
+                    }
+                }
+            }
+            
+            return balances;
+            
+        } catch (Exception e) {
+            log.error("계정 잔고 조회 실패", e);
+            throw new BinanceApiException(
+                "계정 잔고 조회 실패",
+                "BALANCE_FETCH_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 모든 심볼의 현재가 조회
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @return 심볼별 현재가 목록
+     */
+    public List<Map<String, Object>> getAllPrices(String apiKey, String secretKey) throws BinanceApiException {
+        try {
+            // Rate Limit 체크 (weight: 2)
+            if (!checkRateLimit(2)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            String url = config.getActiveBaseUrl() + "/api/v3/ticker/price";
+            
+            // 헤더 설정
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-MBX-APIKEY", apiKey);
+            
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                String.class
+            );
+            
+            updateRateLimit(2);
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                return objectMapper.readValue(response.getBody(), new TypeReference<List<Map<String, Object>>>() {});
+            }
+            
+            throw new BinanceApiException(
+                "현재가 조회 실패",
+                "PRICE_FETCH_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("현재가 조회 실패", e);
+            throw new BinanceApiException(
+                "현재가 조회 실패: " + e.getMessage(),
+                "PRICE_FETCH_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
      * 서명 요청 실행
      */
     private String executeSignedRequest(

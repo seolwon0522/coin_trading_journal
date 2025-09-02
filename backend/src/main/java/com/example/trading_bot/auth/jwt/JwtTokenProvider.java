@@ -98,36 +98,14 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰 유효성 검사
+     * 토큰 유효성 검사 (간단한 boolean 반환)
      * 
      * @param token 검증할 JWT 토큰
      * @return 토큰이 유효하면 true, 그렇지 않으면 false
      */
     public boolean validateToken(String token) {
-        try {
-            Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT token is expired: {}", e.getMessage());
-            return false;
-        } catch (UnsupportedJwtException e) {
-            log.error("JWT token is unsupported: {}", e.getMessage());
-            return false;
-        } catch (MalformedJwtException e) {
-            log.error("JWT token is malformed: {}", e.getMessage());
-            return false;
-        } catch (io.jsonwebtoken.security.SignatureException e) {
-            log.error("JWT signature validation failed: {}", e.getMessage());
-            return false;
-        } catch (IllegalArgumentException e) {
-            log.error("JWT token compact of handler are invalid: {}", e.getMessage());
-            return false;
-        }
+        return validateTokenWithResult(token).isValid();
     }
-
 
     /**
      * 토큰 만료 상태를 확인하여 적절한 예외 처리를 위한 검증 결과 반환
