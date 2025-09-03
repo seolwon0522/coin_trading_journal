@@ -10,12 +10,21 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // 쿠키 전송을 위해 추가
+  withCredentials: false, // JWT 인증은 헤더 사용, 쿠키 불필요
 });
 
-// Request interceptor - 로깅 전용 (토큰 추가는 auth-provider에서 처리)
+// Request interceptor - 토큰 추가 및 로깅
 apiClient.interceptors.request.use(
   (config) => {
+    // 토큰 추가 (F5 새로고침 시에도 즉시 토큰이 포함되도록)
+    const token = authStorage.getAccessToken();
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔑 Token added from localStorage on page refresh');
+      }
+    }
+    
     // 개발 환경 로깅
     if (process.env.NODE_ENV === 'development') {
       const authHeader = config.headers.Authorization;
