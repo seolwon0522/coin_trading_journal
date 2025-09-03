@@ -236,7 +236,7 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/login">
+              <Link href="/demo">
                 <Button size="lg" variant="outline" className="px-8">
                   <Activity className="mr-2 h-4 w-4" />
                   라이브 데모 보기
