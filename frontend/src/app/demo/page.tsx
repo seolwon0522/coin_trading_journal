@@ -151,7 +151,7 @@ function PortfolioItem({ coin, holding, value, pnl, pnlPercent }: any) {
 export default function LiveDemoPage() {
   const [trades, setTrades] = useState<any[]>([]);
   const [aiMessages, setAiMessages] = useState<any[]>([]);
-  const [chartData, setChartData] = useState(generateChartData());
+  const [chartData, setChartData] = useState<any[]>([]);
   const [currentPrice, setCurrentPrice] = useState(45234.56);
   const [priceChange, setPriceChange] = useState(2.34);
   const [botStatus, setBotStatus] = useState('running');
@@ -159,11 +159,16 @@ export default function LiveDemoPage() {
   const [winRate, setWinRate] = useState(68);
   const [activePositions, setActivePositions] = useState(7);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [isClient, setIsClient] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout>();
 
   // 실시간 데이터 업데이트
   useEffect(() => {
-    // 초기 데이터
+    // 클라이언트에서만 실행
+    setIsClient(true);
+    
+    // 초기 데이터 생성
+    setChartData(generateChartData());
     setTrades(Array.from({ length: 5 }, generateTrade));
     setAiMessages([generateAIMessage()]);
 
@@ -384,16 +389,18 @@ export default function LiveDemoPage() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  24H 거래량: ${(Math.random() * 100000000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                  24H 거래량: ${isClient ? (Math.random() * 100000000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "45,000,000"}
                 </p>
               </div>
 
               {/* 간단한 차트 시뮬레이션 */}
               <div className="h-64 bg-muted/30 rounded-lg p-4">
-                <MiniChart 
-                  data={chartData.map(d => d.price)} 
-                  color={priceChange >= 0 ? "#10b981" : "#ef4444"}
-                />
+                {isClient && chartData.length > 0 && (
+                  <MiniChart 
+                    data={chartData.map(d => d.price)} 
+                    color={priceChange >= 0 ? "#10b981" : "#ef4444"}
+                  />
+                )}
                 <div className="grid grid-cols-4 gap-2 mt-4 text-xs">
                   <div>
                     <p className="text-muted-foreground">시가</p>
