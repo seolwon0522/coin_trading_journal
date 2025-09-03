@@ -15,6 +15,7 @@ const FULLSCREEN_ROUTES = [
   '/login',
   '/register',
   '/forgot-password',
+  '/demo',
 ];
 
 // 메인 레이아웃 컴포넌트 (Header + Sidebar + Content)
