@@ -54,4 +54,9 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
      * 사용자의 모든 포트폴리오 삭제
      */
     void deleteByUserId(Long userId);
+    
+    /**
+     * 사용자의 포트폴리오 존재 여부 확인
+     */
+    boolean existsByUserId(Long userId);
 }
