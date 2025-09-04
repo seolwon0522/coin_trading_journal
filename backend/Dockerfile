@@ -2,23 +2,18 @@
 FROM gradle:7.6.1-jdk17 AS build
 WORKDIR /app
 
-# Copy gradle wrapper and build files
-COPY gradlew .
-COPY gradle gradle
+# Copy build files
 COPY build.gradle .
 COPY settings.gradle .
 
-# Make gradlew executable
-RUN chmod +x gradlew
-
 # Download dependencies
-RUN ./gradlew dependencies --no-daemon
+RUN gradle dependencies --no-daemon
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
+RUN gradle bootJar --no-daemon
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
