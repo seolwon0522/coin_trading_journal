@@ -8,6 +8,9 @@ COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 
+# Make gradlew executable
+RUN chmod +x gradlew
+
 # Download dependencies
 RUN ./gradlew dependencies --no-daemon
 
@@ -15,7 +18,7 @@ RUN ./gradlew dependencies --no-daemon
 COPY src src
 
 # Build the application
-RUN ./gradlew bootJar --no-daemon
+RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
