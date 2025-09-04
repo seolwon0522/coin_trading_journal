@@ -161,7 +161,7 @@ export default function LiveDemoPage() {
   const [activePositions, setActivePositions] = useState(7);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isClient, setIsClient] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 실시간 데이터 업데이트
   useEffect(() => {
@@ -185,7 +185,7 @@ export default function LiveDemoPage() {
           setNotifications(prev => [{
             id: Date.now(),
             text: `${newTrade.coin} ${newTrade.side === 'BUY' ? '매수' : '매도'} 체결 - $${newTrade.price}`,
-            type: newTrade.pnl > 0 ? 'success' : 'warning',
+            type: parseFloat(newTrade.pnl) > 0 ? 'success' : 'warning',
             time: new Date().toLocaleTimeString('ko-KR'),
           }, ...prev].slice(0, 5));
         }
