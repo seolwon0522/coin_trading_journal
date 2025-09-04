@@ -1,8 +1,8 @@
 plugins {
-    // 자바 및 스프링 부트 플러그인 적용 (버전은 루트에서 관리: apply false)
+    // 자바 및 스프링 부트 플러그인 적용
     id 'java'
-    id 'org.springframework.boot'
-    id 'io.spring.dependency-management'
+    id 'org.springframework.boot' version '3.1.0'
+    id 'io.spring.dependency-management' version '1.1.0'
 }
 
 group = 'com.example.tradingbot'
