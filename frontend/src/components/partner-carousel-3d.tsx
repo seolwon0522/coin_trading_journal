@@ -6,7 +6,17 @@ import { cn } from '@/lib/utils';
 import { ExternalLink } from 'lucide-react';
 
 // 파트너/거래소 데이터
-const partners = [
+interface Partner {
+  id: number;
+  name: string;
+  logo: string | null;
+  bgColor: string;
+  shadowColor: string;
+  description: string;
+  url: string;
+}
+
+const partners: Partner[] = [
   { 
     id: 1, 
     name: 'Binance', 
@@ -117,7 +127,7 @@ export function PartnerCarousel3D({
   const [currentX, setCurrentX] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
 
   const itemCount = partners.length;
   const anglePerItem = 360 / itemCount;
