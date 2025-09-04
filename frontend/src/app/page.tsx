@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -25,11 +25,148 @@ import {
   AlertCircle,
   CheckCircle,
   Star,
+  Rocket,
+  Globe,
+  Cpu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
+import { PartnerCarousel3D } from '@/components/partner-carousel-3d';
+
+// 스크롤 애니메이션 훅
+function useScrollAnimation() {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  return { ref, isVisible };
+}
+
+// 파티클 배경 컴포넌트
+function ParticleBackground() {
+  const [particles, setParticles] = useState<Array<{
+    id: string;
+    left: string;
+    top: string;
+    delay: string;
+    duration: string;
+    type: string;
+  }>>([]);
+
+  useEffect(() => {
+    const generatedParticles = [];
+    
+    // 큰 파티클
+    for (let i = 0; i < 5; i++) {
+      generatedParticles.push({
+        id: `large-${i}`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 5}s`,
+        duration: `${15 + Math.random() * 10}s`,
+        type: 'large'
+      });
+    }
+    
+    // 중간 파티클
+    for (let i = 0; i < 10; i++) {
+      generatedParticles.push({
+        id: `medium-${i}`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 8}s`,
+        duration: `${12 + Math.random() * 8}s`,
+        type: 'medium'
+      });
+    }
+    
+    // 작은 파티클
+    for (let i = 0; i < 15; i++) {
+      generatedParticles.push({
+        id: `small-${i}`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 10}s`,
+        duration: `${10 + Math.random() * 10}s`,
+        type: 'small'
+      });
+    }
+    
+    // 별 효과
+    for (let i = 0; i < 8; i++) {
+      generatedParticles.push({
+        id: `star-${i}`,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 3}s`,
+        duration: '2s',
+        type: 'star'
+      });
+    }
+    
+    setParticles(generatedParticles);
+  }, []);
+
+  if (particles.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((particle) => (
+        <div
+          key={particle.id}
+          className={`absolute ${
+            particle.type === 'star' ? 'animate-pulse' :
+            particle.type === 'medium' ? 'animate-float-delayed' : 'animate-float'
+          }`}
+          style={{
+            left: particle.left,
+            top: particle.top,
+            animationDelay: particle.delay,
+            animationDuration: particle.duration,
+          }}
+        >
+          {particle.type === 'large' && (
+            <div className="w-3 h-3 bg-gradient-to-br from-primary/30 to-purple-600/30 rounded-full blur-sm" />
+          )}
+          {particle.type === 'medium' && (
+            <div className="w-2 h-2 bg-gradient-to-br from-blue-600/20 to-pink-600/20 rounded-full" />
+          )}
+          {particle.type === 'small' && (
+            <div className="w-1 h-1 bg-primary/20 rounded-full" />
+          )}
+          {particle.type === 'star' && (
+            <Sparkles className="h-3 w-3 text-yellow-500/30" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // 실시간 가격 티커 컴포넌트
 function LivePriceTicker() {
@@ -84,46 +221,56 @@ function FeatureCard({
   description: string;
   gradient: string;
 }) {
+  const { ref, isVisible } = useScrollAnimation();
+  
   return (
-    <Card className="p-6 hover:shadow-xl transition-all duration-300 group relative overflow-hidden">
-      <div className={`absolute inset-0 ${gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
-      <div className="relative z-10">
-        <div className={`h-12 w-12 rounded-lg ${gradient} p-2.5 mb-4`}>
-          <Icon className="h-full w-full text-white" />
+    <div ref={ref} className={`${isVisible ? 'animate-slide-up' : 'opacity-0'}`}>
+      <Card className="p-6 hover:shadow-2xl transition-all duration-500 group relative overflow-hidden hover-lift">
+        <div className={`absolute inset-0 ${gradient} opacity-0 group-hover:opacity-10 transition-all duration-500`} />
+        <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+        <div className="relative z-10">
+          <div className={`h-12 w-12 rounded-lg ${gradient} p-2.5 mb-4 group-hover:scale-110 transition-transform duration-300 animate-pulse-glow`}>
+            <Icon className="h-full w-full text-white" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">{title}</h3>
+          <p className="text-muted-foreground group-hover:text-foreground transition-colors">{description}</p>
         </div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
 
 // 통계 카운터 컴포넌트
 function StatsCounter({ value, label, suffix = '' }: { value: number; label: string; suffix?: string }) {
   const [count, setCount] = useState(0);
+  const { ref, isVisible } = useScrollAnimation();
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   useEffect(() => {
-    const duration = 2000; // 2초
-    const steps = 60;
-    const increment = value / steps;
-    let current = 0;
+    if (isVisible && !hasAnimated) {
+      const duration = 2000; // 2초
+      const steps = 60;
+      const increment = value / steps;
+      let current = 0;
 
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= value) {
-        setCount(value);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, duration / steps);
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= value) {
+          setCount(value);
+          setHasAnimated(true);
+          clearInterval(timer);
+        } else {
+          setCount(Math.floor(current));
+        }
+      }, duration / steps);
 
-    return () => clearInterval(timer);
-  }, [value]);
+      return () => clearInterval(timer);
+    }
+  }, [value, isVisible, hasAnimated]);
 
   return (
-    <div className="text-center">
-      <div className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+    <div ref={ref} className={`text-center ${isVisible ? 'animate-bounce-in' : 'opacity-0'}`}>
+      <div className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent animate-gradient-x">
         {count.toLocaleString()}{suffix}
       </div>
       <p className="text-muted-foreground mt-2">{label}</p>
@@ -187,6 +334,7 @@ export default function LandingPage() {
       <section className="relative px-6 py-20 lg:py-32 overflow-hidden">
         {/* 배경 그라데이션 */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-600/10 -z-10" />
+        <ParticleBackground />
         
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-6">
@@ -208,7 +356,7 @@ export default function LandingPage() {
             <h1 className={`text-5xl lg:text-7xl font-bold transition-all duration-1000 delay-100 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
-              <span className="bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="inline-block animate-gradient-x bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent bg-[length:200%_auto]">
                 암호화폐 트레이딩의
               </span>
               <br />
@@ -231,14 +379,14 @@ export default function LandingPage() {
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}>
               <Link href="/register">
-                <Button size="lg" className="group px-8">
+                <Button size="lg" className="group px-8 hover-lift animate-pulse-glow">
                   무료로 시작하기
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link href="/demo">
-                <Button size="lg" variant="outline" className="px-8">
-                  <Activity className="mr-2 h-4 w-4" />
+                <Button size="lg" variant="outline" className="px-8 group hover-glow">
+                  <Activity className="mr-2 h-4 w-4 animate-pulse" />
                   라이브 데모 보기
                 </Button>
               </Link>
@@ -266,13 +414,19 @@ export default function LandingPage() {
 
         {/* 플로팅 차트 애니메이션 */}
         <div className="absolute top-20 left-10 animate-float">
-          <LineChart className="h-12 w-12 text-primary/20" />
+          <LineChart className="h-12 w-12 text-primary/20 animate-rotate-in" />
         </div>
         <div className="absolute bottom-20 right-10 animate-float-delayed">
-          <PieChart className="h-16 w-16 text-purple-600/20" />
+          <PieChart className="h-16 w-16 text-purple-600/20 animate-pulse" />
         </div>
         <div className="absolute top-40 right-20 animate-float">
-          <BarChart3 className="h-10 w-10 text-pink-600/20" />
+          <BarChart3 className="h-10 w-10 text-pink-600/20 animate-bounce-in" />
+        </div>
+        <div className="absolute bottom-40 left-20 animate-float-delayed">
+          <Bot className="h-14 w-14 text-blue-600/20 animate-pulse-glow" />
+        </div>
+        <div className="absolute top-60 left-1/2 animate-float">
+          <Cpu className="h-8 w-8 text-green-600/20 animate-rotate-in" />
         </div>
       </section>
 
@@ -292,7 +446,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-animation">
             <FeatureCard
               icon={Brain}
               title="AI 매매 분석"
@@ -354,6 +508,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* 3D 파트너 캐러셀 섹션 */}
+      <PartnerCarousel3D className="bg-background" />
 
       {/* 비교 섹션 */}
       <section className="py-20 px-6">
@@ -461,19 +618,19 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <TestimonialCard
-              name="임요셉"
+              name="박준서"
               role="2년차 트레이더"
               content="AI가 제 매매 패턴을 분석해서 개선점을 제시해주니 수익률이 2배로 늘었습니다. 이제는 없어서는 안 될 필수 도구가 되었어요."
               rating={5}
             />
             <TestimonialCard
-              name="김영환"
+              name="이민재"
               role="개인 투자자"
               content="백테스팅으로 전략을 미리 검증할 수 있어서 큰 손실을 피할 수 있었습니다. 리스크 관리 기능도 정말 유용하고 신뢰할 만해요."
               rating={5}
             />
             <TestimonialCard
-              name="최인혁"
+              name="정하윤"
               role="전업 트레이더"
               content="24시간 모니터링하던 부담에서 벗어났습니다. 자동매매 봇이 대신 일해주고, 중요한 타이밍에만 알림을 받아서 훨씬 효율적이에요."
               rating={5}

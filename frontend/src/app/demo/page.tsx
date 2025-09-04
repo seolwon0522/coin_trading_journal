@@ -99,20 +99,21 @@ function MiniChart({ data, color }: { data: number[], color: string }) {
   const range = max - min || 1;
   
   return (
-    <svg className="w-full h-12" viewBox="0 0 100 40">
+    <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
       <polyline
         fill="none"
         stroke={color}
-        strokeWidth="2"
+        strokeWidth="1.5"
+        vectorEffect="non-scaling-stroke"
         points={data.map((value, i) => 
-          `${(i / (data.length - 1)) * 100},${35 - ((value - min) / range) * 30}`
+          `${(i / (data.length - 1)) * 100},${38 - ((value - min) / range) * 35}`
         ).join(' ')}
       />
       <polyline
         fill={color}
         fillOpacity="0.1"
         points={`0,40 ${data.map((value, i) => 
-          `${(i / (data.length - 1)) * 100},${35 - ((value - min) / range) * 30}`
+          `${(i / (data.length - 1)) * 100},${38 - ((value - min) / range) * 35}`
         ).join(' ')} 100,40`}
       />
     </svg>
@@ -363,45 +364,47 @@ export default function LiveDemoPage() {
           {/* 왼쪽 영역 - 차트와 거래 */}
           <div className="xl:col-span-2 space-y-6">
             {/* 실시간 차트 */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <h3 className="font-semibold text-lg">BTC/USDT</h3>
-                  <Badge variant="outline">실시간</Badge>
+            <Card className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <h3 className="font-semibold text-base sm:text-lg">BTC/USDT</h3>
+                  <Badge variant="outline" className="text-xs">실시간</Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost">1분</Button>
-                  <Button size="sm" variant="default">5분</Button>
-                  <Button size="sm" variant="ghost">15분</Button>
-                  <Button size="sm" variant="ghost">1시간</Button>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Button size="sm" variant="ghost" className="px-2 sm:px-3 text-xs sm:text-sm">1분</Button>
+                  <Button size="sm" variant="default" className="px-2 sm:px-3 text-xs sm:text-sm">5분</Button>
+                  <Button size="sm" variant="ghost" className="px-2 sm:px-3 text-xs sm:text-sm hidden sm:inline-flex">15분</Button>
+                  <Button size="sm" variant="ghost" className="px-2 sm:px-3 text-xs sm:text-sm">1H</Button>
                 </div>
               </div>
               
               <div className="mb-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-bold">${currentPrice.toFixed(2)}</span>
+                <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3">
+                  <span className="text-2xl sm:text-3xl font-bold">${currentPrice.toFixed(2)}</span>
                   <Badge 
                     variant={priceChange >= 0 ? "default" : "destructive"}
-                    className="gap-1"
+                    className="gap-1 w-fit text-xs sm:text-sm"
                   >
                     {priceChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   24H 거래량: ${isClient ? (Math.random() * 100000000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "45,000,000"}
                 </p>
               </div>
 
               {/* 간단한 차트 시뮬레이션 */}
-              <div className="h-64 bg-muted/30 rounded-lg p-4">
+              <div className="relative w-full aspect-[16/9] md:aspect-[2/1] bg-muted/30 rounded-lg p-4 overflow-hidden">
                 {isClient && chartData.length > 0 && (
-                  <MiniChart 
-                    data={chartData.map(d => d.price)} 
-                    color={priceChange >= 0 ? "#10b981" : "#ef4444"}
-                  />
+                  <div className="absolute inset-4 bottom-16">
+                    <MiniChart 
+                      data={chartData.map(d => d.price)} 
+                      color={priceChange >= 0 ? "#10b981" : "#ef4444"}
+                    />
+                  </div>
                 )}
-                <div className="grid grid-cols-4 gap-2 mt-4 text-xs">
+                <div className="absolute bottom-4 left-4 right-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                   <div>
                     <p className="text-muted-foreground">시가</p>
                     <p className="font-medium">$44,123</p>
