@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { InteractiveDemo } from '@/components/interactive-demo';
 
 // 스크롤 애니메이션 훅
 function useScrollAnimation(threshold = 0.1) {
@@ -573,22 +574,14 @@ function FeatureSection({ feature, index, isEven }: {
           </div>
         </div>
 
-        {/* 이미지/일러스트 영역 */}
+        {/* Interactive Demo 영역 */}
         <div className="flex-1 flex items-center justify-center">
           <div className={cn(
-            "relative w-full h-[400px] rounded-2xl overflow-hidden bg-gradient-to-br p-1",
+            "relative w-full h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br p-1",
             feature.gradient
           )}>
-            <div className="w-full h-full rounded-2xl bg-background/95 flex items-center justify-center">
-              <div className="text-center space-y-4 p-8">
-                <Icon className="h-24 w-24 mx-auto text-primary opacity-20" />
-                <p className="text-2xl font-bold text-muted-foreground/50">
-                  Interactive Demo
-                </p>
-                <p className="text-sm text-muted-foreground/40">
-                  실제 화면을 미리 체험해보세요
-                </p>
-              </div>
+            <div className="w-full h-full rounded-2xl bg-background/95 overflow-hidden">
+              <InteractiveDemo featureId={feature.id} />
             </div>
           </div>
         </div>
