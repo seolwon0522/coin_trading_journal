@@ -35,6 +35,11 @@ import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { PartnerCarousel3D } from '@/components/partner-carousel-3d';
+import { SponsorBanner } from '@/components/sponsor-banner';
+import { PricingSection } from '@/components/pricing-section';
+import { HowItWorks } from '@/components/how-it-works';
+import { FAQSection } from '@/components/faq-section';
+import { SecuritySection } from '@/components/security-section';
 
 // 스크롤 애니메이션 훅
 function useScrollAnimation() {
@@ -330,7 +335,7 @@ export default function LandingPage() {
       {/* 실시간 가격 티커 */}
       <LivePriceTicker />
 
-      {/* 히어로 섹션 */}
+      {/* 히어로 섹션 - 메인 배너 */}
       <section className="relative px-6 py-20 lg:py-32 overflow-hidden">
         {/* 배경 그라데이션 */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-600/10 -z-10" />
@@ -430,6 +435,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 작동 원리 섹션 */}
+      <HowItWorks className="bg-muted/30" />
+
       {/* 핵심 기능 섹션 */}
       <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
@@ -487,8 +495,11 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 보안 & 신뢰성 섹션 */}
+      <SecuritySection className="bg-muted/30" />
+
       {/* 통계 섹션 */}
-      <section className="py-20 px-6 bg-muted/30">
+      <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4">
@@ -509,8 +520,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 3D 파트너 캐러셀 섹션 */}
-      <PartnerCarousel3D className="bg-background" />
+      {/* 요금제 섹션 */}
+      <PricingSection className="bg-background" />
+
+      {/* FAQ 섹션 */}
+      <FAQSection className="bg-muted/30" />
 
       {/* 비교 섹션 */}
       <section className="py-20 px-6">
@@ -603,8 +617,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 3D 파트너 캐러셀 섹션 */}
+      <PartnerCarousel3D className="bg-background" />
+
+      {/* 후원 배너 */}
+      <SponsorBanner />
+
       {/* 사용자 후기 섹션 */}
-      <section className="py-20 px-6 bg-muted/30">
+      <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4">
