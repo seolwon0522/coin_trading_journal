@@ -1,25 +1,25 @@
 # Simple working Dockerfile for Railway
-FROM openjdk:17-jdk-slim AS build
-
-# Install curl for downloads
-RUN apt-get update && apt-get install -y curl
+FROM openjdk:17-jdk AS build
 
 WORKDIR /app
 
-# Copy gradle wrapper
-COPY gradlew .
+# Copy gradle wrapper files first
 COPY gradle gradle
+COPY gradlew .
+COPY gradlew.bat .
+
+# Copy build configuration
 COPY build.gradle .
 COPY settings.gradle .
 
-# Make gradlew executable
-RUN chmod +x gradlew
+# Make gradlew executable (important!)
+RUN chmod +x ./gradlew
 
-# Copy source
+# Copy source code
 COPY src src
 
-# Build application
-RUN ./gradlew bootJar --no-daemon -x test
+# Build application - use bash explicitly
+RUN bash ./gradlew bootJar --no-daemon -x test
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
