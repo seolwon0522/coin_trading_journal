@@ -1,26 +1,81 @@
-# Railway ignore file - 백엔드 배포용
-
-# 프론트엔드 폴더들
+# Frontend and ML services (not needed for backend deployment)
 frontend/
 ml-dashboard-frontend/
-
-# 루트의 node_modules (프론트엔드 관련)
-node_modules/
-package.json
-package-lock.json
-
-# Python/ML 서비스들 (백엔드와 별개)
 ml_scoring/
 nautilus-ml-pipeline/
 trading-engine/
 
+# Documentation
+*.md
+docs/
+README*
+
 # Git
 .git/
 .gitignore
+.github/
 
-# 기타 불필요한 파일
-*.md
-!backend/RAILWAY_DEPLOYMENT_GUIDE.md
-docker-compose*.yml
-.env
-.env.local
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+package*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Build artifacts
+build/
+dist/
+target/
+*.egg-info/
+.eggs/
+
+# Test coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env*
+!.env.example
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Misc
+*.swp
+*.swo
+*~
+.tmp/
+temp/

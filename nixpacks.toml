@@ -1,8 +1,8 @@
 [phases.setup]
-nixPkgs = ["jdk17", "gradle"]
+nixPkgs = ["jdk17"]
 
 [phases.build]
-cmds = ["cd backend && chmod +x gradlew && ./gradlew build -x test --no-daemon"]
+cmds = ["chmod +x backend/gradlew", "cd backend && ./gradlew build -x test --no-daemon"]
 
 [start]
 cmd = "cd backend && java -Xmx512m -Dserver.port=${PORT:-8080} -Dspring.profiles.active=railway -jar build/libs/trading-bot.jar"
