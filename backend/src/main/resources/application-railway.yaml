@@ -92,6 +92,9 @@ management:
 logging:
   level:
     root: INFO
-    com.example.trading_bot: INFO
+    com.example.trading_bot: DEBUG
     org.springframework.web: INFO
+    org.springframework.boot: INFO
+    org.springframework.boot.autoconfigure: INFO
     org.hibernate: WARN
+    com.zaxxer.hikari: DEBUG
