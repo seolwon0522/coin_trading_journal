@@ -1,19 +1,24 @@
 # Build stage
-FROM gradle:7.6.1-jdk17 AS build
+FROM openjdk:17-jdk AS build
 WORKDIR /app
 
-# Copy build files
+# Copy gradle wrapper and build files
+COPY gradlew .
+COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 
-# Download dependencies
-RUN gradle dependencies --no-daemon
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Download dependencies (cache layer)
+RUN ./gradlew dependencies --no-daemon
 
 # Copy source code
 COPY src src
 
 # Build the application
-RUN gradle bootJar --no-daemon
+RUN ./gradlew bootJar --no-daemon -x test
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
@@ -28,18 +33,22 @@ RUN groupadd -r spring && useradd -r -g spring spring
 # Copy the jar from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
+# Copy start script
+COPY start.sh .
+RUN chmod +x start.sh && chown spring:spring start.sh
+
 # Switch to non-root user
 USER spring:spring
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# Health check - 시작 시간을 충분히 줌
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
 
 # Expose port
 EXPOSE 8080
 
-# Set JVM options for container environment
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport"
+# Set JVM options for container environment (메모리 최적화)
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+UseContainerSupport -Xss512k"
 
-# Run the application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Run the application with explicit port and profile
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-railway} -jar app.jar"]
