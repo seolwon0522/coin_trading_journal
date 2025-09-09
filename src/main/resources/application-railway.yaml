@@ -6,8 +6,7 @@ spring:
     activate:
       on-profile: railway
 
-  # Spring Boot는 DATABASE_URL을 자동으로 파싱합니다
-  # DATABASE_URL 형식: postgresql://user:pass@host:port/database
+  # DatabaseConfig.java가 DATABASE_URL을 자동 변환
   datasource:
     driver-class-name: org.postgresql.Driver
     hikari:
