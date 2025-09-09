@@ -6,11 +6,13 @@ spring:
     activate:
       on-profile: railway
 
-  # Database configuration for Railway - Direct values
+  # Database configuration for Railway - Using TCP Proxy
   datasource:
-    url: jdbc:postgresql://${RAILWAY_PRIVATE_DOMAIN:localhost}:5432/${POSTGRES_DB:railway}
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:password}
+    # Railway PostgreSQL uses TCP proxy for external connections
+    # PGHOST points to private domain, so we need to use TCP proxy explicitly
+    url: jdbc:postgresql://hopper.proxy.rlwy.net:18325/${PGDATABASE:railway}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
@@ -99,5 +101,7 @@ logging:
     org.springframework.web: INFO
     org.springframework.boot: INFO
     org.springframework.boot.autoconfigure: INFO
-    org.hibernate: WARN
+    org.springframework.boot.diagnostics: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.hibernate: INFO
     com.zaxxer.hikari: DEBUG
