@@ -45,8 +45,8 @@ binance:
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
-  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://coin-trading-journal-frontend.vercel.app,https://coin-trading-journal-frontend-*.vercel.app,https://autotradings.vercel.app,http://localhost:3000,http://localhost:3001}
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
   allowed-headers: "*"
   allow-credentials: true
 
