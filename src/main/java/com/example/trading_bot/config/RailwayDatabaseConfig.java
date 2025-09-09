@@ -38,8 +38,18 @@ public class RailwayDatabaseConfig {
             }
         } else if (databaseUrl != null && databaseUrl.startsWith("postgresql://")) {
             // postgresql:// 형식도 지원
-            String jdbcUrl = "jdbc:" + databaseUrl;
+            String jdbcUrl = convertPostgresqlUrl(databaseUrl);
             properties.setUrl(jdbcUrl);
+            
+            // 사용자명과 비밀번호 추출
+            String[] parts = databaseUrl.replace("postgresql://", "").split("@");
+            if (parts.length > 1) {
+                String[] credentials = parts[0].split(":");
+                if (credentials.length > 1) {
+                    properties.setUsername(credentials[0]);
+                    properties.setPassword(credentials[1]);
+                }
+            }
         } else {
             // 기본 로컬 설정
             properties.setUrl("jdbc:postgresql://localhost:5432/trading_bot");
@@ -66,6 +76,20 @@ public class RailwayDatabaseConfig {
         // SSL 모드 추가 (Railway는 SSL을 사용할 수 있음)
         if (!url.contains("?")) {
             url += "?sslmode=require";
+        }
+        
+        return "jdbc:postgresql://" + url;
+    }
+    
+    private String convertPostgresqlUrl(String railwayUrl) {
+        // postgresql://user:pass@host:port/db -> jdbc:postgresql://host:port/db
+        String url = railwayUrl
+            .replace("postgresql://", "")
+            .replaceFirst(".*@", "");
+        
+        // SSL 모드 추가 (Railway는 SSL을 사용할 수 있음)
+        if (!url.contains("?")) {
+            url += "?sslmode=prefer";
         }
         
         return "jdbc:postgresql://" + url;
