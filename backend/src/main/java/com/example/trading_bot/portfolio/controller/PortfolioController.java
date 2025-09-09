@@ -2,6 +2,7 @@ package com.example.trading_bot.portfolio.controller;
 
 import com.example.trading_bot.auth.security.UserPrincipal;
 import com.example.trading_bot.common.dto.ApiResponse;
+import com.example.trading_bot.common.exception.BusinessException;
 import com.example.trading_bot.portfolio.dto.PortfolioBalanceResponse;
 import com.example.trading_bot.portfolio.dto.PortfolioResponse;
 import com.example.trading_bot.portfolio.dto.PortfolioSummaryResponse;
@@ -12,6 +13,7 @@ import com.example.trading_bot.portfolio.service.PortfolioRealtimeService;
 import com.example.trading_bot.portfolio.service.PortfolioSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -43,12 +45,28 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<PortfolioBalanceResponse>> getRealtimeBalance(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
+        // UserPrincipal null 체크 추가
+        if (userPrincipal == null) {
+            log.error("인증 실패: UserPrincipal이 null입니다. JWT 토큰을 확인해주세요.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("인증이 필요합니다. 다시 로그인해주세요."));
+        }
+        
         Long userId = userPrincipal.getId();
-        log.debug("실시간 잔고 조회 요청: userId={}", userId);
+        log.info("실시간 잔고 조회 요청: userId={}", userId);
         
-        PortfolioBalanceResponse balance = realtimeService.getRealtimeBalance(userId);
-        
-        return ResponseEntity.ok(ApiResponse.success(balance, "실시간 잔고 조회 성공"));
+        try {
+            PortfolioBalanceResponse balance = realtimeService.getRealtimeBalance(userId);
+            return ResponseEntity.ok(ApiResponse.success(balance, "실시간 잔고 조회 성공"));
+        } catch (BusinessException e) {
+            log.error("포트폴리오 조회 실패 (비즈니스): userId={}, error={}", userId, e.getMessage());
+            return ResponseEntity.status(e.getStatus())
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("포트폴리오 조회 실패 (시스템): userId={}, error={}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("포트폴리오 조회 중 오류가 발생했습니다."));
+        }
     }
     
     /**
@@ -106,12 +124,28 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> syncPortfolio(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
+        // UserPrincipal null 체크 추가
+        if (userPrincipal == null) {
+            log.error("인증 실패: UserPrincipal이 null입니다. JWT 토큰을 확인해주세요.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("인증이 필요합니다. 다시 로그인해주세요."));
+        }
+        
         Long userId = userPrincipal.getId();
         log.info("수동 포트폴리오 동기화 요청: userId={}", userId);
         
-        Map<String, Object> result = syncService.syncNow(userId);
-        
-        return ResponseEntity.ok(ApiResponse.success(result, "포트폴리오 동기화 완료"));
+        try {
+            Map<String, Object> result = syncService.syncNow(userId);
+            return ResponseEntity.ok(ApiResponse.success(result, "포트폴리오 동기화 완료"));
+        } catch (BusinessException e) {
+            log.error("포트폴리오 동기화 실패 (비즈니스): userId={}, error={}", userId, e.getMessage());
+            return ResponseEntity.status(e.getStatus())
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("포트폴리오 동기화 실패 (시스템): userId={}, error={}", userId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("포트폴리오 동기화 중 오류가 발생했습니다."));
+        }
     }
     
     /**
