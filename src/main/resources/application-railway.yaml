@@ -6,10 +6,11 @@ spring:
     activate:
       on-profile: railway
 
-  # Database configuration for Railway - Using PostgreSQL standard variables
+  # Database configuration for Railway PostgreSQL Service
   datasource:
-    # Using PG* variables that match Railway PostgreSQL service
-    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}
+    # Railway PostgreSQL service provides DATABASE_URL with internal connection
+    # Fallback to individual PG* variables if DATABASE_URL not available
+    url: ${DATABASE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}?sslmode=prefer}
     username: ${PGUSER:postgres}
     password: ${PGPASSWORD:password}
     driver-class-name: org.postgresql.Driver
