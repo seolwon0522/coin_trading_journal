@@ -8,10 +8,11 @@ spring:
 
   # Database configuration for Railway PostgreSQL Service
   datasource:
-    # Use individual PG* variables for better control and debugging
-    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}?sslmode=prefer
-    username: ${PGUSER:postgres}
-    password: ${PGPASSWORD:password}
+    # Primary: Use DATABASE_URL if available (Railway provides this)
+    # DATABASE_URL format: postgresql://user:password@host:port/database
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/railway}}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
