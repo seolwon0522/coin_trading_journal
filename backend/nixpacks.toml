@@ -2,7 +2,7 @@
 nixPkgs = ["jdk17", "gradle"]
 
 [phases.build]
-cmds = ["gradle build -x test"]
+cmds = ["./gradlew build -x test --no-daemon"]
 
 [start]
-cmd = "java -Dspring.profiles.active=railway -jar build/libs/*.jar"
+cmd = "java -Xmx512m -Dserver.port=${PORT:-8080} -Dspring.profiles.active=railway -jar build/libs/trading-bot.jar"
