@@ -1,10 +1,13 @@
 package com.example.trading_bot.config;
 
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+
+import javax.sql.DataSource;
+import java.net.URI;
 
 /**
  * Railway DATABASE_URL 변환 (최소한의 코드)
@@ -14,17 +17,25 @@ import org.springframework.context.annotation.Profile;
 public class DatabaseConfig {
 
     @Bean
-    @Primary
-    public DataSourceProperties dataSourceProperties() {
-        DataSourceProperties properties = new DataSourceProperties();
+    public DataSource dataSource() throws Exception {
         String databaseUrl = System.getenv("DATABASE_URL");
         
-        if (databaseUrl != null) {
-            // postgresql:// -> jdbc:postgresql:// 변환
-            String jdbcUrl = databaseUrl.replace("postgresql://", "jdbc:postgresql://");
-            properties.setUrl(jdbcUrl);
+        if (databaseUrl == null) {
+            throw new IllegalStateException("DATABASE_URL not set");
         }
         
-        return properties;
+        // DATABASE_URL 파싱 (postgresql://user:pass@host:port/db)
+        URI dbUri = new URI(databaseUrl);
+        String username = dbUri.getUserInfo().split(":")[0];
+        String password = dbUri.getUserInfo().split(":")[1];
+        String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + ':' + dbUri.getPort() + dbUri.getPath();
+        
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(dbUrl);
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setMaximumPoolSize(5);
+        
+        return new HikariDataSource(config);
     }
 }
