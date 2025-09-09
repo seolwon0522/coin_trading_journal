@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["jdk17", "gradle"]
-
-[phases.build]
-cmds = ["./gradlew build -x test --no-daemon"]
-
-[start]
-cmd = "java -Xmx512m -Dserver.port=${PORT:-8080} -Dspring.profiles.active=railway -jar build/libs/trading-bot.jar"
