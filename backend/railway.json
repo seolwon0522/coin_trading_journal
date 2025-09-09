@@ -9,6 +9,9 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
     "healthcheckPath": "/actuator/health",
-    "healthcheckTimeout": 30
+    "healthcheckTimeout": 120,
+    "startCommand": "java -jar app.jar",
+    "sleepApplication": false,
+    "region": "us-west1"
   }
 }
