@@ -84,3 +84,19 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// JAR 설정
+jar {
+    enabled = false
+}
+
+bootJar {
+    archiveBaseName = 'trading-bot'
+    archiveVersion = '1.0.0'
+    archiveFileName = 'trading-bot.jar'
+}
+
+// 빌드 태스크 설정
+tasks.named('build') {
+    dependsOn 'bootJar'
+}
