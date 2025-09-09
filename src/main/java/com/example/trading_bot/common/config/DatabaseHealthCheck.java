@@ -39,6 +39,22 @@ public class DatabaseHealthCheck implements HealthIndicator, CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         logger.info("=== Database Connection Validation Starting ===");
+        
+        // Log environment variables for debugging
+        logger.info("Environment Variables Check:");
+        logger.info("  PGHOST: {}", System.getenv("PGHOST"));
+        logger.info("  PGPORT: {}", System.getenv("PGPORT"));
+        logger.info("  PGDATABASE: {}", System.getenv("PGDATABASE"));
+        logger.info("  PGUSER: {}", System.getenv("PGUSER"));
+        logger.info("  PGPASSWORD: {}", System.getenv("PGPASSWORD") != null ? "***SET***" : "NOT SET");
+        logger.info("  DATABASE_URL: {}", System.getenv("DATABASE_URL") != null ? "***SET***" : "NOT SET");
+        
+        // Log datasource properties
+        logger.info("DataSource Properties:");
+        logger.info("  URL: {}", sanitizeUrl(dataSourceProperties.getUrl()));
+        logger.info("  Username: {}", dataSourceProperties.getUsername());
+        logger.info("  Password: {}", dataSourceProperties.getPassword() != null ? "***SET***" : "NOT SET");
+        
         validateConnection();
     }
     

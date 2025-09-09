@@ -8,9 +8,8 @@ spring:
 
   # Database configuration for Railway PostgreSQL Service
   datasource:
-    # Railway PostgreSQL service provides DATABASE_URL with internal connection
-    # Fallback to individual PG* variables if DATABASE_URL not available
-    url: ${DATABASE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}?sslmode=prefer}
+    # Use individual PG* variables for better control and debugging
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}?sslmode=prefer
     username: ${PGUSER:postgres}
     password: ${PGPASSWORD:password}
     driver-class-name: org.postgresql.Driver
