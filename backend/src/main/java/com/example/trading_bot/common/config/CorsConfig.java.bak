@@ -1,14 +1,14 @@
 package com.example.trading_bot.common.config;
 
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+// import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-@Configuration
+// @Configuration - 중복 빈 정의 충돌 방지를 위해 비활성화 (config.CorsConfig 사용)
 public class CorsConfig {
 
     @Bean

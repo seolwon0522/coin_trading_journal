@@ -1,0 +1,31 @@
+# Backend 폴더 내부용 .railwayignore
+
+# Build artifacts (JAR 파일은 필요)
+build/
+!build/libs/*.jar
+.gradle/
+
+# IDE
+.idea/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# Test
+src/test/
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.local
+!.env.railway
+
+# Temporary files
+*.tmp
+*.temp
+*~
