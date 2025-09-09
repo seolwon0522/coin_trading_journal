@@ -1,11 +1,11 @@
 plugins {
     // 자바 및 스프링 부트 플러그인 적용
     id 'java'
-    id 'org.springframework.boot' version '3.1.0'
-    id 'io.spring.dependency-management' version '1.1.0'
+    id 'org.springframework.boot' version '3.5.4'
+    id 'io.spring.dependency-management' version '1.1.6'
 }
 
-group = 'com.example.tradingbot'
+group = 'com.example.trading_bot'
 version = '1.0.0-SNAPSHOT'
 
 java {
