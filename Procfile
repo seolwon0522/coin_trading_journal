@@ -1,1 +1,1 @@
-web: cd backend && java -Xmx512m -Xms256m -Dserver.port=$PORT -Dspring.profiles.active=railway -jar build/libs/trading-bot.jar
+web: java -Xmx512m -Xms256m -Dserver.port=$PORT -Dspring.profiles.active=railway -jar build/libs/trading-bot.jar

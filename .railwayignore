@@ -1,81 +1,31 @@
-# Frontend and ML services (not needed for backend deployment)
-frontend/
-ml-dashboard-frontend/
-ml_scoring/
-nautilus-ml-pipeline/
-trading-engine/
+# Backend 폴더 내부용 .railwayignore
 
-# Documentation
-*.md
-docs/
-README*
-
-# Git
-.git/
-.gitignore
-.github/
+# Build artifacts (JAR 파일은 필요)
+build/
+!build/libs/*.jar
+.gradle/
 
 # IDE
 .idea/
-.vscode/
 *.iml
-*.ipr
-*.iws
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Node modules (if any)
-node_modules/
-package*.json
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Build artifacts
-build/
-dist/
-target/
-*.egg-info/
-.eggs/
-
-# Test coverage
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-.pytest_cache/
-nosetests.xml
-coverage.xml
-*.cover
 
 # Logs
 *.log
 logs/
 
+# Test
+src/test/
+
+# Git
+.git/
+.gitignore
+
 # Environment files
-.env*
-!.env.example
+.env
+.env.local
+!.env.railway
 
-# Docker
-Dockerfile*
-docker-compose*
-.dockerignore
-
-# Misc
-*.swp
-*.swo
+# Temporary files
+*.tmp
+*.temp
 *~
-.tmp/
-temp/
