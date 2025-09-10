@@ -1,14 +1,14 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
   "framework": "nextjs",
+  "installCommand": "npm ci",
   "regions": ["icn1"],
   "functions": {
-    "frontend/app/api/google/token/route.ts": {
+    "app/api/google/token/route.ts": {
       "maxDuration": 10
     },
-    "frontend/app/api/**/*.ts": {
+    "app/api/**/*.ts": {
       "maxDuration": 10
     }
   },
@@ -45,5 +45,6 @@
     "enabled": true,
     "silent": false,
     "autoAlias": true
-  }
+  },
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet ."
 }
