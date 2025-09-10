@@ -2,94 +2,34 @@ server:
   port: ${PORT:8080}
 
 spring:
-  config:
-    activate:
-      on-profile: railway
-
-  # Database configuration for Railway
-  # DataSource is configured in RailwayDataSourceConfig class
-  # to handle Railway's DATABASE_URL format conversion
+  # PostgreSQL configuration using Spring Boot standard properties
+  datasource:
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:railway}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:password}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: false
     properties:
       hibernate:
-        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          lob:
-            non_contextual_creation: true
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    open-in-view: false
-
-  # Security
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID:25307816741-gbf2qretmo0m5il4ao4ke89g2o4fkig4.apps.googleusercontent.com}
-            client-secret: ${GOOGLE_CLIENT_SECRET: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}
-            scope:
-              - email
-              - profile
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:ThisIsAVerySecureJWTSecretKeyForProductionUse1234567890AbcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ}
-  access-token-validity-in-seconds: 1800
-  refresh-token-validity-in-seconds: 604800
+  secret: ${JWT_SECRET}
 
-# Crypto Configuration
+# Crypto Configuration  
 crypto:
   secret:
-    key: ${CRYPTO_SECRET_KEY:3saXgsXn/tNN4CwUzOHLfy23f39UIT/W6uXD5N2HxeY=}
-
-# Binance API Configuration
-binance:
-  api:
-    base-url: https://api.binance.com
-    testnet-url: https://testnet.binance.vision
-    use-testnet: ${USE_BINANCE_TESTNET:true}
-    websocket-url: wss://stream.binance.com:9443
-    testnet-websocket-url: wss://testnet.binance.vision
-    api-key: ${BINANCE_API_KEY:}
-    secret-key: ${BINANCE_SECRET_KEY:}
+    key: ${CRYPTO_SECRET_KEY}
 
 # CORS Configuration
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://coin-trading-journal-frontend.vercel.app,https://coin-trading-journal-frontend-*.vercel.app,http://localhost:3000,http://localhost:3001}
-  allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
-  allowed-headers: "*"
-  allow-credentials: true
-
-# Actuator
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: always
-      probes:
-        enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
 # Logging
 logging:
   level:
     root: INFO
-    com.example.trading_bot: DEBUG
-    org.springframework.web: INFO
-    org.springframework.boot: INFO
-    org.springframework.boot.autoconfigure: INFO
-    org.hibernate: WARN
-    com.zaxxer.hikari: DEBUG
