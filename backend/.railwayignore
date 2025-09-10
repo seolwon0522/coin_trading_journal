@@ -1,31 +1,77 @@
-# Backend 폴더 내부용 .railwayignore
+# Railway ignore file for backend deployment
 
-# Build artifacts (JAR 파일은 필요)
-build/
+# Build artifacts (keep JAR files)
+build/**
+!build/libs/
 !build/libs/*.jar
 .gradle/
+bin/
+out/
+target/
 
 # IDE
 .idea/
 *.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
 
 # Logs
 *.log
 logs/
+log/
 
 # Test
 src/test/
+test/
+tests/
+*Test.java
+*Tests.java
+
+# Documentation
+README.md
+docs/
+*.md
+LICENSE
 
 # Git
 .git/
 .gitignore
+.gitattributes
 
 # Environment files
 .env
 .env.local
+.env.development
 !.env.railway
+application-local.yml
+application-local.yaml
+application-dev.yml
+application-dev.yaml
 
 # Temporary files
 *.tmp
 *.temp
 *~
+.DS_Store
+Thumbs.db
+
+# Frontend and other projects
+../frontend/
+../ml_scoring/
+../trading-engine/
+../ml-dashboard-frontend/
+../nautilus-ml-pipeline/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Gradle wrapper (Railway will download its own)
+gradle/
+gradlew
+gradlew.bat
