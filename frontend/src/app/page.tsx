@@ -650,7 +650,7 @@ export default function LandingPage() {
               rating={5}
             />
             <TestimonialCard
-              name="이민재"
+              name="강형안"
               role="개인 투자자"
               content="백테스팅으로 전략을 미리 검증할 수 있어서 큰 손실을 피할 수 있었습니다. 리스크 관리 기능도 정말 유용하고 신뢰할 만해요."
               rating={5}
