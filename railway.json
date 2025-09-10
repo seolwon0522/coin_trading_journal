@@ -1,4 +1,0 @@
-{
-  "root": "backend",
-  "watchPatterns": ["backend/**"]
-}
