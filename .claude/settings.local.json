@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(/C:\\Users\\futuregen\\Downloads\\coin_trading_journal\\frontend\\src\\app/**)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}

@@ -131,3 +131,30 @@ pids
 .claude/pm/projects/*.cache
 .claude/pm/workflows/temp/
 .claude/pm/state.json
+
+# Documentation and misc files (except README.md)
+*.md
+!README.md
+!frontend/README.md
+!backend/README.md
+
+# Development documentation
+CLAUDE.md
+DEPLOYMENT.md
+docs/
+*.postman_collection.json
+
+# ML and Trading Engine internal docs
+ml_scoring/**/*.md
+trading-engine/**/*.md
+nautilus-ml-pipeline/**/*.md
+ml-dashboard-frontend/**/*.md
+
+# Temporary and build directories
+temp_*/
+build/
+dist/
+out/
+
+# Claude configuration (keep only essential)
+.claude/
