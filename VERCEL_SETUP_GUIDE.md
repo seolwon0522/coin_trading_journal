@@ -31,18 +31,14 @@
 
 Build & Development Settings 페이지 하단:
 
+**옵션 1: Vercel 자동 감지 사용 (권장)**
 1. **"Ignored Build Step"** 섹션 찾기
 2. **토글 스위치 활성화** ✅
-3. 커스텀 명령어가 자동으로 설정됨:
-   ```bash
-   cd .. && git diff HEAD^ HEAD --quiet frontend/
-   ```
-   이 명령어는 frontend 디렉토리 내의 파일이 변경된 경우에만 빌드를 실행합니다.
-   
-   **또는** Vercel 대시보드에서 직접 입력:
-   ```bash
-   git diff HEAD^ HEAD --quiet frontend/
-   ```
+3. **커스텀 명령어는 비워두기** (Vercel이 자동으로 frontend 폴더 변경 감지)
+
+**옵션 2: 수동 설정 (필요한 경우)**
+- 대시보드에서 커스텀 명령어 입력란을 비워두고 Vercel의 자동 감지에 의존
+- Vercel은 Root Directory가 설정된 경우 해당 폴더의 변경사항만 자동으로 추적
 
 ### 4. 환경 변수 설정
 
