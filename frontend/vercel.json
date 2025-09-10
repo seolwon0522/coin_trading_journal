@@ -40,5 +40,5 @@
     "silent": false,
     "autoAlias": true
   },
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet ."
+  "ignoreCommand": "cd .. && git diff HEAD^ HEAD --quiet frontend/"
 }

@@ -33,11 +33,16 @@ Build & Development Settings 페이지 하단:
 
 1. **"Ignored Build Step"** 섹션 찾기
 2. **토글 스위치 활성화** ✅
-3. 다음 명령어가 자동으로 설정됨:
+3. 커스텀 명령어가 자동으로 설정됨:
    ```bash
-   git diff HEAD^ HEAD --quiet .
+   cd .. && git diff HEAD^ HEAD --quiet frontend/
    ```
    이 명령어는 frontend 디렉토리 내의 파일이 변경된 경우에만 빌드를 실행합니다.
+   
+   **또는** Vercel 대시보드에서 직접 입력:
+   ```bash
+   git diff HEAD^ HEAD --quiet frontend/
+   ```
 
 ### 4. 환경 변수 설정
 
@@ -45,10 +50,7 @@ Environment Variables 페이지에서 직접 값 입력:
 
 #### 필수 환경 변수:
 ```
-NEXT_PUBLIC_API_BASE_URL=https://coin-trading-journal-production.up.railway.app
-NEXT_PUBLIC_APP_URL=https://coin-trading-journal.vercel.app
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=25307816741-gbf2qretmo0m5il4ao4ke89g2o4fkig4.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=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
+ 
 ```
 
 #### 선택 환경 변수:
