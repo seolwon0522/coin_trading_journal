@@ -1,0 +1,77 @@
+# Backend and other services
+backend/
+ml_scoring/
+trading-engine/
+ml-dashboard-frontend/
+nautilus-ml-pipeline/
+temp_backend_deploy/
+ccpm/
+
+# Build directories
+build/
+.gradle/
+gradle/
+out/
+dist/
+
+# Documentation
+docs/
+*.md
+!frontend/*.md
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Environment files
+.env
+.env.local
+.env.example
+env.example
+!frontend/.env.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+logs/
+
+# Test files
+*test*
+*spec*
+e2e/
+cypress/
+
+# Config files
+*.toml
+*.bat
+*.yaml
+*.yml
+!frontend/**/*.yaml
+!frontend/**/*.yml
+Procfile
+gradlew*
+*.gradle
+*.properties
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+nul
+
+# Other files
+*.postman_collection.json
+openapi.yaml
+package.json.bak
+package-lock.json.bak
+railway.json

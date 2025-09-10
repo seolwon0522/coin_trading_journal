@@ -50,9 +50,4 @@ docs/
 .gitlab-ci.yml
 .travis.yml
 
-# Other projects
-../backend/
-../ml_scoring/
-../trading-engine/
-../ml-dashboard-frontend/
-../nautilus-ml-pipeline/
+# Other projects (handled by root .vercelignore)
