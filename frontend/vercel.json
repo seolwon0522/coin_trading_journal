@@ -12,12 +12,6 @@
       "maxDuration": 10
     }
   },
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@production_api_url",
-    "NEXT_PUBLIC_APP_URL": "@production_app_url",
-    "GOOGLE_CLIENT_ID": "@google_client_id",
-    "GOOGLE_CLIENT_SECRET": "@google_client_secret"
-  },
   "headers": [
     {
       "source": "/api/(.*)",

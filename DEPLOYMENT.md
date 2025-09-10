@@ -23,10 +23,11 @@ main branch
 
 **자동 배포 설정:**
 - Branch: `main`
-- Root Directory: `frontend/`
+- Root Directory: `frontend` (Vercel 대시보드에서 설정)
 - Framework: Next.js
 - Build Command: `npm run build`
 - Output Directory: `.next`
+- Ignored Build Step: 활성화 (frontend 폴더 변경시에만 빌드)
 
 **환경 변수 (Vercel Dashboard에서 설정):**
 ```env
@@ -34,7 +35,7 @@ NEXT_PUBLIC_API_URL=https://coin-trading-journal-production.up.railway.app
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-```
+```ㅌ
 
 ### Backend (Railway)
 
