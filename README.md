@@ -1,489 +1,656 @@
-<div align="center">
+# 🚀 Crypto Trading Journal
 
-<!-- 헤더 배너 -->
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=24&height=250&section=header&text=Crypto%20Trading%20Journal&fontSize=70&fontAlignY=35&desc=AI-Powered%20Cryptocurrency%20Trading%20Platform&descSize=20&descAlignY=55&animation=twinkling" alt="header"/>
+[![Build Status](https://github.com/kimminkyu-link/coin_trading_journal/actions/workflows/deploy.yml/badge.svg)](https://github.com/kimminkyu-link/coin_trading_journal/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.4-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Next.js](https://img.shields.io/badge/Next.js-15.4.5-blue.svg)](https://nextjs.org/)
+[![Python](https://img.shields.io/badge/Python-3.11+-yellow.svg)](https://www.python.org/)
 
-<!-- 배지 섹션 -->
-<p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge" alt="version"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="license"/>
-  <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge" alt="PRs"/>
-</p>
+**암호화폐 거래를 체계적으로 관리하고 분석하는 올인원 트레이딩 플랫폼**
 
-<p align="center">
-  <a href="https://github.com/kimminkyu-link/coin_trading_journal/actions/workflows/frontend-ci.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/kimminkyu-link/coin_trading_journal/frontend-ci.yml?style=for-the-badge&label=Frontend%20CI&logo=github" alt="Frontend CI"/>
-  </a>
-  <a href="https://github.com/kimminkyu-link/coin_trading_journal/actions/workflows/backend-ci.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/kimminkyu-link/coin_trading_journal/backend-ci.yml?style=for-the-badge&label=Backend%20CI&logo=github" alt="Backend CI"/>
-  </a>
-  <a href="https://github.com/kimminkyu-link/coin_trading_journal/actions/workflows/deploy.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/kimminkyu-link/coin_trading_journal/deploy.yml?style=for-the-badge&label=Deploy&logo=railway" alt="Deploy"/>
-  </a>
-</p>
+Binance API와 실시간 연동하여 거래를 자동으로 추적하고, ML 기반으로 성과를 분석하며, 백테스팅과 자동매매까지 지원하는 통합 솔루션입니다.
 
-<!-- 간단한 설명 -->
-<h3 align="center">
-  🚀 차세대 암호화폐 트레이딩 플랫폼 🚀
-</h3>
+## 📚 목차
 
-<p align="center">
-  <b>실시간 거래 기록</b> • <b>AI 성과 분석</b> • <b>자동매매 시스템</b> • <b>백테스팅 엔진</b>
-</p>
+- [✨ 주요 기능](#-주요-기능)
+- [🏗️ 시스템 구조](#️-시스템-구조)
+- [🚀 빠른 시작](#-빠른-시작)
+- [⚙️ 상세 설정](#️-상세-설정)
+- [📖 API 문서](#-api-문서)
+- [🧪 테스트](#-테스트)
+- [🌐 배포](#-배포)
+- [🐛 문제 해결](#-문제-해결)
+- [🤝 기여하기](#-기여하기)
 
-<br/>
+## ✨ 주요 기능
 
-<!-- 빠른 링크 -->
-<p align="center">
-  <a href="#-핵심-기능"><b>핵심 기능</b></a> •
-  <a href="#-기술-스택"><b>기술 스택</b></a> •
-  <a href="#-시작하기"><b>시작하기</b></a> •
-  <a href="#-api-문서"><b>API 문서</b></a> •
-  <a href="#-기여하기"><b>기여하기</b></a>
-</p>
+### 📊 거래 관리 & 추적
+- **실시간 동기화**: Binance API와 24시간 거래 내역 자동 연동
+- **다중 거래소 지원**: 타 거래소 거래 수동 입력 및 통합 관리
+- **전략 분류**: BREAKOUT, TREND_FOLLOWING, MEAN_REVERSION, SCALPING
+- **정확한 손익 계산**: 수수료, 슬리피지 포함 실시간 P&L 추적
 
-</div>
+### 💼 포트폴리오 분석
+- **실시간 평가**: 현재 포지션 및 총 자산 실시간 모니터링
+- **평균 단가 관리**: 추가 매수/매도 시 자동 평균가 계산
+- **멀티 자산**: BTC, ETH, BNB 등 모든 Binance 페어 지원
+- **성과 시각화**: 일별/주별/월별 수익률 차트 및 대시보드
 
-<br/>
+### 🤖 ML 기반 분석
+- **XGBoost 스코어링**: 거래별 성과 점수 및 개선점 제안
+- **패턴 인식**: 반복되는 실수 패턴 및 성공 패턴 분석
+- **시간대 분석**: 수익률이 높은 거래 시간대 히트맵
+- **전략 최적화**: 전략별 성과 비교 및 최적 파라미터 추천
 
----
+### 🔄 자동매매 시스템 (Beta)
+- **멀티 전략 봇**: 다양한 전략을 동시에 실행하는 봇 프레임워크
+- **리스크 관리**: 자동 손절매, 익절매, 트레일링 스탑
+- **포지션 사이징**: Kelly Criterion 기반 최적 포지션 크기 계산
+- **실시간 모니터링**: WebSocket 기반 실시간 시장 데이터 처리
 
-## 🎯 **핵심 기능**
+## 🏗️ 시스템 구조
 
-<table>
-<tr>
-<td width="50%">
+### 시스템 컴포넌트
 
-### 📊 **트레이딩 저널**
-<img src="https://img.shields.io/badge/Real--time-Sync-brightgreen?style=flat-square" alt="real-time"/>
-
-- ✨ **Binance API 자동 동기화**
-- 📈 **실시간 포트폴리오 추적**
-- 📉 **수익률 자동 계산**
-- 🎯 **전략별 성과 분석**
-- 📅 **시간대별 통계**
-
-</td>
-<td width="50%">
-
-### 🤖 **AI/ML 분석 엔진**
-<img src="https://img.shields.io/badge/XGBoost-Powered-blue?style=flat-square" alt="xgboost"/>
-
-- 🧠 **거래 패턴 자동 분석**
-- 📊 **성과 점수화 시스템**
-- 🔮 **예측 모델링**
-- 🎲 **리스크 평가**
-- 📚 **학습 기반 개선**
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### ⚡ **자동매매 시스템**
-<img src="https://img.shields.io/badge/24%2F7-Active-orange?style=flat-square" alt="24/7"/>
-
-- 🤖 **다중 전략 동시 운영**
-- 🛡️ **자동 손절/익절**
-- ⚖️ **포지션 자동 관리**
-- 📡 **실시간 시장 모니터링**
-- 🔄 **전략 자동 전환**
-
-</td>
-<td width="50%">
-
-### 🧪 **백테스팅 플랫폼**
-<img src="https://img.shields.io/badge/Nautilus-Trader-purple?style=flat-square" alt="nautilus"/>
-
-- 📈 **과거 데이터 시뮬레이션**
-- 🎯 **전략 성과 검증**
-- 📊 **상세 리포트 생성**
-- 🔬 **파라미터 최적화**
-- 💡 **개선점 자동 도출**
-
-</td>
-</tr>
-</table>
-
-<br/>
-
----
-
-## 🛠️ **기술 스택**
-
-<div align="center">
-
-### **Frontend**
-<p>
-  <img src="https://img.shields.io/badge/Next.js-15.4.5-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/Tailwind-3.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind"/>
-</p>
-
-### **Backend**
-<p>
-  <img src="https://img.shields.io/badge/Spring_Boot-3.5.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot"/>
-  <img src="https://img.shields.io/badge/Java-17-007396?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-15-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
-  <img src="https://img.shields.io/badge/Redis-7.0-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"/>
-</p>
-
-### **AI/ML**
-<p>
-  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-  <img src="https://img.shields.io/badge/FastAPI-0.104-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/XGBoost-2.0-FF9900?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost"/>
-  <img src="https://img.shields.io/badge/Pandas-2.0-150458?style=for-the-badge&logo=pandas&logoColor=white" alt="Pandas"/>
-</p>
-
-### **Infrastructure**
-<p>
-  <img src="https://img.shields.io/badge/Docker-24.0-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
-  <img src="https://img.shields.io/badge/Vercel-Deploy-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel"/>
-  <img src="https://img.shields.io/badge/Railway-Deploy-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway"/>
-  <img src="https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions"/>
-</p>
-
-</div>
-
-<br/>
-
----
-
-## 🏗️ **시스템 아키텍처**
-
-<div align="center">
-
-```mermaid
-graph TB
-    subgraph "🖥️ Client Layer"
-        A[React Frontend<br/>Next.js 15]
-    end
-    
-    subgraph "⚙️ API Gateway"
-        B[Spring Boot API<br/>JWT Auth]
-    end
-    
-    subgraph "🧠 Services"
-        C[Trading Service]
-        D[Portfolio Service]
-        E[ML Scoring Engine]
-        F[Auto Trading Bot]
-    end
-    
-    subgraph "💾 Data Layer"
-        G[(PostgreSQL)]
-        H[(Redis Cache)]
-    end
-    
-    subgraph "🌐 External"
-        I[Binance API]
-    end
-    
-    A --> B
-    B --> C
-    B --> D
-    C --> E
-    D --> F
-    C --> G
-    D --> G
-    B --> H
-    F --> I
-    
-    style A fill:#61DAFB
-    style B fill:#6DB33F
-    style E fill:#FF9900
-    style G fill:#316192
-    style H fill:#DC382D
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend (Next.js)                     │
+│                    React 19 + TypeScript + TailwindCSS        │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ├── REST API
+                                ├── WebSocket
+                                │
+┌─────────────────────────────────────────────────────────────┐
+│                     Backend (Spring Boot)                     │
+│                          Java 17                              │
+├───────────────────────────────────────────────────────────────┤
+│   Trade Service  │  Portfolio Service  │  Auth Service       │
+└───────────────────────────────────────────────────────────────┘
+                                │
+                ┌───────────────┼───────────────┐
+                │               │               │
+┌───────────────┴──┐ ┌─────────┴──────┐ ┌────┴────────────┐
+│   PostgreSQL 15  │ │   Redis 7.0    │ │  Binance API   │
+│   (Primary DB)   │ │   (Cache)      │ │  (Market Data) │
+└──────────────────┘ └────────────────┘ └─────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────┐
+│                    ML Services (Python)                       │
+├───────────────────────────────────────────────────────────────┤
+│  Scoring Engine  │  Trading Engine  │  Backtesting Engine   │
+│    (FastAPI)     │    (FastAPI)     │  (Nautilus Trader)   │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-</div>
+### 기술 스택
 
-<br/>
+#### Frontend
+- **프레임워크**: Next.js 15.4.5 (App Router)
+- **UI 라이브러리**: React 19.1.0
+- **언어**: TypeScript 5.x
+- **스타일링**: Tailwind CSS v4 + shadcn/ui
+- **상태 관리**: TanStack Query v5
+- **폼 관리**: React Hook Form + Zod validation
+- **차트**: Chart.js, Recharts
 
----
+#### Backend
+- **프레임워크**: Spring Boot 3.5.4
+- **언어**: Java 17
+- **빌드 도구**: Gradle 8.x
+- **데이터베이스**: PostgreSQL 15 (메인), Redis 7.0 (캐시)
+- **ORM**: JPA/Hibernate
+- **보안**: Spring Security + JWT
+- **API 문서**: Swagger/OpenAPI
 
-## 🚀 **시작하기**
+#### ML/데이터 사이언스
+- **언어**: Python 3.11+
+- **웹 프레임워크**: FastAPI
+- **ML 라이브러리**: XGBoost, scikit-learn
+- **데이터 처리**: pandas, NumPy
+- **백테스팅**: Nautilus Trader
+- **태스크 큐**: Celery (예정)
 
-### **📋 사전 요구사항**
+#### 인프라
+- **컨테이너화**: Docker, Docker Compose
+- **CI/CD**: GitHub Actions
+- **프론트엔드 호스팅**: Vercel
+- **백엔드 호스팅**: Railway
+- **모니터링**: Railway/Vercel 대시보드를 통한 애플리케이션 로그
 
-<table>
-<tr>
-<td>
+## 🚀 빠른 시작
 
-**필수 도구**
-- 🟢 Node.js 20+
-- ☕ Java 17+
-- 🐍 Python 3.11+
-- 🐳 Docker & Docker Compose
+### 📋 사전 요구사항
 
-</td>
-<td>
+- Node.js 20+ 및 npm 9+
+- Java 17+ (OpenJDK 권장)
+- Python 3.11+
+- Docker 및 Docker Compose
+- PostgreSQL 15 (또는 Docker 사용)
+- Redis 7.0 (또는 Docker 사용)
+- Binance API 인증 정보 (실시간 거래 기능용)
 
-**데이터베이스**
-- 🐘 PostgreSQL 15+
-- 🔴 Redis 7.0+
+### 🔧 설치 가이드
 
-</td>
-</tr>
-</table>
-
-### **⚡ 빠른 설치**
-
-<details>
-<summary><b>🔧 자세한 설치 과정 보기</b></summary>
-
-#### **1️⃣ 저장소 클론**
+#### 1. 저장소 클론
 ```bash
-git clone https://github.com/kimminkyu-link/coin_trading_journal.git
+git clone https://github.com/seolwon0522/coin_trading_journal.git
 cd coin_trading_journal
 ```
 
-#### **2️⃣ 환경 변수 설정**
-```bash
-# Frontend 환경 변수
-cp frontend/.env.example frontend/.env.local
+#### 2. 환경 변수 설정
 
-# Backend 환경 변수
-cp backend/src/main/resources/application.yml.example \
-   backend/src/main/resources/application.yml
+예제 파일을 기반으로 `.env` 파일 생성:
+
+```bash
+# 백엔드 환경
+cp backend/src/main/resources/application.yml.example backend/src/main/resources/application.yml
+
+# 프론트엔드 환경
+cp frontend/.env.example frontend/.env.local
 ```
 
-#### **3️⃣ Docker로 DB 실행**
+#### 3. Docker로 데이터베이스 시작
 ```bash
 docker-compose up -d postgres redis
 ```
 
-#### **4️⃣ 서비스 실행**
-
-<table>
-<tr>
-<td>
-
-**Backend** 🚀
+#### 4. 백엔드 설치 및 실행
 ```bash
 cd backend
+./gradlew build
 ./gradlew bootRun
 ```
-➡️ http://localhost:8080
+백엔드는 http://localhost:8080 에서 접근 가능
 
-</td>
-<td>
-
-**Frontend** 🎨
+#### 5. 프론트엔드 설치 및 실행
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-➡️ http://localhost:3000
+프론트엔드는 http://localhost:3000 에서 접근 가능
 
-</td>
-</tr>
-</table>
+#### 6. Python ML 서비스 설정 (선택사항)
+```bash
+cd ml_scoring
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8001
+```
 
-</details>
+## ⚙️ 상세 설정
 
-### **🐳 Docker 한 번에 실행**
+### 백엔드 설정
+
+`backend/src/main/resources/application.yml` 편집:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cryptodb
+    username: cryptouser
+    password: cryptopass
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  
+  redis:
+    host: localhost
+    port: 6379
+
+jwt:
+  secret: your-256-bit-secret-key-change-in-production
+  access-token-validity-in-seconds: 900  # 15분
+  refresh-token-validity-in-seconds: 604800  # 7일
+
+binance:
+  api:
+    key: ${BINANCE_API_KEY}
+    secret: ${BINANCE_SECRET_KEY}
+    baseUrl: https://api.binance.com
+
+encryption:
+  key: your-32-character-encryption-key
+```
+
+### 프론트엔드 설정
+
+`frontend/.env.local` 편집:
 
 ```bash
-docker-compose up -d
+# API 설정
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_WS_URL=ws://localhost:8080/ws
+
+# Google OAuth (선택사항)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-nextauth-secret
+
+# 기능 플래그
+NEXT_PUBLIC_ENABLE_TRADING_BOT=false
+NEXT_PUBLIC_ENABLE_BACKTESTING=false
 ```
 
-<br/>
+### 데이터베이스 설정
 
----
+Docker를 사용하지 않는 경우, 수동으로 데이터베이스 생성:
 
-## 📊 **API 문서**
+```sql
+CREATE DATABASE cryptodb;
+CREATE USER cryptouser WITH PASSWORD 'cryptopass';
+GRANT ALL PRIVILEGES ON DATABASE cryptodb TO cryptouser;
+```
 
-<div align="center">
+### 🚀 빠른 시작 (Docker Compose)
 
-### **🔗 주요 엔드포인트**
+모든 서비스를 한 번에 실행하려면:
 
-| 카테고리 | 메소드 | 경로 | 설명 |
-|:---:|:---:|:---|:---|
-| **🔐 인증** | `POST` | `/api/auth/login` | 사용자 로그인 |
-| | `POST` | `/api/auth/refresh` | 토큰 갱신 |
-| | `GET` | `/api/auth/me` | 현재 사용자 정보 |
-| **💹 거래** | `GET` | `/api/trades` | 거래 목록 조회 |
-| | `POST` | `/api/trades` | 거래 생성 |
-| | `POST` | `/api/trades/sync` | Binance 동기화 |
-| **💼 포트폴리오** | `GET` | `/api/portfolio` | 포트폴리오 조회 |
-| | `GET` | `/api/portfolio/summary` | 포트폴리오 요약 |
-| **📈 통계** | `GET` | `/api/trades/statistics` | 거래 통계 |
+```bash
+# 전체 스택 실행
+docker-compose up -d
 
-</div>
+# 상태 확인
+docker-compose ps
 
-### **📖 Swagger 문서**
-> 🔗 **Production**: https://coin-trading-journal-production.up.railway.app/swagger-ui
+# 로그 확인
+docker-compose logs -f
+```
 
-<br/>
+서비스 접근:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- ML Service: http://localhost:8001
 
----
+### 💡 주요 사용 시나리오
 
-## 🔐 **보안**
+#### 1. Binance 거래 자동 동기화
+1. 설정 페이지에서 Binance API 키 등록
+2. "동기화" 버튼 클릭하여 최근 24시간 거래 가져오기
+3. 자동으로 포트폴리오 업데이트 및 손익 계산
 
-<div align="center">
+#### 2. 거래 성과 분석
+1. 대시보드에서 전체 포트폴리오 현황 확인
+2. "분석" 탭에서 상세 통계 및 차트 확인
+3. ML 점수를 통해 거래 개선점 파악
 
-<table>
-<tr>
-<td align="center">
+#### 3. 백테스팅 실행
+1. 전략 선택 및 파라미터 설정
+2. 과거 데이터 기간 선택
+3. 백테스트 실행 및 결과 분석
 
-### **🛡️ JWT 인증**
+### 🔑 인증 플로우
+
 ```mermaid
 sequenceDiagram
-    Client->>Server: Login
-    Server->>Client: Access Token (15분)
-    Server->>Client: Refresh Token (7일)
-    Client->>Server: API Request + Token
-    Server->>Client: Response
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+    
+    U->>F: 로그인 요청
+    F->>B: POST /api/auth/login
+    B->>DB: 사용자 검증
+    DB-->>B: 사용자 정보
+    B-->>F: Access Token (15분) + Refresh Token (7일)
+    F-->>U: 로그인 성공
+    
+    Note over F: 토큰 만료 시
+    F->>B: POST /api/auth/refresh
+    B-->>F: 새 Access Token
 ```
 
-</td>
-<td align="center">
+### 📱 API 사용 예제
 
-### **🔒 보안 기능**
-- ✅ OAuth 2.0 (Google)
-- ✅ JWT 토큰 인증
-- ✅ AES-256 암호화
-- ✅ CORS 설정
-- ✅ Rate Limiting
+```javascript
+// 거래 조회
+const response = await fetch('http://localhost:8080/api/trades', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  }
+});
+const trades = await response.json();
 
-</td>
-</tr>
-</table>
+// 새 거래 생성
+const trade = {
+  symbol: 'BTCUSDT',
+  side: 'BUY',
+  quantity: 0.001,
+  price: 50000,
+  tradingStrategy: 'TREND_FOLLOWING',
+  entryTime: new Date().toISOString()
+};
 
-</div>
-
-<br/>
-
----
-
-## 📈 **성능 메트릭**
-
-<div align="center">
-
-| 지표 | 목표 | 현재 | 상태 |
-|:---:|:---:|:---:|:---:|
-| **API 응답 시간** | < 200ms | 150ms | 🟢 |
-| **페이지 로드** | < 2s | 1.8s | 🟢 |
-| **WebSocket 지연** | < 50ms | 45ms | 🟢 |
-| **DB 쿼리** | < 100ms | 80ms | 🟢 |
-
-</div>
-
-<br/>
-
----
-
-## 🤝 **기여하기**
-
-<div align="center">
-
-### **브랜치 전략**
-
-```mermaid
-gitGraph
-    commit
-    branch feature/new-feature
-    checkout feature/new-feature
-    commit
-    commit
-    checkout main
-    merge feature/new-feature
-    commit
+await fetch('http://localhost:8080/api/trades', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(trade)
+});
 ```
 
-</div>
+## 📖 API 문서
 
-### **커밋 컨벤션**
+### REST API 엔드포인트
 
-| 타입 | 설명 | 예시 |
-|:---:|:---|:---|
-| `feat` | 새로운 기능 | `feat: 실시간 차트 추가` |
-| `fix` | 버그 수정 | `fix: 로그인 오류 해결` |
-| `docs` | 문서 수정 | `docs: API 문서 업데이트` |
-| `style` | 코드 포맷팅 | `style: 코드 정리` |
-| `refactor` | 코드 리팩토링 | `refactor: 서비스 로직 개선` |
+| 메소드 | 엔드포인트 | 설명 |
+|--------|----------|-------------|
+| **인증** |
+| POST | `/api/auth/register` | 새 사용자 등록 |
+| POST | `/api/auth/login` | 사용자 로그인 |
+| POST | `/api/auth/refresh` | 액세스 토큰 갱신 |
+| GET | `/api/auth/me` | 현재 사용자 조회 |
+| **거래** |
+| GET | `/api/trades` | 거래 목록 조회 (페이지네이션) |
+| GET | `/api/trades/{id}` | 거래 상세 조회 |
+| POST | `/api/trades` | 거래 생성 |
+| PUT | `/api/trades/{id}` | 거래 수정 |
+| DELETE | `/api/trades/{id}` | 거래 삭제 |
+| POST | `/api/trades/sync` | Binance와 동기화 |
+| **포트폴리오** |
+| GET | `/api/portfolio` | 포트폴리오 조회 |
+| GET | `/api/portfolio/summary` | 포트폴리오 요약 조회 |
+| PUT | `/api/portfolio/{symbol}/buy-price` | 평균 매수가 업데이트 |
+| **통계** |
+| GET | `/api/trades/statistics` | 거래 통계 조회 |
+| GET | `/api/trades/statistics/time-heatmap` | 거래 시간 히트맵 조회 |
 
-<br/>
+로컬 실행 시 전체 API 문서는 http://localhost:8080/swagger-ui.html 에서 확인 가능합니다.
 
----
+### 🔧 개발 환경 설정
 
-## 🐛 **트러블슈팅**
+#### 추천 IDE 설정
 
-<details>
-<summary><b>💡 자주 발생하는 문제 해결</b></summary>
+**Backend (Java/Spring Boot)**:
+- IntelliJ IDEA (추천) 또는 VS Code with Java Extension Pack
+- Lombok 플러그인 설치 필수
+- Spring Boot DevTools 자동 재시작 활성화
 
-### **Frontend 빌드 오류**
+**Frontend (TypeScript/Next.js)**:
+- VS Code with ESLint, Prettier 확장
+- Auto-save 및 format on save 활성화
+
+**Python (ML Services)**:
+- PyCharm 또는 VS Code with Python Extension
+- Black formatter 설정
+
+### 📁 프로젝트 구조
+
+```
+coin_trading_journal/
+├── frontend/                 # Next.js 프론트엔드 애플리케이션
+│   ├── src/
+│   │   ├── app/            # App router 페이지
+│   │   ├── components/     # React 컴포넌트
+│   │   ├── hooks/          # 커스텀 React hooks
+│   │   ├── lib/           # 유틸리티 및 API 클라이언트
+│   │   └── types/         # TypeScript 타입 정의
+│   └── public/            # 정적 자산
+│
+├── backend/                 # Spring Boot 백엔드 애플리케이션
+│   └── src/main/java/com/example/trading_bot/
+│       ├── auth/          # 인증 및 JWT
+│       ├── trade/         # 거래 관리
+│       ├── portfolio/     # 포트폴리오 관리
+│       ├── binance/       # Binance API 통합
+│       └── common/        # 공유 유틸리티
+│
+├── ml_scoring/             # Python ML 스코어링 서비스
+│   ├── app/              # FastAPI 애플리케이션
+│   ├── ml/               # ML 모델 및 학습
+│   └── tests/            # 단위 테스트
+│
+├── trading-engine/         # 자동매매 엔진
+│   └── fastapi/          # 트레이딩 봇 API
+│
+└── nautilus-ml-pipeline/   # 백테스팅 프레임워크
+    └── strategies/       # 거래 전략
+```
+
+### 🔄 개발 워크플로우
+
+1. **기능 브랜치 생성**
+```bash
+git checkout -b feature/your-feature-name
+```
+
+2. **변경사항 작성 및 로컬 테스트**
+```bash
+# 백엔드 테스트 실행
+cd backend && ./gradlew test
+
+# 프론트엔드 테스트 실행
+cd frontend && npm test
+```
+
+3. **변경사항 커밋**
+```bash
+git add .
+git commit -m "feat: 새 기능 추가"
+```
+
+4. **푸시 및 PR 생성**
+```bash
+git push origin feature/your-feature-name
+```
+
+### 코드 스타일
+
+- **Java**: Google Java Style Guide
+- **TypeScript/JavaScript**: ESLint + Prettier 설정
+- **Python**: Black formatter + isort
+
+커밋 전 포매터 실행:
+```bash
+# 프론트엔드
+npm run lint:fix
+npm run prettier:fix
+
+# 백엔드
+./gradlew spotlessApply
+
+# Python
+black . && isort .
+```
+
+## 🧪 테스트
+
+### 백엔드 테스트
+```bash
+cd backend
+./gradlew test                 # 단위 테스트
+./gradlew integrationTest      # 통합 테스트
+./gradlew jacocoTestReport     # 커버리지 리포트
+```
+
+### 프론트엔드 테스트
+```bash
+cd frontend
+npm test                       # 단위 테스트
+npm run test:e2e              # E2E 테스트 (Playwright)
+npm run test:coverage         # 커버리지 리포트
+```
+
+### ML 서비스 테스트
+```bash
+cd ml_scoring
+pytest                        # 모든 테스트
+pytest --cov=app             # 커버리지 포함
+```
+
+## 🌐 배포
+
+### 🚀 자동 배포 (CI/CD)
+
+#### GitHub Actions 워크플로우
+
+`main` 브랜치에 푸시하면 자동으로:
+
+1. **테스트 실행**: 단위 테스트 및 통합 테스트
+2. **빌드**: Docker 이미지 빌드
+3. **배포**:
+   - Frontend → Vercel
+   - Backend → Railway
+   - ML Services → Railway (선택사항)
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run tests
+        run: |
+          cd backend && ./gradlew test
+          cd ../frontend && npm test
+  
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+      - name: Deploy to Railway
+        uses: berviantoleo/railway-deploy@main
+```
+
+### 수동 배포
+
+#### Vercel로 프론트엔드 배포
+```bash
+cd frontend
+npm run build
+vercel --prod
+```
+
+#### Railway로 백엔드 배포
+```bash
+railway up
+```
+
+### 프로덕션 환경 변수
+
+배포 플랫폼에 다음 환경 변수 설정 필요:
+
+**백엔드 (Railway)**:
+- `DATABASE_URL`
+- `REDIS_URL`
+- `JWT_SECRET`
+- `BINANCE_API_KEY`
+- `BINANCE_SECRET_KEY`
+- `ENCRYPTION_KEY`
+
+**프론트엔드 (Vercel)**:
+- `NEXT_PUBLIC_API_BASE_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `NEXTAUTH_SECRET`
+
+## 🐛 문제 해결
+
+### ❗ 자주 발생하는 문제와 해결법
+
+#### 백엔드가 시작되지 않음
+- Java 버전 확인: `java -version` (17+ 필요)
+- `application.yml`의 데이터베이스 연결 확인
+- PostgreSQL과 Redis가 실행 중인지 확인
+
+#### 프론트엔드 빌드 오류
 ```bash
 rm -rf node_modules .next
 npm install
 npm run build
 ```
 
-### **Backend 빌드 오류**
-```bash
-./gradlew clean build --refresh-dependencies
+#### 데이터베이스 연결 문제
+- PostgreSQL 실행 확인: `docker ps`
+- `application.yml`의 인증 정보 확인
+- 수동 연결 시도: `psql -h localhost -U cryptouser -d cryptodb`
+
+#### JWT 토큰 문제
+- 브라우저 localStorage 삭제
+- 백엔드 설정의 토큰 만료 설정 확인
+- 배포 환경 간 JWT secret 일치 여부 확인
+
+#### Binance API 오류
+- Binance의 API 키 권한 확인
+- IP 화이트리스트 설정 확인
+- 환경 변수에 API 키/시크릿이 올바르게 설정되었는지 확인
+
+### 로깅
+
+- **백엔드 로그**: 콘솔 출력 또는 `logs/application.log` 확인
+- **프론트엔드 로그**: 브라우저 콘솔 및 Vercel 함수 로그
+- **데이터베이스 쿼리**: `application.yml`에서 `show-sql: true` 활성화
+
+## 🤝 기여하기
+
+기여를 환영합니다! 다음 가이드라인을 따라주세요:
+
+1. 저장소 포크
+2. 기능 브랜치 생성
+3. 적절한 테스트와 함께 변경사항 작성
+4. 모든 테스트 통과 확인
+5. Pull Request 제출
+
+### 커밋 메시지 규칙
+
+```
+feat: 새 기능 추가
+fix: 버그 수정
+docs: 문서 업데이트
+style: 코드 포맷
+refactor: 코드 리팩토링
+test: 테스트 추가
+chore: 의존성 업데이트
 ```
 
-### **Docker 이슈**
-```bash
-docker-compose down -v
-docker-compose up -d
-```
+### 🏷️ 버전 관리
 
-</details>
+[Semantic Versioning](https://semver.org/)을 따릅니다:
+- MAJOR: 호환되지 않는 API 변경
+- MINOR: 하위 호환 기능 추가
+- PATCH: 하위 호환 버그 수정
 
-<br/>
+### 📝 라이선스
 
----
+이 프로젝트는 MIT 라이선스 하에 배포됩니다 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-## 📄 **라이선스**
+### 📞 연락처 & 커뮤니티
 
-<div align="center">
+- **버그 리포트**: [GitHub Issues](https://github.com/seolwon0522/coin_trading_journal/issues)
+- **기능 제안**: [GitHub Discussions](https://github.com/seolwon0522/coin_trading_journal/discussions)
+- **이메일**: support@cryptojournal.com
 
-이 프로젝트는 **MIT License** 하에 배포됩니다.
+### 🙏 감사의 말
 
-자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+이 프로젝트는 다음 오픈소스 프로젝트들의 도움으로 만들어졌습니다:
 
-</div>
-
-<br/>
-
----
-
-## 💬 **지원 & 커뮤니티**
-
-<div align="center">
-
-<a href="https://github.com/kimminkyu-link/coin_trading_journal/issues">
-  <img src="https://img.shields.io/badge/Report%20Bug-FF4444?style=for-the-badge&logo=github&logoColor=white" alt="Report Bug"/>
-</a>
-<a href="https://github.com/kimminkyu-link/coin_trading_journal/discussions">
-  <img src="https://img.shields.io/badge/Discussions-00AA00?style=for-the-badge&logo=github&logoColor=white" alt="Discussions"/>
-</a>
-<a href="mailto:support@example.com">
-  <img src="https://img.shields.io/badge/Email-0078D4?style=for-the-badge&logo=microsoft-outlook&logoColor=white" alt="Email"/>
-</a>
-
-</div>
-
-<br/>
+- [Binance API](https://binance-docs.github.io/apidocs/) - 실시간 시장 데이터
+- [Nautilus Trader](https://nautilustrader.io/) - 고성능 백테스팅
+- [shadcn/ui](https://ui.shadcn.com/) - 모던 UI 컴포넌트
+- [Spring Boot](https://spring.io/) - 엔터프라이즈급 백엔드
+- [Next.js](https://nextjs.org/) - 풀스택 React 프레임워크
 
 ---
 
 <div align="center">
-
-### **⭐ Star를 눌러주세요!**
-
-이 프로젝트가 도움이 되었다면, ⭐ **Star**를 눌러주세요!
-
-<br/>
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=24&height=100&section=footer&fontSize=90&fontAlignY=50&animation=twinkling" alt="footer"/>
-
-**Made with 💜 by Crypto Trading Journal Team**
-
+  <strong>🚀 Happy Trading! 🚀</strong>
+  <br>
+  <sub>Built with ❤️ by the Crypto Journal Team</sub>
 </div>
