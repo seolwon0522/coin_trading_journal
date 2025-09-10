@@ -74,6 +74,7 @@ GOOGLE_CLIENT_SECRET=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
 
 - [ ] Root Directory 비워둠
 - [ ] Framework Preset: Other
+- 
 - [ ] vercel.json이 프로젝트 루트에 있음
 - [ ] 환경 변수 모두 설정
 - [ ] GitHub main 브랜치에 최신 코드 푸시
