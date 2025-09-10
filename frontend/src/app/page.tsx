@@ -389,10 +389,16 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Link href="/demo">
+              <Link href="/login">
                 <Button size="lg" variant="outline" className="px-8 group hover-glow">
+                  <Lock className="mr-2 h-4 w-4" />
+                  로그인
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button size="lg" variant="ghost" className="px-8 group">
                   <Activity className="mr-2 h-4 w-4 animate-pulse" />
-                  라이브 데모 보기
+                  라이브 데모
                 </Button>
               </Link>
             </div>

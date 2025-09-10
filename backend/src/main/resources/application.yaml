@@ -30,7 +30,7 @@ jwt:
 # OAuth2 설정
 oauth2:
   google:
-    client-id: 617965160441-duhprvkkvvhgifgp12osligng8scp8bd.apps.googleusercontent.com
+    client-id: 25307816741-gbf2qretmo0m5il4ao4ke89g2o4fkig4.apps.googleusercontent.com
   apple:
     client-id: development-apple-client-id
 
@@ -47,6 +47,13 @@ binance:
     use-testnet: false
     websocket-url: wss://stream.binance.com:9443
     testnet-websocket-url: wss://testnet.binance.vision
+
+# CORS 설정 (로컬 개발용)
+cors:
+  allowed-origins: http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+  allowed-headers: "*"
+  allow-credentials: true
 
 ---
 # 개발 환경 설정

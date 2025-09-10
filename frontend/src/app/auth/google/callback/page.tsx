@@ -37,13 +37,14 @@ function GoogleCallbackContent() {
           router.replace('/login');
           return;
         }
-        // 액세스/리프레시 토큰 저장 후 리다이렉트 (AuthProvider가 부팅 시 me() 호출)
+        // 액세스/리프레시 토큰 저장 후 대시보드로 직접 이동
         authStorage.save({
           accessToken: payload.accessToken,
           refreshToken: payload.refreshToken,
         });
-        // 라우팅만으로 충분하지만 캐시된 컨텍스트 초기화를 위해 하드 리로드가 더 안전
-        window.location.replace('/');
+        toast.success('로그인 성공!');
+        // 대시보드로 직접 이동
+        window.location.href = '/dashboard';
       } catch (e: any) {
         toast.error(e?.message || 'Google 로그인 중 오류 발생');
         router.replace('/login');

@@ -13,6 +13,10 @@ export async function POST(request: NextRequest) {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET; // 서버 전용
     if (!clientId || !clientSecret) {
+      console.error('Missing OAuth config:', { 
+        hasClientId: !!clientId, 
+        hasClientSecret: !!clientSecret 
+      });
       return NextResponse.json({ error: 'Google OAuth client configuration missing' }, { status: 500 });
     }
 
@@ -34,6 +38,11 @@ export async function POST(request: NextRequest) {
 
     const tokenJson = await tokenResp.json();
     if (!tokenResp.ok) {
+      console.error('Google token exchange failed:', {
+        status: tokenResp.status,
+        error: tokenJson,
+        redirectUri
+      });
       return NextResponse.json({ error: 'google_token_error', details: tokenJson }, { status: 502 });
     }
 
@@ -44,6 +53,8 @@ export async function POST(request: NextRequest) {
 
     // 2) 우리 백엔드 OAuth2 로그인
     const backendBase = process.env.BACKEND_BASE_URL || 'http://localhost:8080';
+    console.log('Backend OAuth2 login:', { backendBase });
+    
     const loginResp = await fetch(`${backendBase.replace(/\/$/, '')}/api/oauth2/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -51,8 +62,17 @@ export async function POST(request: NextRequest) {
     });
 
     const loginJson = await loginResp.json();
+    
+    if (!loginResp.ok) {
+      console.error('Backend OAuth2 login failed:', {
+        status: loginResp.status,
+        response: loginJson
+      });
+    }
+    
     return NextResponse.json(loginJson, { status: loginResp.status });
   } catch (error: any) {
+    console.error('Unexpected error in Google token route:', error);
     return NextResponse.json({ error: 'unexpected_error', message: error?.message }, { status: 500 });
   }
 }

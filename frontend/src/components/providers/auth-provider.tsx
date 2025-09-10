@@ -147,6 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authStorage.clear();
       setUser(null);
       toast.success('로그아웃 되었습니다');
+      // 메인 페이지로 리다이렉트
+      window.location.href = '/';
     }
   }, []);
 
