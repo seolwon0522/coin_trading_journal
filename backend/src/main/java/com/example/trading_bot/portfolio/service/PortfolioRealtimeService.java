@@ -146,8 +146,8 @@ public class PortfolioRealtimeService {
     private UserApiKey getActiveApiKey(Long userId) {
         return apiKeyRepository.findByUserIdAndExchangeAndIsActiveTrue(userId, "BINANCE")
                 .orElseThrow(() -> new BusinessException(
-                    "활성화된 Binance API 키가 없습니다. API 키를 먼저 등록해주세요.", 
-                    HttpStatus.NOT_FOUND
+                    "Binance API 키가 등록되지 않았습니다. 설정 > API 키 관리에서 Binance API 키를 등록해주세요.", 
+                    HttpStatus.BAD_REQUEST
                 ));
     }
     
