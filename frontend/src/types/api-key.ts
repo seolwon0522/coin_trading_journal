@@ -25,6 +25,7 @@ export interface ApiKeyRequest {
   secretKey: string;
   keyName?: string;
   isActive?: boolean;
+  canTrade?: boolean;
 }
 
 // 거래 동기화 요청 타입
