@@ -30,7 +30,7 @@ jwt:
 # OAuth2 설정
 oauth2:
   google:
-    client-id: 25307816741-gbf2qretmo0m5il4ao4ke89g2o4fkig4.apps.googleusercontent.com
+    client-id: 25307816741-f2030iqmhammf9r9l65gt6hv61vjf58p.apps.googleusercontent.com
   apple:
     client-id: development-apple-client-id
 

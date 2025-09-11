@@ -137,6 +137,11 @@ export default function LoginPage() {
               // 2) 리디렉트 URI 구성 (서버/클라이언트 모두 동일 경로 사용)
               const origin = typeof window !== 'undefined' ? window.location.origin : '';
               const redirectUri = `${origin}/auth/google/callback`;
+              
+              // 디버깅: 실제 redirect_uri 확인
+              console.log('Current origin:', origin);
+              console.log('Redirect URI being sent:', redirectUri);
+              console.log('Client ID:', clientId);
 
               // 3) FedCM/GSI를 사용하지 않고 바로 OAuth2 동의 화면으로 리다이렉트
               const queryString = new URLSearchParams({
