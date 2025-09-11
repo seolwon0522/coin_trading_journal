@@ -122,13 +122,11 @@ public class BinanceApiClient {
                 return ApiKeyValidationResult.failure("TIME_SYNC", "시간 동기화 필요: " + timeDiff + "ms 차이");
             }
             
-            // 계정 정보 조회
+            // 계정 정보 조회 - API 키가 유효하면 성공
             BinanceAccountResponse account = getAccountInfo(apiKey, secretKey);
             
-            // 권한 체크
-            if (account.getPermissions() == null || !account.getPermissions().contains("SPOT")) {
-                return ApiKeyValidationResult.failure("NO_PERMISSION", "SPOT 거래 권한 없음");
-            }
+            // 간단한 상태 로깅
+            log.info("API 키 검증 성공 - 계정 정보 조회 완료");
             
             breaker.recordSuccess();
             return ApiKeyValidationResult.success(account);
@@ -505,7 +503,7 @@ public class BinanceApiClient {
                 userMessage = "API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요.";
                 break;
             case PERMISSION_DENIED:
-                userMessage = "API 키에 필요한 권한이 없습니다. 'Enable Reading' 권한을 확인해주세요.";
+                userMessage = "API 키에 필요한 권한이 없습니다. Binance에서 'Enable Reading' 및 필요한 거래 권한을 활성화해주세요.";
                 break;
             case TIMESTAMP_ERROR:
                 userMessage = "시스템 시간이 Binance 서버와 맞지 않습니다.";

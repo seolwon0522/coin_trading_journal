@@ -78,18 +78,13 @@ public class UserApiKeyService {
                 .encryptedSecretKey(encryptedSecretKey)
                 .keyName(request.getKeyName())
                 .isActive(true)
-                .canTrade(validationResult.isCanTrade()) // Binance에서 가져온 실제 권한
-                .canWithdraw(validationResult.isCanWithdraw()) // Binance에서 가져온 실제 권한
                 .lastUsedAt(LocalDateTime.now())
                 .syncFailureCount(0)
-                .permissions(validationResult.getPermissions() != null ? 
-                        String.join(",", validationResult.getPermissions()) : null)
                 .build();
         
         UserApiKey saved = apiKeyRepository.save(apiKey);
-        log.info("API 키 저장 완료: userId={}, exchange={}, keyId={}, canTrade={}, canWithdraw={}", 
-                userId, request.getExchange(), saved.getId(), 
-                saved.getCanTrade(), saved.getCanWithdraw());
+        log.info("API 키 저장 완료: userId={}, exchange={}, keyId={}", 
+                userId, request.getExchange(), saved.getId());
         
         return ApiKeyResponse.from(saved);
     }
@@ -124,12 +119,6 @@ public class UserApiKeyService {
             
             apiKey.setApiKey(request.getApiKey());
             apiKey.setEncryptedSecretKey(cryptoUtils.encrypt(request.getSecretKey()));
-            
-            // Binance에서 가져온 실제 권한으로 업데이트
-            apiKey.setCanTrade(validationResult.isCanTrade());
-            apiKey.setCanWithdraw(validationResult.isCanWithdraw());
-            apiKey.setPermissions(validationResult.getPermissions() != null ? 
-                    String.join(",", validationResult.getPermissions()) : null);
         }
         
         // 기타 필드 업데이트
@@ -139,11 +128,9 @@ public class UserApiKeyService {
         if (request.getIsActive() != null) {
             apiKey.setIsActive(request.getIsActive());
         }
-        // 수동으로 canTrade를 설정하는 것은 제거 (API 키가 변경되지 않은 경우에만 기존 값 유지)
         
         UserApiKey saved = apiKeyRepository.save(apiKey);
-        log.info("API 키 수정 완료: userId={}, keyId={}, canTrade={}, canWithdraw={}", 
-                userId, keyId, saved.getCanTrade(), saved.getCanWithdraw());
+        log.info("API 키 수정 완료: userId={}, keyId={}", userId, keyId);
         
         return ApiKeyResponse.from(saved);
     }
@@ -229,16 +216,11 @@ public class UserApiKeyService {
         );
         
         if (validationResult.isValid()) {
-            // 테스트 성공 시 권한 정보 업데이트
+            // 테스트 성공 시
             apiKey.setLastUsedAt(LocalDateTime.now());
             apiKey.setSyncFailureCount(0);
-            apiKey.setCanTrade(validationResult.isCanTrade());
-            apiKey.setCanWithdraw(validationResult.isCanWithdraw());
-            apiKey.setPermissions(validationResult.getPermissions() != null ? 
-                    String.join(",", validationResult.getPermissions()) : null);
             
-            log.info("API 키 테스트 성공 및 권한 업데이트: keyId={}, canTrade={}, canWithdraw={}", 
-                    keyId, apiKey.getCanTrade(), apiKey.getCanWithdraw());
+            log.info("API 키 테스트 성공: keyId={}", keyId);
         } else {
             apiKey.setSyncFailureCount(apiKey.getSyncFailureCount() + 1);
             log.warn("API 키 테스트 실패: keyId={}, error={}", keyId, validationResult.getErrorMessage());
@@ -371,16 +353,11 @@ public class UserApiKeyService {
                     );
                     
                     if (result.isValid()) {
-                        apiKey.setCanTrade(result.isCanTrade());
-                        apiKey.setCanWithdraw(result.isCanWithdraw());
-                        apiKey.setPermissions(result.getPermissions() != null ? 
-                                String.join(",", result.getPermissions()) : null);
                         apiKey.setLastUsedAt(LocalDateTime.now());
                         apiKeyRepository.save(apiKey);
                         updatedCount++;
                         
-                        log.info("API 키 권한 업데이트 완료: keyId={}, canTrade={}, canWithdraw={}", 
-                                apiKey.getId(), apiKey.getCanTrade(), apiKey.getCanWithdraw());
+                        log.info("API 키 권한 업데이트 완료: keyId={}", apiKey.getId());
                     } else {
                         log.warn("API 키 권한 업데이트 실패: keyId={}, error={}", 
                                 apiKey.getId(), result.getErrorMessage());

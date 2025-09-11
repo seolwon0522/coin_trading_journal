@@ -30,10 +30,6 @@ public class ApiKeyResponse {
     
     private Boolean isActive;
     
-    private Boolean canTrade;
-    
-    private Boolean canWithdraw;
-    
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastUsedAt;
     
@@ -58,8 +54,6 @@ public class ApiKeyResponse {
                 .keyName(apiKey.getKeyName())
                 .apiKeyMasked(maskApiKey(apiKey.getApiKey()))
                 .isActive(apiKey.getIsActive())
-                .canTrade(apiKey.getCanTrade())
-                .canWithdraw(apiKey.getCanWithdraw())
                 .lastUsedAt(apiKey.getLastUsedAt())
                 .lastSyncAt(apiKey.getLastSyncAt())
                 .syncFailureCount(apiKey.getSyncFailureCount())

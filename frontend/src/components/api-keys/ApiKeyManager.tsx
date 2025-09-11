@@ -109,7 +109,8 @@ interface ApiKeyCardProps {
 
 function ApiKeyCard({ apiKey, onDelete, onTest, isTestLoading }: ApiKeyCardProps) {
   return (
-    <div className="border rounded-lg p-4 space-y-3">
+    <div className="border rounded-lg p-4 space-y-3 hover:shadow-sm transition-shadow">
+      {/* 상단 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Badge variant={apiKey.isActive ? 'default' : 'secondary'}>
@@ -117,7 +118,7 @@ function ApiKeyCard({ apiKey, onDelete, onTest, isTestLoading }: ApiKeyCardProps
           </Badge>
           <span className="font-medium">{apiKey.keyName || 'API Key'}</span>
           {apiKey.isActive ? (
-            <Badge variant="outline" className="text-green-600">
+            <Badge variant="outline" className="text-green-600 border-green-600">
               활성
             </Badge>
           ) : (
@@ -147,30 +148,28 @@ function ApiKeyCard({ apiKey, onDelete, onTest, isTestLoading }: ApiKeyCardProps
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <span className="text-muted-foreground">API 키:</span>
-          <span className="ml-2 font-mono">{apiKey.apiKeyMasked}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground">권한:</span>
-          <span className="ml-2">
-            {apiKey.canTrade ? '거래 가능' : '읽기 전용'}
-          </span>
-        </div>
+      {/* 키 정보 */}
+      <div className="text-sm">
+        <span className="text-muted-foreground">API 키:</span>
+        <p className="font-mono text-xs mt-1">{apiKey.apiKeyMasked}</p>
       </div>
 
-      {apiKey.lastSyncAt && (
-        <div className="text-sm text-muted-foreground">
-          마지막 동기화: {format(new Date(apiKey.lastSyncAt), 'PPP HH:mm', { locale: ko })}
+      {/* 하단 정보 */}
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+        <div className="flex items-center gap-3">
+          {apiKey.lastSyncAt && (
+            <span>마지막 동기화: {format(new Date(apiKey.lastSyncAt), 'MM/dd HH:mm', { locale: ko })}</span>
+          )}
+          {apiKey.lastUsedAt && (
+            <span>마지막 사용: {format(new Date(apiKey.lastUsedAt), 'MM/dd HH:mm', { locale: ko })}</span>
+          )}
         </div>
-      )}
-
-      {apiKey.syncFailureCount > 0 && (
-        <Badge variant="destructive" className="text-xs">
-          동기화 실패 {apiKey.syncFailureCount}회
-        </Badge>
-      )}
+        {apiKey.syncFailureCount > 0 && (
+          <Badge variant="destructive" className="text-xs">
+            동기화 실패 {apiKey.syncFailureCount}회
+          </Badge>
+        )}
+      </div>
     </div>
   );
 }

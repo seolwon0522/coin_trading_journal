@@ -73,15 +73,30 @@ export function useTestApiKey() {
     mutationFn: apiKeyApi.testApiKey,
     onSuccess: (response) => {
       if (response.success) {
-        toast.success('API 키 연결 테스트 성공!');
+        // 권한 정보 포함한 성공 메시지
+        const permissions = response.data?.permissions;
+        let message = 'API 키 연결 테스트 성공!';
+        
+        if (permissions && permissions.length > 0) {
+          message += ` 활성 권한: ${permissions.join(', ')}`;
+        } else {
+          message += ' (읽기 전용 모드)';
+        }
+        
+        toast.success(message);
         // 테스트 성공 시 API 키 목록을 다시 조회하여 권한 정보 업데이트
         queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       } else {
-        toast.error(response.message || 'API 키 연결 테스트 실패');
+        // 실패 시 구체적인 에러 메시지
+        const errorMessage = response.data?.errorMessage || response.message || 'API 키 연결 테스트 실패';
+        toast.error(errorMessage);
       }
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || '연결 테스트에 실패했습니다.');
+      const errorMessage = error.response?.data?.data?.errorMessage || 
+                          error.response?.data?.message || 
+                          '연결 테스트에 실패했습니다.';
+      toast.error(errorMessage);
     },
   });
 }

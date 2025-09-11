@@ -157,13 +157,16 @@ export function ApiKeyForm({ onSuccess }: ApiKeyFormProps) {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Binance API 키 생성 방법:</strong>
+            <strong>Binance API 키 설정 가이드:</strong>
             <ol className="mt-2 ml-4 text-sm space-y-1">
               <li>1. Binance 계정 설정 → API Management</li>
-              <li>2. "Create API" 클릭</li>
-              <li>3. 라벨 입력 후 생성</li>
-              <li>4. "Enable Reading" 권한 필수</li>
-              <li>5. IP 제한 설정 권장 (보안)</li>
+              <li>2. "Create API" 클릭 후 라벨 입력</li>
+              <li>3. 필요한 권한 활성화:</li>
+              <li className="ml-4">• Enable Reading (필수)</li>
+              <li className="ml-4">• Enable Spot & Margin Trading (거래용)</li>
+              <li className="ml-4">• Enable Futures (선물 거래용)</li>
+              <li>4. IP 제한 설정 권장 (보안 강화)</li>
+              <li>5. 생성된 API Key와 Secret Key 복사</li>
             </ol>
           </AlertDescription>
         </Alert>

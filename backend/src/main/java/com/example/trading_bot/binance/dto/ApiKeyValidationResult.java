@@ -49,13 +49,59 @@ public class ApiKeyValidationResult {
     
     /**
      * 성공 결과 생성
+     * 
+     * Binance API 권한 시스템:
+     * 1. canTrade: 계정 자체가 거래 가능한지 (계정 레벨)
+     * 2. permissions: API 키가 가진 권한들
+     * 
+     * API 키 권한 구분:
+     * - 읽기 전용: permissions가 비어있거나 TRD_GRP_XXX만 포함
+     * - 거래 가능: permissions에 SPOT, MARGIN, FUTURES 등 포함
+     * 
+     * TRD_GRP_XXX는 계정이 거래할 수 있는 심볼 그룹을 나타내며,
+     * API 키의 거래 권한과는 무관합니다.
      */
     public static ApiKeyValidationResult success(BinanceAccountResponse account) {
+        List<String> permissions = account.getPermissions();
+        
+        // API 키의 실제 거래 권한 확인
+        // TRD_GRP_XXX는 거래 권한이 아님 - 심볼 그룹 권한일 뿐
+        boolean apiKeyCanTrade = false;
+        if (permissions != null) {
+            for (String permission : permissions) {
+                // 실제 거래 권한 체크 (TRD_GRP 제외)
+                if (permission.equals("SPOT") || 
+                    permission.equals("MARGIN") || 
+                    permission.equals("FUTURES") ||
+                    permission.equals("LEVERAGED") ||
+                    permission.equals("OPTIONS") ||
+                    permission.equals("TRADE")) {
+                    apiKeyCanTrade = true;
+                    break;
+                }
+            }
+        }
+        
+        // 권한 배열이 비어있거나 TRD_GRP만 있으면 읽기 전용
+        if (permissions == null || permissions.isEmpty()) {
+            apiKeyCanTrade = false;
+        } else if (permissions.stream().allMatch(p -> p.startsWith("TRD_GRP_"))) {
+            // TRD_GRP_XXX만 있으면 읽기 전용
+            apiKeyCanTrade = false;
+        }
+        
+        // API 키의 실제 출금 권한 확인
+        boolean apiKeyCanWithdraw = permissions != null && permissions.stream()
+            .anyMatch(p -> p.equals("WITHDRAW") || 
+                          p.equals("UNIVERSAL_TRANSFER") || 
+                          p.equals("INTERNAL_TRANSFER") || 
+                          p.equals("TRANSFER"));
+        
         return ApiKeyValidationResult.builder()
                 .isValid(true)
-                .permissions(account.getPermissions())
-                .canTrade(account.getCanTrade())
-                .canWithdraw(account.getCanWithdraw())
+                .permissions(permissions)
+                .canTrade(apiKeyCanTrade)      // API 키의 거래 권한 (SPOT, MARGIN 등이 있어야 true)
+                .canWithdraw(apiKeyCanWithdraw) // API 키의 출금 권한
                 .isIpWhitelisted(true)
                 .serverTime(System.currentTimeMillis())
                 .timeDiff(0L)

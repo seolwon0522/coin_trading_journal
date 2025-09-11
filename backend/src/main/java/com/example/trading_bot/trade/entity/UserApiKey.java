@@ -44,14 +44,6 @@ public class UserApiKey extends BaseTimeEntity {
     private Boolean isActive = true;
     
     @Column
-    @Builder.Default
-    private Boolean canTrade = false;
-    
-    @Column
-    @Builder.Default
-    private Boolean canWithdraw = false;
-    
-    @Column
     private LocalDateTime lastUsedAt;
     
     @Column
@@ -60,7 +52,4 @@ public class UserApiKey extends BaseTimeEntity {
     @Column
     @Builder.Default
     private Integer syncFailureCount = 0;
-    
-    @Column(columnDefinition = "TEXT")
-    private String permissions; // JSON 형태로 저장된 권한 목록
 }
