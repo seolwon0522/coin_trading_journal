@@ -67,13 +67,17 @@ export function useDeleteApiKey() {
 
 // API 키 테스트
 export function useTestApiKey() {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: apiKeyApi.testApiKey,
-    onSuccess: (isValid) => {
-      if (isValid) {
+    onSuccess: (response) => {
+      if (response.success) {
         toast.success('API 키 연결 테스트 성공!');
+        // 테스트 성공 시 API 키 목록을 다시 조회하여 권한 정보 업데이트
+        queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       } else {
-        toast.error('API 키 연결 테스트 실패');
+        toast.error(response.message || 'API 키 연결 테스트 실패');
       }
     },
     onError: (error: any) => {

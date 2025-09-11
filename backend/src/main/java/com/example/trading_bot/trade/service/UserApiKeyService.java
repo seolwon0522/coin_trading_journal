@@ -53,19 +53,24 @@ public class UserApiKeyService {
             throw new BusinessException("이미 등록된 API 키입니다", HttpStatus.CONFLICT);
         }
         
-        // API 키 유효성 검증은 이미 프론트엔드에서 /validate 엔드포인트를 통해 수행됨
-        // 중복 검증으로 인한 Rate Limit 문제 방지를 위해 여기서는 스킵
-        // 필요시 아래 주석 해제
-        /*
-        if (!validateApiKeysSimple(request.getApiKey(), request.getSecretKey(), request.getExchange())) {
-            throw new BusinessException("유효하지 않은 API 키입니다", HttpStatus.BAD_REQUEST);
+        // API 키 검증 및 실제 권한 가져오기
+        ApiKeyValidationResult validationResult = validateApiKeys(
+                request.getApiKey(), 
+                request.getSecretKey(), 
+                request.getExchange()
+        );
+        
+        if (!validationResult.isValid()) {
+            throw new BusinessException(
+                    "유효하지 않은 API 키입니다: " + validationResult.getErrorMessage(), 
+                    HttpStatus.BAD_REQUEST
+            );
         }
-        */
         
         // 시크릿 키 암호화
         String encryptedSecretKey = cryptoUtils.encrypt(request.getSecretKey());
         
-        // API 키 저장
+        // API 키 저장 - Binance에서 가져온 실제 권한 사용
         UserApiKey apiKey = UserApiKey.builder()
                 .user(user)
                 .exchange(request.getExchange().toUpperCase())
@@ -73,15 +78,18 @@ public class UserApiKeyService {
                 .encryptedSecretKey(encryptedSecretKey)
                 .keyName(request.getKeyName())
                 .isActive(true)
-                .canTrade(request.getCanTrade() != null ? request.getCanTrade() : false)
-                .canWithdraw(false) // 보안상 출금 권한은 항상 false
+                .canTrade(validationResult.isCanTrade()) // Binance에서 가져온 실제 권한
+                .canWithdraw(validationResult.isCanWithdraw()) // Binance에서 가져온 실제 권한
                 .lastUsedAt(LocalDateTime.now())
                 .syncFailureCount(0)
+                .permissions(validationResult.getPermissions() != null ? 
+                        String.join(",", validationResult.getPermissions()) : null)
                 .build();
         
         UserApiKey saved = apiKeyRepository.save(apiKey);
-        log.info("API 키 저장 완료: userId={}, exchange={}, keyId={}", 
-                userId, request.getExchange(), saved.getId());
+        log.info("API 키 저장 완료: userId={}, exchange={}, keyId={}, canTrade={}, canWithdraw={}", 
+                userId, request.getExchange(), saved.getId(), 
+                saved.getCanTrade(), saved.getCanWithdraw());
         
         return ApiKeyResponse.from(saved);
     }
@@ -99,14 +107,29 @@ public class UserApiKeyService {
         UserApiKey apiKey = apiKeyRepository.findByIdAndUserId(keyId, userId)
                 .orElseThrow(() -> new BusinessException("API 키를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
         
-        // 새로운 API 키가 제공된 경우 유효성 검증
+        // 새로운 API 키가 제공된 경우 유효성 검증 및 실제 권한 가져오기
         if (request.getApiKey() != null && request.getSecretKey() != null) {
-            if (!validateApiKeysSimple(request.getApiKey(), request.getSecretKey(), apiKey.getExchange())) {
-                throw new BusinessException("유효하지 않은 API 키입니다", HttpStatus.BAD_REQUEST);
+            ApiKeyValidationResult validationResult = validateApiKeys(
+                    request.getApiKey(), 
+                    request.getSecretKey(), 
+                    apiKey.getExchange()
+            );
+            
+            if (!validationResult.isValid()) {
+                throw new BusinessException(
+                        "유효하지 않은 API 키입니다: " + validationResult.getErrorMessage(), 
+                        HttpStatus.BAD_REQUEST
+                );
             }
             
             apiKey.setApiKey(request.getApiKey());
             apiKey.setEncryptedSecretKey(cryptoUtils.encrypt(request.getSecretKey()));
+            
+            // Binance에서 가져온 실제 권한으로 업데이트
+            apiKey.setCanTrade(validationResult.isCanTrade());
+            apiKey.setCanWithdraw(validationResult.isCanWithdraw());
+            apiKey.setPermissions(validationResult.getPermissions() != null ? 
+                    String.join(",", validationResult.getPermissions()) : null);
         }
         
         // 기타 필드 업데이트
@@ -116,12 +139,11 @@ public class UserApiKeyService {
         if (request.getIsActive() != null) {
             apiKey.setIsActive(request.getIsActive());
         }
-        if (request.getCanTrade() != null) {
-            apiKey.setCanTrade(request.getCanTrade());
-        }
+        // 수동으로 canTrade를 설정하는 것은 제거 (API 키가 변경되지 않은 경우에만 기존 값 유지)
         
         UserApiKey saved = apiKeyRepository.save(apiKey);
-        log.info("API 키 수정 완료: userId={}, keyId={}", userId, keyId);
+        log.info("API 키 수정 완료: userId={}, keyId={}, canTrade={}, canWithdraw={}", 
+                userId, keyId, saved.getCanTrade(), saved.getCanWithdraw());
         
         return ApiKeyResponse.from(saved);
     }
@@ -192,25 +214,38 @@ public class UserApiKeyService {
      * 
      * @param userId 사용자 ID
      * @param keyId API 키 ID
-     * @return 연결 성공 여부
+     * @return 검증 결과
      */
     @Transactional
-    public boolean testApiKeyConnection(Long userId, Long keyId) {
+    public ApiKeyValidationResult testApiKeyConnection(Long userId, Long keyId) {
         UserApiKey apiKey = apiKeyRepository.findByIdAndUserId(keyId, userId)
                 .orElseThrow(() -> new BusinessException("API 키를 찾을 수 없습니다", HttpStatus.NOT_FOUND));
         
         String decryptedSecret = cryptoUtils.decrypt(apiKey.getEncryptedSecretKey());
-        boolean isValid = validateApiKeysSimple(apiKey.getApiKey(), decryptedSecret, apiKey.getExchange());
+        ApiKeyValidationResult validationResult = validateApiKeys(
+                apiKey.getApiKey(), 
+                decryptedSecret, 
+                apiKey.getExchange()
+        );
         
-        if (isValid) {
+        if (validationResult.isValid()) {
+            // 테스트 성공 시 권한 정보 업데이트
             apiKey.setLastUsedAt(LocalDateTime.now());
             apiKey.setSyncFailureCount(0);
+            apiKey.setCanTrade(validationResult.isCanTrade());
+            apiKey.setCanWithdraw(validationResult.isCanWithdraw());
+            apiKey.setPermissions(validationResult.getPermissions() != null ? 
+                    String.join(",", validationResult.getPermissions()) : null);
+            
+            log.info("API 키 테스트 성공 및 권한 업데이트: keyId={}, canTrade={}, canWithdraw={}", 
+                    keyId, apiKey.getCanTrade(), apiKey.getCanWithdraw());
         } else {
             apiKey.setSyncFailureCount(apiKey.getSyncFailureCount() + 1);
+            log.warn("API 키 테스트 실패: keyId={}, error={}", keyId, validationResult.getErrorMessage());
         }
         
         apiKeyRepository.save(apiKey);
-        return isValid;
+        return validationResult;
     }
     
     /**
@@ -311,5 +346,53 @@ public class UserApiKeyService {
      */
     public ApiKeyValidationResult validateApiKeyForRegistration(ApiKeyRequest request) {
         return validateApiKeys(request.getApiKey(), request.getSecretKey(), request.getExchange());
+    }
+    
+    /**
+     * 모든 활성 API 키의 권한 정보 업데이트
+     * 기존 API 키들의 권한 정보를 Binance에서 다시 가져와 업데이트합니다
+     * 
+     * @param userId 사용자 ID
+     * @return 업데이트된 API 키 개수
+     */
+    @Transactional
+    public int refreshAllApiKeyPermissions(Long userId) {
+        List<UserApiKey> apiKeys = apiKeyRepository.findByUserId(userId);
+        int updatedCount = 0;
+        
+        for (UserApiKey apiKey : apiKeys) {
+            if (apiKey.getIsActive()) {
+                try {
+                    String decryptedSecret = cryptoUtils.decrypt(apiKey.getEncryptedSecretKey());
+                    ApiKeyValidationResult result = validateApiKeys(
+                            apiKey.getApiKey(), 
+                            decryptedSecret, 
+                            apiKey.getExchange()
+                    );
+                    
+                    if (result.isValid()) {
+                        apiKey.setCanTrade(result.isCanTrade());
+                        apiKey.setCanWithdraw(result.isCanWithdraw());
+                        apiKey.setPermissions(result.getPermissions() != null ? 
+                                String.join(",", result.getPermissions()) : null);
+                        apiKey.setLastUsedAt(LocalDateTime.now());
+                        apiKeyRepository.save(apiKey);
+                        updatedCount++;
+                        
+                        log.info("API 키 권한 업데이트 완료: keyId={}, canTrade={}, canWithdraw={}", 
+                                apiKey.getId(), apiKey.getCanTrade(), apiKey.getCanWithdraw());
+                    } else {
+                        log.warn("API 키 권한 업데이트 실패: keyId={}, error={}", 
+                                apiKey.getId(), result.getErrorMessage());
+                    }
+                } catch (Exception e) {
+                    log.error("API 키 권한 업데이트 중 오류: keyId={}", apiKey.getId(), e);
+                }
+            }
+        }
+        
+        log.info("전체 API 키 권한 업데이트 완료: userId={}, updated={}/{}", 
+                userId, updatedCount, apiKeys.size());
+        return updatedCount;
     }
 }

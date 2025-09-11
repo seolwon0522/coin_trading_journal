@@ -141,18 +141,18 @@ public class ApiKeyController {
      */
     @PostMapping("/{keyId}/test")
     @Operation(summary = "API 키 연결 테스트", description = "API 키의 유효성을 테스트합니다")
-    public ResponseEntity<ApiResponse<Boolean>> testApiKey(
+    public ResponseEntity<ApiResponse<ApiKeyValidationResult>> testApiKey(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Parameter(description = "API 키 ID") @PathVariable Long keyId) {
         
         log.info("API 키 테스트 요청: userId={}, keyId={}", userPrincipal.getId(), keyId);
         
-        boolean isValid = apiKeyService.testApiKeyConnection(userPrincipal.getId(), keyId);
+        ApiKeyValidationResult result = apiKeyService.testApiKeyConnection(userPrincipal.getId(), keyId);
         
-        if (isValid) {
-            return ResponseEntity.ok(ApiResponse.success(true, "API 키 연결 테스트 성공"));
+        if (result.isValid()) {
+            return ResponseEntity.ok(ApiResponse.success(result, "API 키 연결 테스트 성공"));
         } else {
-            return ResponseEntity.ok(ApiResponse.error("API 키 연결 테스트 실패", false));
+            return ResponseEntity.ok(ApiResponse.error(result.getErrorMessage(), result));
         }
     }
     
@@ -179,5 +179,26 @@ public class ApiKeyController {
         } else {
             return ResponseEntity.ok(ApiResponse.error(result.getErrorMessage(), result));
         }
+    }
+    
+    /**
+     * 모든 API 키 권한 정보 새로고침
+     * 
+     * @param userPrincipal 인증된 사용자 정보
+     * @return 업데이트된 API 키 개수
+     */
+    @PostMapping("/refresh-permissions")
+    @Operation(summary = "API 키 권한 새로고침", description = "모든 API 키의 권한 정보를 Binance에서 다시 가져와 업데이트합니다")
+    public ResponseEntity<ApiResponse<Integer>> refreshApiKeyPermissions(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        
+        log.info("API 키 권한 새로고침 요청: userId={}", userPrincipal.getId());
+        
+        int updatedCount = apiKeyService.refreshAllApiKeyPermissions(userPrincipal.getId());
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                updatedCount, 
+                String.format("%d개의 API 키 권한이 업데이트되었습니다", updatedCount)
+        ));
     }
 }

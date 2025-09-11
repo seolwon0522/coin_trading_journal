@@ -51,11 +51,11 @@ export const apiKeyApi = {
   /**
    * API 키 테스트
    */
-  async testApiKey(keyId: number): Promise<boolean> {
-    const response = await apiClient.post<ApiResponse<boolean>>(
+  async testApiKey(keyId: number): Promise<any> {
+    const response = await apiClient.post<ApiResponse<any>>(
       `/api/api-keys/${keyId}/test`
     );
-    return response.data.data;
+    return response.data;
   },
 
   /**
