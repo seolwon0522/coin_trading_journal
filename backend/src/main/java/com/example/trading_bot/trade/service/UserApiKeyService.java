@@ -197,6 +197,38 @@ public class UserApiKeyService {
     }
     
     /**
+     * 사용자의 활성화된 API 키 조회 (복호화된 시크릿 키 포함)
+     * 
+     * @param userId 사용자 ID
+     * @return 활성화된 API 키 (복호화된 시크릿 키 포함)
+     */
+    public UserApiKey getActiveApiKeyWithDecryptedSecret(Long userId) {
+        List<UserApiKey> apiKeys = apiKeyRepository.findByUserId(userId);
+        
+        if (apiKeys.isEmpty()) {
+            throw new BusinessException("API 키가 등록되지 않았습니다", HttpStatus.BAD_REQUEST);
+        }
+        
+        // 활성화된 키 찾기
+        UserApiKey activeKey = apiKeys.stream()
+            .filter(UserApiKey::getIsActive)
+            .findFirst()
+            .orElseThrow(() -> new BusinessException("활성화된 API 키가 없습니다", HttpStatus.BAD_REQUEST));
+        
+        return activeKey;
+    }
+    
+    /**
+     * API 키의 시크릿 키 복호화
+     * 
+     * @param apiKey API 키 엔티티
+     * @return 복호화된 시크릿 키
+     */
+    public String getDecryptedSecretKey(UserApiKey apiKey) {
+        return cryptoUtils.decrypt(apiKey.getEncryptedSecretKey());
+    }
+    
+    /**
      * API 키 연결 테스트
      * 
      * @param userId 사용자 ID

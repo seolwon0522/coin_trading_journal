@@ -3,6 +3,8 @@ package com.example.trading_bot.binance.client;
 import com.example.trading_bot.binance.config.BinanceApiConfig;
 import com.example.trading_bot.binance.dto.ApiKeyValidationResult;
 import com.example.trading_bot.binance.dto.BinanceAccountResponse;
+import com.example.trading_bot.binance.dto.BinanceOrderRequest;
+import com.example.trading_bot.binance.dto.BinanceOrderResponse;
 import com.example.trading_bot.binance.dto.BinanceTradeResponse;
 import com.example.trading_bot.binance.exception.BinanceApiException;
 import com.example.trading_bot.binance.exception.BinanceApiException.BinanceErrorType;
@@ -607,5 +609,365 @@ public class BinanceApiClient {
             new org.springframework.util.LinkedMultiValueMap<>();
         map.forEach((key, value) -> multiValueMap.add(key, String.valueOf(value)));
         return multiValueMap;
+    }
+    
+    // ============== 주문 실행 관련 메서드 ==============
+    
+    /**
+     * 시장가 주문 실행
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param symbol 거래 심볼
+     * @param side 매수/매도 (BUY/SELL)
+     * @param quantity 수량
+     * @return 주문 응답
+     */
+    public BinanceOrderResponse placeMarketOrder(
+        String apiKey,
+        String secretKey,
+        String symbol,
+        String side,
+        String quantity
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크 (주문 weight = 1)
+            if (!checkRateLimit(1)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("symbol", symbol);
+            params.put("side", side);
+            params.put("type", "MARKET");
+            params.put("quantity", quantity);
+            
+            String response = executeSignedRequest(
+                "/api/v3/order",
+                HttpMethod.POST,
+                params,
+                apiKey,
+                secretKey,
+                1
+            );
+            
+            return objectMapper.readValue(response, BinanceOrderResponse.class);
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("시장가 주문 실패: symbol={}, side={}, quantity={}", symbol, side, quantity, e);
+            throw new BinanceApiException(
+                "시장가 주문 실패: " + e.getMessage(),
+                "ORDER_PLACE_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 지정가 주문 실행
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param symbol 거래 심볼
+     * @param side 매수/매도 (BUY/SELL)
+     * @param quantity 수량
+     * @param price 가격
+     * @param timeInForce 주문 유효 기간 (GTC, IOC, FOK)
+     * @return 주문 응답
+     */
+    public BinanceOrderResponse placeLimitOrder(
+        String apiKey,
+        String secretKey,
+        String symbol,
+        String side,
+        String quantity,
+        String price,
+        String timeInForce
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크
+            if (!checkRateLimit(1)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("symbol", symbol);
+            params.put("side", side);
+            params.put("type", "LIMIT");
+            params.put("quantity", quantity);
+            params.put("price", price);
+            params.put("timeInForce", timeInForce != null ? timeInForce : "GTC");
+            
+            String response = executeSignedRequest(
+                "/api/v3/order",
+                HttpMethod.POST,
+                params,
+                apiKey,
+                secretKey,
+                1
+            );
+            
+            return objectMapper.readValue(response, BinanceOrderResponse.class);
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("지정가 주문 실패: symbol={}, side={}, quantity={}, price={}", 
+                symbol, side, quantity, price, e);
+            throw new BinanceApiException(
+                "지정가 주문 실패: " + e.getMessage(),
+                "ORDER_PLACE_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 주문 취소
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param symbol 거래 심볼
+     * @param orderId 주문 ID
+     * @return 취소된 주문 정보
+     */
+    public BinanceOrderResponse cancelOrder(
+        String apiKey,
+        String secretKey,
+        String symbol,
+        Long orderId
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크
+            if (!checkRateLimit(1)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("symbol", symbol);
+            params.put("orderId", orderId);
+            
+            String response = executeSignedRequest(
+                "/api/v3/order",
+                HttpMethod.DELETE,
+                params,
+                apiKey,
+                secretKey,
+                1
+            );
+            
+            return objectMapper.readValue(response, BinanceOrderResponse.class);
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("주문 취소 실패: symbol={}, orderId={}", symbol, orderId, e);
+            throw new BinanceApiException(
+                "주문 취소 실패: " + e.getMessage(),
+                "ORDER_CANCEL_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 열린 주문 조회
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param symbol 거래 심볼 (선택사항, null이면 모든 심볼)
+     * @return 열린 주문 목록
+     */
+    public List<BinanceOrderResponse> getOpenOrders(
+        String apiKey,
+        String secretKey,
+        String symbol
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크
+            int weight = symbol != null ? 3 : 40; // 특정 심볼은 3, 전체는 40
+            if (!checkRateLimit(weight)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            if (symbol != null) {
+                params.put("symbol", symbol);
+            }
+            
+            String response = executeSignedRequest(
+                "/api/v3/openOrders",
+                HttpMethod.GET,
+                params,
+                apiKey,
+                secretKey,
+                weight
+            );
+            
+            return objectMapper.readValue(response, new TypeReference<List<BinanceOrderResponse>>() {});
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("열린 주문 조회 실패: symbol={}", symbol, e);
+            throw new BinanceApiException(
+                "열린 주문 조회 실패: " + e.getMessage(),
+                "OPEN_ORDERS_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 주문 상태 조회
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param symbol 거래 심볼
+     * @param orderId 주문 ID
+     * @return 주문 정보
+     */
+    public BinanceOrderResponse getOrder(
+        String apiKey,
+        String secretKey,
+        String symbol,
+        Long orderId
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크
+            if (!checkRateLimit(2)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("symbol", symbol);
+            params.put("orderId", orderId);
+            
+            String response = executeSignedRequest(
+                "/api/v3/order",
+                HttpMethod.GET,
+                params,
+                apiKey,
+                secretKey,
+                2
+            );
+            
+            return objectMapper.readValue(response, BinanceOrderResponse.class);
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("주문 상태 조회 실패: symbol={}, orderId={}", symbol, orderId, e);
+            throw new BinanceApiException(
+                "주문 상태 조회 실패: " + e.getMessage(),
+                "ORDER_STATUS_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
+    }
+    
+    /**
+     * 테스트 주문 실행 (실제로 주문이 체결되지 않음)
+     * @param apiKey API 키
+     * @param secretKey 시크릿 키
+     * @param orderRequest 주문 요청 정보
+     * @return 테스트 결과 (성공 시 빈 응답)
+     */
+    public void placeTestOrder(
+        String apiKey,
+        String secretKey,
+        BinanceOrderRequest orderRequest
+    ) throws BinanceApiException {
+        try {
+            // Rate Limit 체크
+            if (!checkRateLimit(1)) {
+                throw new BinanceApiException(
+                    "Rate limit exceeded",
+                    "RATE_LIMIT",
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    BinanceErrorType.RATE_LIMIT_EXCEEDED
+                );
+            }
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("symbol", orderRequest.getSymbol());
+            params.put("side", orderRequest.getSide());
+            params.put("type", orderRequest.getType());
+            
+            if (orderRequest.getQuantity() != null) {
+                params.put("quantity", orderRequest.getQuantity());
+            }
+            
+            if ("LIMIT".equals(orderRequest.getType())) {
+                params.put("price", orderRequest.getPrice());
+                params.put("timeInForce", orderRequest.getTimeInForce() != null ? 
+                    orderRequest.getTimeInForce() : "GTC");
+            }
+            
+            if (orderRequest.getStopPrice() != null) {
+                params.put("stopPrice", orderRequest.getStopPrice());
+            }
+            
+            executeSignedRequest(
+                "/api/v3/order/test",
+                HttpMethod.POST,
+                params,
+                apiKey,
+                secretKey,
+                1
+            );
+            
+            log.info("테스트 주문 성공: {}", orderRequest);
+            
+        } catch (HttpClientErrorException e) {
+            throw parseBinanceError(e);
+        } catch (BinanceApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("테스트 주문 실패: {}", orderRequest, e);
+            throw new BinanceApiException(
+                "테스트 주문 실패: " + e.getMessage(),
+                "TEST_ORDER_ERROR",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                BinanceErrorType.UNKNOWN
+            );
+        }
     }
 }
