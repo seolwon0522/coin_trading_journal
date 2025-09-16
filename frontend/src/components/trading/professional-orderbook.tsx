@@ -55,26 +55,26 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
   }
 
   return (
-    <Card className="h-full bg-background/50 backdrop-blur border-border/50 p-0 overflow-hidden">
+    <Card className="h-full bg-transparent border-0 p-0 overflow-hidden">
       {/* 헤더 */}
-      <div className="px-3 py-2 border-b border-border/50">
+      <div className="px-2 py-1.5 bg-[#1a1a1a] border-b border-[#2a2a2a]">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">호가창</h3>
+          <h3 className="text-xs font-normal text-gray-400">호가창</h3>
           <div className="flex items-center gap-2">
             {isReconnecting ? (
               <div className="flex items-center gap-1 text-yellow-500">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span className="text-[10px]">재연결</span>
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                <span className="text-[9px]">재연결</span>
               </div>
             ) : isConnected ? (
-              <div className="flex items-center gap-1 text-emerald-500">
-                <Wifi className="h-3 w-3" />
-                <span className="text-[10px]">실시간</span>
+              <div className="flex items-center gap-0.5 text-emerald-500">
+                <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[9px]">실시간</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1 text-red-500">
-                <WifiOff className="h-3 w-3" />
-                <span className="text-[10px]">오프라인</span>
+              <div className="flex items-center gap-0.5 text-red-500">
+                <div className="h-1.5 w-1.5 bg-red-500 rounded-full" />
+                <span className="text-[9px]">오프라인</span>
               </div>
             )}
           </div>
@@ -82,14 +82,14 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
       </div>
 
       {/* 컬럼 헤더 */}
-      <div className="grid grid-cols-2 text-[11px] font-medium text-muted-foreground px-3 py-1.5 border-b border-border/50">
+      <div className="grid grid-cols-2 text-[10px] font-normal text-gray-500 px-2 py-1 bg-[#1a1a1a] border-b border-[#2a2a2a]">
         <div className="grid grid-cols-3">
-          <span>가격(USDT)</span>
+          <span>가격</span>
           <span className="text-right">수량</span>
           <span className="text-right">총액</span>
         </div>
         <div className="grid grid-cols-3">
-          <span>가격(USDT)</span>
+          <span>가격</span>
           <span className="text-right">수량</span>
           <span className="text-right">총액</span>
         </div>
@@ -99,7 +99,7 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
       <div className="flex flex-col h-[calc(100%-100px)]">
         <div className="grid grid-cols-2 flex-1 overflow-hidden">
           {/* 매수 호가 */}
-          <div className="border-r border-border/50 overflow-y-auto scrollbar-thin">
+          <div className="border-r border-[#2a2a2a] overflow-y-auto scrollbar-thin bg-[#161616]">
             {orderBook.bids.slice(0, limit).map((bid, index) => {
               const depthPercent = ((bid.total || 0) / maxTotal) * 100;
               return (
@@ -111,14 +111,14 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
                     className="absolute inset-0 bg-emerald-500/10"
                     style={{ width: `${depthPercent}%` }}
                   />
-                  <div className="relative grid grid-cols-3 px-3 py-[3px] text-[11px]">
-                    <span className="text-emerald-500 font-medium">
+                  <div className="relative grid grid-cols-3 px-2 py-0.5 text-[10px]">
+                    <span className="text-emerald-400 font-medium tabular-nums">
                       {formatPrice(bid.price)}
                     </span>
-                    <span className="text-right text-gray-300">
+                    <span className="text-right text-gray-400 tabular-nums">
                       {formatCompact(bid.quantity)}
                     </span>
-                    <span className="text-right text-gray-500">
+                    <span className="text-right text-gray-500 tabular-nums">
                       {formatCompact(bid.total || 0)}
                     </span>
                   </div>
@@ -128,7 +128,7 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
           </div>
 
           {/* 매도 호가 */}
-          <div className="overflow-y-auto scrollbar-thin">
+          <div className="overflow-y-auto scrollbar-thin bg-[#161616]">
             {orderBook.asks.slice(0, limit).map((ask, index) => {
               const depthPercent = ((ask.total || 0) / maxTotal) * 100;
               return (
@@ -140,14 +140,14 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
                     className="absolute inset-0 bg-red-500/10"
                     style={{ width: `${depthPercent}%` }}
                   />
-                  <div className="relative grid grid-cols-3 px-3 py-[3px] text-[11px]">
-                    <span className="text-red-500 font-medium">
+                  <div className="relative grid grid-cols-3 px-2 py-0.5 text-[10px]">
+                    <span className="text-red-400 font-medium tabular-nums">
                       {formatPrice(ask.price)}
                     </span>
-                    <span className="text-right text-gray-300">
+                    <span className="text-right text-gray-400 tabular-nums">
                       {formatCompact(ask.quantity)}
                     </span>
-                    <span className="text-right text-gray-500">
+                    <span className="text-right text-gray-500 tabular-nums">
                       {formatCompact(ask.total || 0)}
                     </span>
                   </div>
@@ -158,25 +158,25 @@ export function ProfessionalOrderBook({ symbol, limit = 25 }: ProfessionalOrderB
         </div>
 
         {/* 스프레드 정보 */}
-        <div className="border-t border-border/50 px-3 py-2">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground">스프레드</span>
-            <div className="flex items-center gap-3">
-              <span className="font-medium text-gray-300">
+        <div className="border-t border-[#2a2a2a] px-2 py-1.5 bg-[#1a1a1a]">
+          <div className="flex items-center justify-between text-[9px]">
+            <span className="text-gray-500">스프레드</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 tabular-nums">
                 {formatPrice(orderBook.spread)}
               </span>
               <span className={cn(
-                "font-medium",
+                "tabular-nums",
                 orderBook.spreadPercent > 0.5 ? "text-yellow-500" : "text-gray-500"
               )}>
-                ({orderBook.spreadPercent.toFixed(3)}%)
+                ({orderBook.spreadPercent.toFixed(2)}%)
               </span>
             </div>
           </div>
           {midPrice > 0 && (
-            <div className="flex items-center justify-between text-[10px] mt-1">
-              <span className="text-muted-foreground">중간가</span>
-              <span className="font-medium text-gray-300">
+            <div className="flex items-center justify-between text-[9px] mt-0.5">
+              <span className="text-gray-500">중간가</span>
+              <span className="text-gray-400 tabular-nums">
                 {formatPrice(midPrice)}
               </span>
             </div>

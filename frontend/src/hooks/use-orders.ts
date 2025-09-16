@@ -79,6 +79,7 @@ export function useOrders() {
   const fetchBalance = useCallback(async () => {
     try {
       const balances = await orderApi.getBalance();
+      console.log('Fetched balances:', balances); // 디버깅용
       setBalance(balances);
       return balances;
     } catch (error) {

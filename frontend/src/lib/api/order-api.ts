@@ -39,6 +39,16 @@ export interface BalanceInfo {
   free: number;
   locked: number;
   total: number;
+  priceUsdt?: number;
+  valueUsdt?: number;
+  allocation?: number;
+}
+
+export interface PortfolioBalanceResponse {
+  totalValueUsdt: number;
+  totalValueBtc?: number;
+  balances: BalanceInfo[];
+  timestamp?: string;
 }
 
 export class OrderApi {
@@ -152,8 +162,23 @@ export class OrderApi {
         throw new Error(error.message || 'Failed to fetch balance');
       }
 
-      const data = await response.json();
-      return data.balances || [];
+      const result = await response.json();
+      console.log('Balance API Response:', result); // 디버깅용
+
+      // ApiResponse 래퍼를 처리
+      if (result.success && result.data) {
+        const portfolioData = result.data;
+        console.log('Portfolio Data:', portfolioData); // 디버깅용
+
+        // balances 배열 반환
+        return portfolioData.balances || [];
+      } else if (result.balances) {
+        // 직접 balances가 있는 경우
+        return result.balances;
+      } else {
+        console.warn('Unexpected balance response structure:', result);
+        return [];
+      }
     } catch (error) {
       console.error('Failed to fetch balance:', error);
       throw error;

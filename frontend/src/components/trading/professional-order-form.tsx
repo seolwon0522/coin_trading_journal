@@ -43,10 +43,23 @@ export function ProfessionalOrderForm({ symbol, currentPrice = 0 }: Professional
     return { baseAsset: base, quoteAsset: quote };
   }, [symbol]);
 
-  // 초기 잔고 로드
+  // 초기 잔고 로드 및 주기적인 새로고침
+  useEffect(() => {
+    // 초기 로드
+    fetchBalance();
+
+    // 5초마다 잔고 새로고침
+    const intervalId = setInterval(() => {
+      fetchBalance();
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [fetchBalance]);
+
+  // 심볼 변경 시 잔고 새로고침
   useEffect(() => {
     fetchBalance();
-  }, [fetchBalance]);
+  }, [symbol, fetchBalance]);
 
   // 현재 가격 설정
   useEffect(() => {
@@ -117,69 +130,67 @@ export function ProfessionalOrderForm({ symbol, currentPrice = 0 }: Professional
   };
 
   return (
-    <Card className="h-full bg-background/50 backdrop-blur border-border/50 p-0">
-      <Tabs value={orderSide} onValueChange={(v) => setOrderSide(v as 'BUY' | 'SELL')}>
-        <TabsList className="grid w-full grid-cols-2 p-0 h-10 bg-transparent">
+    <Card className="h-full bg-transparent border-0 p-0 flex flex-col">
+      <Tabs value={orderSide} onValueChange={(v) => setOrderSide(v as 'BUY' | 'SELL')} className="h-full flex flex-col">
+        <TabsList className="grid w-full grid-cols-2 p-0 h-9 bg-[#1a1a1a] flex-shrink-0 border-b border-[#2a2a2a]">
           <TabsTrigger
             value="BUY"
             className={cn(
-              "rounded-none data-[state=active]:bg-emerald-500/10",
-              "data-[state=active]:text-emerald-500 data-[state=active]:border-b-2",
-              "data-[state=active]:border-emerald-500"
+              "rounded-none h-full text-xs font-normal",
+              "data-[state=active]:bg-emerald-500/10",
+              "data-[state=active]:text-emerald-400 data-[state=active]:border-b-2",
+              "data-[state=active]:border-emerald-400"
             )}
           >
-            <TrendingUp className="h-4 w-4 mr-1" />
             매수
           </TabsTrigger>
           <TabsTrigger
             value="SELL"
             className={cn(
-              "rounded-none data-[state=active]:bg-red-500/10",
-              "data-[state=active]:text-red-500 data-[state=active]:border-b-2",
-              "data-[state=active]:border-red-500"
+              "rounded-none h-full text-xs font-normal",
+              "data-[state=active]:bg-red-500/10",
+              "data-[state=active]:text-red-400 data-[state=active]:border-b-2",
+              "data-[state=active]:border-red-400"
             )}
           >
-            <TrendingDown className="h-4 w-4 mr-1" />
             매도
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={orderSide} className="p-3 space-y-3 mt-0">
-          {/* 주문 유형 선택 */}
-          <div className="flex gap-2">
+        <TabsContent value={orderSide} className="flex-1 p-2 mt-0 flex flex-col overflow-hidden bg-[#161616]">
+          <div className="flex-1 flex flex-col justify-between space-y-2">
+            {/* 주문 유형 선택 */}
+            <div className="flex gap-1">
             <Button
-              variant={orderType === 'LIMIT' ? 'secondary' : 'outline'}
+              variant={orderType === 'LIMIT' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setOrderType('LIMIT')}
-              className="flex-1 h-8 text-xs"
+              className="flex-1 h-7 text-[10px] bg-[#252525] hover:bg-[#2a2a2a]"
             >
               지정가
             </Button>
             <Button
-              variant={orderType === 'MARKET' ? 'secondary' : 'outline'}
+              variant={orderType === 'MARKET' ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setOrderType('MARKET')}
-              className="flex-1 h-8 text-xs"
+              className="flex-1 h-7 text-[10px] bg-[#252525] hover:bg-[#2a2a2a]"
             >
               시장가
             </Button>
           </div>
 
-          {/* 잔고 표시 */}
-          <div className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Wallet className="h-3 w-3" />
-              <span>사용 가능</span>
+            {/* 잔고 표시 */}
+            <div className="flex items-center justify-between p-1.5 bg-[#1a1a1a] rounded-sm text-[10px]">
+              <span className="text-gray-500">사용 가능</span>
+              <span className="text-gray-400 font-medium tabular-nums">
+                {formatQuantity(availableBalance)} {orderSide === 'BUY' ? quoteAsset : baseAsset}
+              </span>
             </div>
-            <span className="font-medium">
-              {formatQuantity(availableBalance)} {orderSide === 'BUY' ? quoteAsset : baseAsset}
-            </span>
-          </div>
 
           {/* 가격 입력 (지정가만) */}
           {orderType === 'LIMIT' && (
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">
+            <div className="space-y-1">
+              <Label className="text-[10px] text-gray-500 font-normal">
                 가격 ({quoteAsset})
               </Label>
               <div className="relative">
@@ -189,7 +200,7 @@ export function ProfessionalOrderForm({ symbol, currentPrice = 0 }: Professional
                   placeholder="0.00"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="h-9 text-sm pr-20 bg-background/50"
+                  className="h-8 text-xs pr-16 bg-[#1a1a1a] border-[#2a2a2a] focus:border-[#3a3a3a] tabular-nums"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                   <Button
@@ -224,102 +235,103 @@ export function ProfessionalOrderForm({ symbol, currentPrice = 0 }: Professional
             </div>
           )}
 
-          {/* 수량 입력 */}
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              수량 ({baseAsset})
-            </Label>
-            <Input
-              type="number"
-              step="any"
-              placeholder="0.00"
-              value={quantity}
-              onChange={(e) => {
-                setQuantity(e.target.value);
-                // 퍼센트 계산
-                if (availableBalance > 0) {
-                  const qty = parseFloat(e.target.value) || 0;
-                  if (orderSide === 'BUY') {
-                    const priceNum = parseFloat(price) || currentPrice || 0;
-                    if (priceNum > 0) {
-                      const percent = (qty * priceNum / availableBalance) * 100;
+            {/* 수량 입력 */}
+            <div className="space-y-1">
+              <Label className="text-[10px] text-gray-500 font-normal">
+                수량 ({baseAsset})
+              </Label>
+              <Input
+                type="number"
+                step="any"
+                placeholder="0.00"
+                value={quantity}
+                onChange={(e) => {
+                  setQuantity(e.target.value);
+                  // 퍼센트 계산
+                  if (availableBalance > 0) {
+                    const qty = parseFloat(e.target.value) || 0;
+                    if (orderSide === 'BUY') {
+                      const priceNum = parseFloat(price) || currentPrice || 0;
+                      if (priceNum > 0) {
+                        const percent = (qty * priceNum / availableBalance) * 100;
+                        setPercentage(Math.min(100, Math.max(0, percent)));
+                      }
+                    } else {
+                      const percent = (qty / availableBalance) * 100;
                       setPercentage(Math.min(100, Math.max(0, percent)));
                     }
-                  } else {
-                    const percent = (qty / availableBalance) * 100;
-                    setPercentage(Math.min(100, Math.max(0, percent)));
                   }
-                }
-              }}
-              className="h-9 text-sm bg-background/50"
-            />
-          </div>
-
-          {/* 퍼센트 슬라이더 */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>0%</span>
-              <span className="font-medium text-foreground">{percentage.toFixed(0)}%</span>
-              <span>100%</span>
+                }}
+                className="h-8 text-xs bg-[#1a1a1a] border-[#2a2a2a] focus:border-[#3a3a3a] tabular-nums"
+              />
             </div>
-            <Slider
-              value={[percentage]}
-              onValueChange={handlePercentageChange}
-              max={100}
-              step={1}
-              className="w-full"
-            />
-            <div className="grid grid-cols-4 gap-1 mt-2">
-              {[25, 50, 75, 100].map((percent) => (
-                <Button
-                  key={percent}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePercentageChange([percent])}
-                  className="h-7 text-[10px]"
-                >
-                  {percent}%
-                </Button>
-              ))}
+
+            {/* 퍼센트 슬라이더 */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[9px] text-gray-500">
+                <span>0%</span>
+                <span className="text-gray-400">{percentage.toFixed(0)}%</span>
+                <span>100%</span>
+              </div>
+              <Slider
+                value={[percentage]}
+                onValueChange={handlePercentageChange}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+              <div className="grid grid-cols-4 gap-0.5 mt-1">
+                {[25, 50, 75, 100].map((percent) => (
+                  <Button
+                    key={percent}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePercentageChange([percent])}
+                    className="h-6 text-[9px] bg-[#252525] hover:bg-[#2a2a2a]"
+                  >
+                    {percent}%
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* 총액 표시 */}
-          <div className="space-y-1.5 p-2 bg-muted/30 rounded">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">총액</span>
-              <span className="font-medium">
-                {formatPrice(total)} {quoteAsset}
-              </span>
+            {/* 총액 표시 */}
+            <div className="p-1.5 bg-[#1a1a1a] rounded-sm">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-gray-500">총액</span>
+                <span className="text-gray-400 font-medium tabular-nums">
+                  {formatPrice(total)} {quoteAsset}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* 제출 버튼 */}
-          <Button
-            className={cn(
-              'w-full h-10',
-              orderSide === 'BUY'
-                ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                : 'bg-red-500 hover:bg-red-600 text-white'
-            )}
-            onClick={handleSubmit}
-            disabled={isPlacingOrder || !quantity || (orderType === 'LIMIT' && !price)}
-          >
-            {isPlacingOrder ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                주문 처리 중...
-              </>
-            ) : (
-              <>
-                {orderSide === 'BUY' ? '매수' : '매도'} {baseAsset}
-              </>
-            )}
-          </Button>
+            {/* 제출 버튼 */}
+            <Button
+              className={cn(
+                'w-full h-9 text-xs font-medium',
+                orderSide === 'BUY'
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              )}
+              onClick={handleSubmit}
+              disabled={isPlacingOrder || !quantity || (orderType === 'LIMIT' && !price)}
+            >
+              {isPlacingOrder ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                  주문 처리 중...
+                </>
+              ) : (
+                <>
+                  {orderSide === 'BUY' ? '매수' : '매도'} {baseAsset}
+                </>
+              )}
+            </Button>
 
-          {/* 수수료 안내 */}
-          <div className="text-[10px] text-muted-foreground text-center">
-            거래 수수료: Maker 0.1% / Taker 0.1%
+            {/* 수수료 안내 */}
+            <div className="text-[9px] text-gray-600 text-center">
+              거래 수수료: Maker 0.1% / Taker 0.1%
+            </div>
           </div>
         </TabsContent>
       </Tabs>
