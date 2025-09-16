@@ -14,6 +14,7 @@ import {
   Shield,
   Bot,
   Wallet,
+  CandlestickChart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,12 @@ export function Sidebar() {
       title: '포트폴리오',
       href: '/portfolio',
       icon: Wallet,
+    },
+    {
+      title: '트레이딩',
+      href: '/trading',
+      icon: CandlestickChart,
+      badge: 'LIVE',
     },
     {
       title: '매매기록',

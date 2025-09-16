@@ -21,9 +21,10 @@ const FULLSCREEN_ROUTES = [
 // 메인 레이아웃 컴포넌트 (Header + Sidebar + Content)
 export function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname();
-  
+
   // 현재 경로가 풀스크린 경로인지 확인
-  const isFullscreenRoute = FULLSCREEN_ROUTES.includes(pathname);
+  // 트레이딩 페이지는 전체 화면 사용
+  const isFullscreenRoute = FULLSCREEN_ROUTES.includes(pathname) || pathname.startsWith('/trading');
 
   // 풀스크린 경로일 경우 사이드바와 헤더 없이 렌더링
   if (isFullscreenRoute) {

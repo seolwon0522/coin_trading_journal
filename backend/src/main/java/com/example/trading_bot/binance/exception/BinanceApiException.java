@@ -25,16 +25,16 @@ public class BinanceApiException extends RuntimeException {
      * Binance 에러 타입 분류
      */
     public enum BinanceErrorType {
-        INVALID_API_KEY("API-key format invalid", true),
-        INVALID_SIGNATURE("Signature for this request is not valid", true),
-        TIMESTAMP_ERROR("Timestamp for this request is outside of the recvWindow", false),
-        IP_NOT_WHITELISTED("IP address is not whitelisted", true),
-        RATE_LIMIT_EXCEEDED("Too many requests", false),
-        INSUFFICIENT_BALANCE("Account has insufficient balance", false),
-        PERMISSION_DENIED("You don't have permission", true),
-        NETWORK_ERROR("Network error", false),
-        MAINTENANCE("System maintenance", false),
-        UNKNOWN("Unknown error", false);
+        INVALID_API_KEY("API 키 형식이 올바르지 않습니다", true),
+        INVALID_SIGNATURE("요청에 대한 서명이 유효하지 않습니다", true),
+        TIMESTAMP_ERROR("요청 타임스탬프가 recvWindow 범위를 벗어났습니다", false),
+        IP_NOT_WHITELISTED("IP 주소가 화이트리스트에 없습니다", true),
+        RATE_LIMIT_EXCEEDED("너무 많은 요청이 발생했습니다", false),
+        INSUFFICIENT_BALANCE("계정 잔액이 부족합니다", false),
+        PERMISSION_DENIED("권한이 없습니다", true),
+        NETWORK_ERROR("네트워크 오류가 발생했습니다", false),
+        MAINTENANCE("시스템 점검 중입니다", false),
+        UNKNOWN("알 수 없는 오류가 발생했습니다", false);
         
         private final String description;
         private final boolean isPermanent;  // true면 재시도 불필요

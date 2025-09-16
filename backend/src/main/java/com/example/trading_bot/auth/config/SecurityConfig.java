@@ -58,28 +58,32 @@ public class SecurityConfig {
                 // 인증 관련 엔드포인트
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/oauth2/**").permitAll()
-                
+
                 // Binance 관련 API (공개 데이터)
                 .requestMatchers("/api/binance/**").permitAll()
-                
+
+                // Portfolio와 Order API - 인증 필수
+                .requestMatchers("/api/portfolio/**").authenticated()
+                .requestMatchers("/api/orders/**").authenticated()
+
                 // Swagger 문서
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/swagger-ui.html").permitAll()
                 .requestMatchers("/swagger-resources/**").permitAll()
                 .requestMatchers("/webjars/**").permitAll()
-                
+
                 // 헬스체크 엔드포인트
                 .requestMatchers("/actuator/health").permitAll()
-                
+
                 // 거래 관련 API - 인증 필수
                 .requestMatchers("/api/trades/**").authenticated()
                 .requestMatchers("/api/statistics/**").authenticated()
                 .requestMatchers("/api/market/**").authenticated()
-                
+
                 // API 키 관리 - 인증 필수
                 .requestMatchers("/api/api-keys/**").authenticated()
-                
+
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )
