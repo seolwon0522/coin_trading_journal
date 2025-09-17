@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Search, TrendingUp, Loader2, Star, StarOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,7 +58,7 @@ const COIN_NAMES: { [key: string]: string } = {
   CHZ: '칠리즈',
 };
 
-export function BinanceSymbolSelector({
+function BinanceSymbolSelectorComponent({
   value,
   onChange,
   placeholder = '심볼 선택...',
@@ -268,3 +268,5 @@ export function BinanceSymbolSelector({
     </>
   );
 }
+
+export const BinanceSymbolSelector = React.memo(BinanceSymbolSelectorComponent);

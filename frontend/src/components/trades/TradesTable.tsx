@@ -30,7 +30,7 @@ interface TradesTableProps {
   currency: 'USD' | 'KRW';
 }
 
-export function TradesTable({ currency }: TradesTableProps) {
+function TradesTableComponent({ currency }: TradesTableProps) {
   const { usdToKrw, formatKRW } = useExchangeRate();
   const {
     trades,
@@ -256,3 +256,5 @@ export function TradesTable({ currency }: TradesTableProps) {
     </>
   );
 }
+
+export const TradesTable = React.memo(TradesTableComponent);
