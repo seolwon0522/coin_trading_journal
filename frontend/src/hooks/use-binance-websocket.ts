@@ -25,8 +25,8 @@ export function useBinanceWebSocket({
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const pingIntervalRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const pingIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const mountedRef = useRef(true);
   const intentionalCloseRef = useRef(false);
   const maxReconnectAttempts = 10;
