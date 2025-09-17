@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 export interface BinanceWebSocketOptions {
   streams: string[];
@@ -29,6 +29,7 @@ export function useBinanceWebSocket({
   const pingIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const mountedRef = useRef(true);
   const intentionalCloseRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0); // Use ref to avoid dependency issues
   const maxReconnectAttempts = 10;
 
   const connect = useCallback(() => {
@@ -61,6 +62,7 @@ export function useBinanceWebSocket({
         setIsConnected(true);
         setIsReconnecting(false);
         setReconnectAttempts(0);
+        reconnectAttemptsRef.current = 0;
         intentionalCloseRef.current = false;
 
         // Setup ping interval to keep connection alive
@@ -106,24 +108,25 @@ export function useBinanceWebSocket({
 
         // Only attempt reconnect if it wasn't an intentional close
         if (enabled && !intentionalCloseRef.current && mountedRef.current &&
-            reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttemptsRef.current < maxReconnectAttempts) {
           setIsReconnecting(true);
 
           // Exponential backoff with jitter
           const backoffDelay = Math.min(
-            reconnectInterval * Math.pow(2, reconnectAttempts) +
+            reconnectInterval * Math.pow(2, reconnectAttemptsRef.current) +
             Math.random() * 1000,
             30000 // Max 30 seconds
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {
             if (mountedRef.current && enabled) {
-              console.log(`Reconnect attempt ${reconnectAttempts + 1}/${maxReconnectAttempts}`);
-              setReconnectAttempts(prev => prev + 1);
+              reconnectAttemptsRef.current += 1;
+              console.log(`Reconnect attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}`);
+              setReconnectAttempts(reconnectAttemptsRef.current);
               connect();
             }
           }, backoffDelay);
-        } else if (reconnectAttempts >= maxReconnectAttempts) {
+        } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
           console.error('Max reconnection attempts reached');
           setIsReconnecting(false);
         }
@@ -133,7 +136,7 @@ export function useBinanceWebSocket({
       setIsConnected(false);
       setIsReconnecting(false);
     }
-  }, [streams, enabled, reconnectInterval, onMessage, onError, onOpen, onClose, reconnectAttempts]);
+  }, [streams, enabled, reconnectInterval, onMessage, onError, onOpen, onClose]);
 
   const disconnect = useCallback(() => {
     intentionalCloseRef.current = true;
@@ -156,6 +159,7 @@ export function useBinanceWebSocket({
     setIsConnected(false);
     setIsReconnecting(false);
     setReconnectAttempts(0);
+    reconnectAttemptsRef.current = 0;
   }, []);
 
   const sendMessage = useCallback((message: any) => {
@@ -165,6 +169,9 @@ export function useBinanceWebSocket({
       console.warn('WebSocket is not connected');
     }
   }, []);
+
+  // Use useMemo to create stable streams key
+  const streamsKey = useMemo(() => streams.join(','), [streams]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -177,7 +184,7 @@ export function useBinanceWebSocket({
       mountedRef.current = false;
       disconnect();
     };
-  }, [enabled, streams.join(',')]); // Re-connect when streams change
+  }, [enabled, streamsKey, connect, disconnect]); // Re-connect when streams change
 
   return {
     isConnected,
