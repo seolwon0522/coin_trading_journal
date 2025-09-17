@@ -43,6 +43,8 @@ export function useBinanceOrderBook(symbol: string, limit: number = 20) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updateCount, setUpdateCount] = useState(0);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
 
   const orderBookRef = useRef<Map<string, OrderBookLevel>>(new Map());
   const bidsRef = useRef<Map<string, OrderBookLevel>>(new Map());
@@ -129,11 +131,36 @@ export function useBinanceOrderBook(symbol: string, limit: number = 20) {
   }, [symbol, limit, processOrderBookData]);
 
   const handleWebSocketMessage = useCallback((data: any) => {
-    if (!data.stream || !data.data) return;
+    // Binance WebSocket sends data in different formats depending on the stream
+    // For combined streams: { stream: "btcusdt@depth", data: {...} }
+    // For single stream: {...} directly
 
-    const streamData = data.data;
+    const streamData = data.data || data;
 
-    // Check if this is a depth update
+    // depth20@100ms sends snapshot data, not depthUpdate events
+    // It has format: { lastUpdateId, bids: [[price, qty], ...], asks: [[price, qty], ...] }
+    if (streamData.lastUpdateId && streamData.bids && streamData.asks) {
+      // This is a depth snapshot from depth5/10/20 streams
+
+      // Clear and update with snapshot data
+      bidsRef.current.clear();
+      asksRef.current.clear();
+
+      streamData.bids.forEach(([price, quantity]: [string, string]) => {
+        bidsRef.current.set(price, { price, quantity });
+      });
+
+      streamData.asks.forEach(([price, quantity]: [string, string]) => {
+        asksRef.current.set(price, { price, quantity });
+      });
+
+      lastUpdateIdRef.current = streamData.lastUpdateId;
+      snapshotReceivedRef.current = true;
+      processOrderBookData(bidsRef.current, asksRef.current);
+      return;
+    }
+
+    // Check if this is a depth update (from @depth stream)
     if (streamData.e === 'depthUpdate') {
       const update: OrderBookUpdate = streamData;
 
@@ -165,8 +192,9 @@ export function useBinanceOrderBook(symbol: string, limit: number = 20) {
     }
   }, [processOrderBookData]);
 
+  // Use depth20@100ms for fast updates with 20 levels
   const { isConnected, isReconnecting } = useBinanceWebSocket({
-    streams: [`${symbol.toLowerCase()}@depth@100ms`],
+    streams: [`${symbol.toLowerCase()}@depth20@100ms`], // 100ms updates with 20 levels
     onMessage: handleWebSocketMessage,
     enabled: !!symbol,
   });

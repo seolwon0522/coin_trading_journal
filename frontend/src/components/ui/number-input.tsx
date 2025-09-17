@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
-import { parseNumberSafe } from '@/lib/utils/number-format';
+import { parseNumberSafe } from '@/lib/formatting';
 import { cn } from '@/lib/utils';
 
 export interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> {

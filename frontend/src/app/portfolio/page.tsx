@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw, TrendingUp, Wallet, Bitcoin, Database, Loader2, Timer, Pause, Play } from 'lucide-react';
-import { formatPrice, formatNumber } from '@/lib/utils/format';
+import { formatPrice, formatNumber } from '@/lib/formatting';
 import {
   Select,
   SelectContent,

@@ -112,7 +112,7 @@ export function OrderBook({ symbol, limit = 20 }: OrderBookProps) {
       </div>
 
       {/* Order Book Content */}
-      <div className="grid grid-cols-2 gap-4 h-[calc(100%-120px)] overflow-hidden">
+      <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
         {/* Bids */}
         <div className="space-y-0.5 overflow-y-auto custom-scrollbar">
           {orderBook.bids.map((bid, index) => {

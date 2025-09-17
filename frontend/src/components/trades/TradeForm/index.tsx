@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BinanceSymbolSelector } from '../BinanceSymbolSelector';
-import { formatNumber } from '@/lib/utils/number-format';
+import { formatNumber } from '@/lib/formatting';
 import { useExchangeRate } from '@/hooks/use-exchange-rate';
 import { cn } from '@/lib/utils';
 import {

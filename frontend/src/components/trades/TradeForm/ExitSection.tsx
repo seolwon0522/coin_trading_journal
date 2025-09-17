@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DateTimeInput } from '@/components/ui/datetime-input';
-import { formatNumber, parseNumber } from '@/lib/utils/number-format';
+import { formatNumber, parseNumber } from '@/lib/formatting';
 import { TrendingDown, DollarSign, Hash } from 'lucide-react';
 import { ProfitDisplay } from './ProfitDisplay';
 import { TradeRequest } from '@/types/trade';

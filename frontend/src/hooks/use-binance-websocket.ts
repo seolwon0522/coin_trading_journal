@@ -51,26 +51,34 @@ export function useBinanceWebSocket({
 
       // Create WebSocket URL for multiple streams
       const streamNames = streams.join('/');
-      const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streamNames}`;
+      // Use the correct Binance WebSocket endpoint without port
+      const wsUrl = `wss://stream.binance.com/stream?streams=${streamNames}`;
+
+      console.log('Attempting to connect to Binance WebSocket:', {
+        streams: streams,
+        streamNames: streamNames,
+        url: wsUrl
+      });
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
         if (!mountedRef.current) return;
-        console.log('Binance WebSocket connected');
+        console.log('✅ Binance WebSocket connected successfully', {
+          url: wsUrl,
+          readyState: ws.readyState,
+          streams: streams,
+          timestamp: new Date().toISOString()
+        });
         setIsConnected(true);
         setIsReconnecting(false);
         setReconnectAttempts(0);
         reconnectAttemptsRef.current = 0;
         intentionalCloseRef.current = false;
 
-        // Setup ping interval to keep connection alive
-        pingIntervalRef.current = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ method: 'ping' }));
-          }
-        }, 30000); // Ping every 30 seconds
+        // Binance WebSocket handles ping/pong automatically
+        // We don't need manual ping messages
 
         onOpen?.();
       };
@@ -79,8 +87,6 @@ export function useBinanceWebSocket({
         if (!mountedRef.current) return;
         try {
           const data = JSON.parse(event.data);
-          // Ignore pong responses
-          if (data.result === 'pong') return;
           onMessage?.(data);
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -89,13 +95,41 @@ export function useBinanceWebSocket({
 
       ws.onerror = (error) => {
         if (!mountedRef.current) return;
-        console.error('Binance WebSocket error:', error);
+        // WebSocket error 이벤트는 상세 정보를 제공하지 않으므로,
+        // readyState와 URL을 함께 로깅
+        console.error('Binance WebSocket error occurred', {
+          readyState: ws.readyState,
+          url: wsUrl,
+          error: error,
+          type: error.type,
+          streams: streams
+        });
         onError?.(error);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         if (!mountedRef.current) return;
-        console.log('Binance WebSocket disconnected');
+
+        // Provide meaningful close code descriptions
+        const closeCodeDescription = {
+          1000: 'Normal closure',
+          1001: 'Going away',
+          1002: 'Protocol error',
+          1003: 'Unsupported data',
+          1006: 'Abnormal closure (no close frame received)',
+          1007: 'Invalid frame payload data',
+          1008: 'Policy violation',
+          1009: 'Message too big',
+          1011: 'Internal server error',
+        }[event.code] || 'Unknown reason';
+
+        console.log(`❌ Binance WebSocket disconnected: ${closeCodeDescription}`, {
+          code: event.code,
+          reason: event.reason || 'No reason provided',
+          wasClean: event.wasClean,
+          streams: streams,
+          timestamp: new Date().toISOString()
+        });
         setIsConnected(false);
 
         // Clear ping interval
@@ -184,7 +218,7 @@ export function useBinanceWebSocket({
       mountedRef.current = false;
       disconnect();
     };
-  }, [enabled, streamsKey, connect, disconnect]); // Re-connect when streams change
+  }, [enabled, streamsKey]); // Only react to enabled and streams changes - avoid circular dependency
 
   return {
     isConnected,
