@@ -76,6 +76,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Trading Design System Tokens */
+  --trading-bg-primary: #0d0d0d;
+  --trading-bg-secondary: #161616;
+  --trading-border: #2a2a2a;
+  --trading-text-primary: #ffffff;
+  --trading-text-secondary: #a0a0a0;
+  --trading-text-muted: #6b7280;
+  --trading-accent-green: #10b981;
+  --trading-accent-red: #ef4444;
+  --trading-card-padding: 0.75rem;
+  --trading-border-radius: 0;
+  --trading-header-height: 48px;
+  --trading-footer-height: 120px;
 }
 
 .dark {
@@ -110,6 +124,20 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Trading Design System Tokens (Dark Mode) */
+  --trading-bg-primary: #0d0d0d;
+  --trading-bg-secondary: #161616;
+  --trading-border: #2a2a2a;
+  --trading-text-primary: #ffffff;
+  --trading-text-secondary: #a0a0a0;
+  --trading-text-muted: #6b7280;
+  --trading-accent-green: #10b981;
+  --trading-accent-red: #ef4444;
+  --trading-card-padding: 0.75rem;
+  --trading-border-radius: 0;
+  --trading-header-height: 48px;
+  --trading-footer-height: 120px;
 }
 
 @layer base {

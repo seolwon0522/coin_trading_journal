@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ApiKeyManager } from '@/components/api-keys/ApiKeyManager';
+import { PageHeader } from '@/components/ui/page-header';
+import { TradingCard } from '@/components/ui/trading-card';
 
 export default function SettingsPage() {
   const [nickname, setNickname] = useState('');
@@ -54,17 +56,15 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="border-b bg-muted/50">
-        <div className="px-6 py-8">
-          <h1 className="text-3xl font-bold tracking-tight">설정</h1>
-          <p className="text-muted-foreground mt-2">애플리케이션 설정을 관리하세요.</p>
-        </div>
-      </div>
+    <div className="min-h-full bg-[#0d0d0d]">
+      <PageHeader
+        title="설정"
+        description="애플리케이션 설정을 관리하세요."
+      />
 
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-4">
         {/* 계정 및 프로필 설정 */}
-        <section className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <TradingCard>
           <div className="p-6 border-b">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <User className="h-5 w-5" /> 계정 및 프로필
@@ -105,10 +105,10 @@ export default function SettingsPage() {
               변경 사항 저장
             </Button>
           </form>
-        </section>
+        </TradingCard>
 
         {/* 데이터 관리 */}
-        <section className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <TradingCard>
           <div className="p-6 border-b">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Database className="h-5 w-5" /> 데이터 관리
@@ -130,10 +130,10 @@ export default function SettingsPage() {
               </Button>
             </div>
           </div>
-        </section>
+        </TradingCard>
 
         {/* 알림 설정 */}
-        <section className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <TradingCard>
           <div className="p-6 border-b">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Bell className="h-5 w-5" /> 알림 설정
@@ -215,7 +215,7 @@ export default function SettingsPage() {
               알림 설정 저장
             </Button>
           </div>
-        </section>
+        </TradingCard>
 
         {/* API 키 관리 */}
         <ApiKeyManager />

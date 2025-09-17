@@ -16,6 +16,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useTrades } from '@/hooks/use-trades';
+import { PageHeader } from '@/components/ui/page-header';
+import { TradingCard } from '@/components/ui/trading-card';
 
 export default function TradesPage() {
   const [showForm, setShowForm] = useState(false);
@@ -34,52 +36,40 @@ export default function TradesPage() {
   };
 
   return (
-    <div className="min-h-full bg-background">
+    <div className="min-h-full bg-[#0d0d0d]">
       {/* 페이지 헤더 */}
-      <div className="border-b bg-muted/50">
-        <div className="px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <TrendingUp className="h-8 w-8" />
-                매매 기록
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                거래 내역을 체계적으로 기록하고 관리하세요.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <ExchangeRateBadge />
-                <ToggleGroup
-                  type="single"
-                  value={currency}
-                  onValueChange={(value: 'USD' | 'KRW') => value && setCurrency(value)}
-                  className="h-8"
-                >
-                  <ToggleGroupItem value="USD" className="h-7 px-3 text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white min-w-[60px] flex items-center justify-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    <span>USD</span>
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="KRW" className="h-7 px-3 text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white min-w-[60px] flex items-center justify-center">
-                    <span>₩ KRW</span>
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleGoToStatistics} className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  통계 보기
-                </Button>
-                <Button size="sm" onClick={() => setShowForm(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  새 기록 추가
-                </Button>
-              </div>
-            </div>
-          </div>
+      <PageHeader
+        title="매매 기록"
+        description="거래 내역을 체계적으로 기록하고 관리하세요."
+      >
+        <div className="flex items-center gap-2">
+          <ExchangeRateBadge />
+          <ToggleGroup
+            type="single"
+            value={currency}
+            onValueChange={(value: 'USD' | 'KRW') => value && setCurrency(value)}
+            className="h-8"
+          >
+            <ToggleGroupItem value="USD" className="h-7 px-3 text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white min-w-[60px] flex items-center justify-center gap-1">
+              <DollarSign className="h-3 w-3" />
+              <span>USD</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="KRW" className="h-7 px-3 text-xs data-[state=on]:bg-blue-500 data-[state=on]:text-white min-w-[60px] flex items-center justify-center">
+              <span>₩ KRW</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
-      </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleGoToStatistics} className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            통계 보기
+          </Button>
+          <Button size="sm" onClick={() => setShowForm(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            새 기록 추가
+          </Button>
+        </div>
+      </PageHeader>
 
       {/* 메인 콘텐츠 */}
       <div className="p-6 space-y-6">

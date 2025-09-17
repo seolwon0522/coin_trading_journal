@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
+import { PageHeader } from '@/components/ui/page-header';
+import { TradingCard } from '@/components/ui/trading-card';
 
 export default function PortfolioPage() {
   const { interval, changeInterval } = useRefreshInterval();
@@ -65,45 +67,47 @@ export default function PortfolioPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              포트폴리오를 불러올 수 없습니다. API 키를 확인해주세요.
-            </p>
-            <Button 
-              onClick={handleSync} 
-              className="mt-4"
-              variant="outline"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              DB 동기화 시도
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-full bg-[#0d0d0d]">
+        <PageHeader title="내 포트폴리오" description="Binance 계정의 실시간 자산 현황" />
+        <div className="p-6">
+          <TradingCard>
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">
+                포트폴리오를 불러올 수 없습니다. API 키를 확인해주세요.
+              </p>
+              <Button
+                onClick={handleSync}
+                className="mt-4"
+                variant="outline"
+              >
+                <Database className="h-4 w-4 mr-2" />
+                DB 동기화 시도
+              </Button>
+            </div>
+          </TradingCard>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">내 포트폴리오</h1>
-          <p className="text-muted-foreground">Binance 계정의 실시간 자산 현황</p>
-          {portfolio?.timestamp && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-muted-foreground">
-                업데이트: {lastUpdateText}
+    <div className="min-h-full bg-[#0d0d0d]">
+      <PageHeader
+        title="내 포트폴리오"
+        description="Binance 계정의 실시간 자산 현황"
+      >
+        {portfolio?.timestamp && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              업데이트: {lastUpdateText}
+            </span>
+            {isAutoRefreshing && interval && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
+                자동 갱신 중
               </span>
-              {isAutoRefreshing && interval && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full animate-pulse">
-                  자동 갱신 중
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
         <div className="flex gap-2 items-center">
           {/* 실시간 업데이트 간격 선택 */}
           <Select 
@@ -167,11 +171,12 @@ export default function PortfolioPage() {
             )}
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* 총 자산 카드 - 실시간 업데이트 */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+      <div className="p-6 space-y-4">
+        {/* 총 자산 카드 - 실시간 업데이트 */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <TradingCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">총 자산 (USDT)</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -197,9 +202,9 @@ export default function PortfolioPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </TradingCard>
 
-        <Card>
+        <TradingCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">총 자산 (BTC)</CardTitle>
             <Bitcoin className="h-4 w-4 text-muted-foreground" />
@@ -225,9 +230,9 @@ export default function PortfolioPage() {
               </div>
             )}
           </CardContent>
-        </Card>
+        </TradingCard>
 
-        <Card>
+        <TradingCard>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">보유 코인</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -246,11 +251,11 @@ export default function PortfolioPage() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+        </TradingCard>
+        </div>
 
-      {/* 자산 목록 테이블 - 실시간 현재가 및 평가금액 */}
-      <Card>
+        {/* 자산 목록 테이블 - 실시간 현재가 및 평가금액 */}
+        <TradingCard>
         <CardHeader>
           <CardTitle>자산 상세</CardTitle>
           <div className="text-sm text-muted-foreground flex items-center justify-between">
@@ -381,7 +386,8 @@ export default function PortfolioPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </TradingCard>
+      </div>
     </div>
   );
 }

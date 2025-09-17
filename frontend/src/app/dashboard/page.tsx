@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTrades } from '@/hooks/use-trades';
 import { BinanceCoinSelector } from '@/components/binance-coin-selector';
+import { TradingCard } from '@/components/ui/trading-card';
+import { PageHeader } from '@/components/ui/page-header';
 
 // 간단한 통계 카드 컴포넌트
 function StatCard({
@@ -37,31 +39,31 @@ function StatCard({
   trendValue?: string;
 }) {
   return (
-    <div className="bg-card p-6 rounded-lg border hover:shadow-md transition-shadow">
+    <TradingCard>
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted-foreground">{title}</p>
+          <p className="text-xl font-bold">{value}</p>
           {trendValue && (
             <div className="flex items-center space-x-1">
               <Badge
                 variant={
                   trend === 'up' ? 'default' : trend === 'down' ? 'destructive' : 'secondary'
                 }
-                className="text-xs"
+                className="text-xs h-5"
               >
                 {trendValue}
               </Badge>
               <span className="text-xs text-muted-foreground">{description}</span>
             </div>
           )}
-          {!trendValue && <p className="text-sm text-muted-foreground">{description}</p>}
+          {!trendValue && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
-        <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
-          <Icon className="h-6 w-6 text-primary" />
+        <div className="h-10 w-10 bg-[#0d0d0d] rounded-none flex items-center justify-center">
+          <Icon className="h-5 w-5 text-primary" />
         </div>
       </div>
-    </div>
+    </TradingCard>
   );
 }
 
@@ -81,25 +83,25 @@ function QuickActionCard({
 }) {
   return (
     <Link href={href}>
-      <div className="bg-card p-6 rounded-lg border hover:shadow-md transition-all hover:border-primary/50 group cursor-pointer mb-4">
+      <TradingCard className="group cursor-pointer mb-2 hover:bg-[#1a1a1a] transition-colors">
         <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
+          <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold group-hover:text-primary transition-colors">{title}</h3>
+              <h3 className="text-sm font-semibold">{title}</h3>
               {badge && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs h-5">
                   {badge}
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="flex items-center gap-1">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <ArrowRight className="h-3 w-3 text-muted-foreground" />
           </div>
         </div>
-      </div>
+      </TradingCard>
     </Link>
   );
 }
@@ -111,17 +113,17 @@ function RecentTradesSummary() {
   if (loading) {
     return (
       <div>
-        <div className="bg-card p-6 rounded-lg border">
-          <h3 className="font-semibold mb-4">최근 거래</h3>
-          <div className="space-y-3">
+        <TradingCard>
+          <h3 className="text-sm font-semibold mb-3">최근 거래</h3>
+          <div className="space-y-2">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
+                <div className="h-3 bg-[#2a2a2a] rounded w-3/4 mb-1"></div>
+                <div className="h-2 bg-[#2a2a2a] rounded w-1/2"></div>
               </div>
             ))}
           </div>
-        </div>
+        </TradingCard>
       </div>
     );
   }
@@ -129,56 +131,56 @@ function RecentTradesSummary() {
   const recentTrades = trades?.slice(0, 5) || [];
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-semibold">최근 거래내역</h3>
-      <div className="bg-card p-6 rounded-lg border">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold">거래내역</h3>
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold">최근 거래내역</h3>
+      <TradingCard>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">거래내역</h3>
           <Link href="/trades">
-            <Button variant="ghost" size="sm">
-              전체 보기 <ArrowRight className="h-4 w-4 ml-1" />
+            <Button variant="ghost" size="sm" className="h-7 text-xs">
+              전체 보기 <ArrowRight className="h-3 w-3 ml-1" />
             </Button>
           </Link>
         </div>
 
         {recentTrades.length === 0 ? (
-          <div className="text-center py-8">
-            <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">아직 거래 기록이 없습니다</p>
+          <div className="text-center py-6">
+            <TrendingUp className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">아직 거래 기록이 없습니다</p>
             <Link href="/trades">
-              <Button variant="outline" size="sm" className="mt-2">
+              <Button variant="outline" size="sm" className="mt-2 h-7 text-xs">
                 첫 거래 기록하기
               </Button>
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {recentTrades.map((trade) => (
               <div
                 key={trade.id}
-                className="flex items-center justify-between py-3 border-b last:border-0"
+                className="flex items-center justify-between py-2 border-b border-[#2a2a2a] last:border-0"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div
                     className={`h-2 w-2 rounded-full ${
                       trade.side === 'BUY' ? 'bg-emerald-500' : 'bg-red-500'
                     }`}
                   />
                   <div>
-                    <p className="font-medium text-sm">{trade.symbol}</p>
+                    <p className="font-medium text-xs">{trade.symbol}</p>
                     <p className="text-xs text-muted-foreground">
                       {trade.side === 'BUY' ? '매수' : '매도'} • {trade.entryQuantity?.toLocaleString() || '0'}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium">${trade.entryPrice?.toLocaleString() || '0'}</p>
+                  <p className="text-xs font-medium">${trade.entryPrice?.toLocaleString() || '0'}</p>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </TradingCard>
     </div>
   );
 }
@@ -195,72 +197,23 @@ export default function Dashboard() {
   const totalPenaltyScore: number = 0;
   const riskScore: number = 100;
 
-  // 토큰 갱신 테스트 함수 (임시)
-  const testTokenRefresh = async () => {
-    try {
-      const refreshToken = localStorage.getItem('ctj_refresh_token');
-      console.log('Current Refresh Token:', refreshToken);
-      
-      const response = await fetch('http://localhost:8080/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${refreshToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-      });
-      
-      const data = await response.json();
-      console.log('Token Refresh Response:', data);
-      
-      if (data.success) {
-        alert('토큰 갱신 성공!');
-        // 새 토큰 저장
-        if (data.data?.accessToken && data.data?.refreshToken) {
-          localStorage.setItem('ctj_access_token', data.data.accessToken);
-          localStorage.setItem('ctj_refresh_token', data.data.refreshToken);
-        }
-      } else {
-        alert('토큰 갱신 실패: ' + data.message);
-      }
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      alert('토큰 갱신 오류: ' + error);
-    }
-  };
-
   return (
-    <div className="min-h-full bg-background">
-      {/* 페이지 헤더 */}
-      <div className="border-b bg-muted/50">
-        <div className="px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">대시보드</h1>
-              <p className="text-muted-foreground mt-2">매매 활동 요약과 빠른 액션 메뉴입니다.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="gap-1">
-                <Clock className="h-3 w-3" />
-                실시간 업데이트
-              </Badge>
-              {/* 임시 토큰 갱신 테스트 버튼 */}
-              <Button 
-                onClick={testTokenRefresh}
-                variant="outline"
-                size="sm"
-              >
-                토큰 갱신 테스트
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="h-screen bg-[#0d0d0d] flex flex-col overflow-hidden">
+      {/* 페이지 타이틀 */}
+      <PageHeader
+        title="대시보드"
+        description="매매 활동 요약과 빠른 액션 메뉴입니다."
+      >
+        <Badge variant="outline" className="gap-1 text-xs h-6">
+          <Clock className="h-3 w-3" />
+          실시간 업데이트
+        </Badge>
+      </PageHeader>
 
       {/* 메인 콘텐츠 */}
-      <div className="p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 통계 카드들 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
           <StatCard
             title="총 거래 수"
             value={totalTrades.toString()}
@@ -308,12 +261,12 @@ export default function Dashboard() {
         </div>
 
         {/* 바이낸스 코인 가격 조회 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <BinanceCoinSelector />
         </div>
 
         {/* 메인 콘텐츠 그리드 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* 최근 거래 (2/3) */}
           <div className="lg:col-span-2">
             <RecentTradesSummary />
@@ -321,9 +274,9 @@ export default function Dashboard() {
 
           {/* 빠른 액션 (1/3) */}
           <div>
-            <h3 className="font-semibold mb-4">빠른 액션</h3>
+            <h3 className="text-sm font-semibold mb-2">빠른 액션</h3>
 
-            <div className="space-y-6">
+            <div className="space-y-2">
               <QuickActionCard
                 title="새 거래 기록"
                 description="매수/매도 기록을 추가하세요"
@@ -350,9 +303,9 @@ export default function Dashboard() {
         </div>
 
         {/* 도움말 섹션 */}
-        <div className="mt-8 p-6 bg-muted/30 rounded-lg border border-dashed">
-          <h3 className="text-lg font-semibold mb-2">시작하기</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <TradingCard className="mt-4">
+          <h3 className="text-sm font-semibold mb-2">시작하기</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
             <div>
               <h4 className="font-medium text-foreground mb-1">1. 첫 거래 기록</h4>
               <p className="text-muted-foreground">
@@ -370,7 +323,7 @@ export default function Dashboard() {
               <p className="text-muted-foreground">꾸준한 기록으로 투자 실력을 향상시키세요.</p>
             </div>
           </div>
-        </div>
+        </TradingCard>
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { ProfessionalOrderBook } from '@/components/trading/professional-orderbo
 import { ProfessionalOrderForm } from '@/components/trading/professional-order-form';
 import { TradingViewAdvancedChart } from '@/components/trading/tradingview-advanced-chart';
 import { MarketHeader } from '@/components/trading/market-header';
-import { TradingHeader } from '@/components/layout/trading-header';
 import { MarketList } from '@/components/trading/market-list';
 import { BinanceApi, Ticker24hr } from '@/lib/api/binance-api';
 import { Card } from '@/components/ui/card';
@@ -107,9 +106,6 @@ export default function TradingSymbolPage() {
 
   return (
     <div className="h-screen bg-[#0d0d0d] flex flex-col overflow-hidden">
-      {/* Trading 전용 헤더 */}
-      <TradingHeader currentSymbol={symbol} />
-
       {/* 메인 콘텐츠 영역 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 좌측: 마켓 리스트 */}
