@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { ProfessionalOrderBook } from '@/components/trading/professional-orderbook';
 import { ProfessionalOrderForm } from '@/components/trading/professional-order-form';
 import { TradingViewAdvancedChart } from '@/components/trading/tradingview-advanced-chart';
@@ -13,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useTicker } from '@/hooks/use-ticker';
+import { useOrders } from '@/hooks/use-orders';
+import { useTrades } from '@/hooks/use-trades';
 
 // 레이아웃 토글 버튼 컴포넌트 분리
 function LayoutToggleButtons({
@@ -49,7 +52,51 @@ function LayoutToggleButtons({
 }
 
 // 주문/거래 내역 탭 컴포넌트 분리
-function TradingHistoryTabs() {
+function TradingHistoryTabs({ symbol }: { symbol: string }) {
+  const { openOrders, orderHistory, fetchOpenOrders, fetchOrderHistory } = useOrders();
+  const { trades, loading: tradesLoading, refresh: refreshTrades } = useTrades();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 컴포넌트 마운트 시 데이터 가져오기
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchOpenOrders(symbol),
+          fetchOrderHistory()
+        ]);
+        // useTrades hook automatically loads on mount, so we just need to refresh if symbol changes
+        refreshTrades();
+      } catch (error) {
+        console.error('Failed to fetch trading history:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [symbol]);
+
+  // 날짜 포맷터
+  const formatDate = (timestamp: number | string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('ko-KR', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // 가격 포맷터
+  const formatPrice = (price: number | string) => {
+    return Number(price).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8
+    });
+  };
+
   return (
     <div className="flex-shrink-0 border-t border-[#2a2a2a] h-[120px] bg-[#0d0d0d]">
       <Card className="bg-background/50 backdrop-blur border-0 rounded-none p-0 h-full">
@@ -60,45 +107,120 @@ function TradingHistoryTabs() {
               className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
             >
               <List className="h-3 w-3 mr-1" />
-              <span className="text-xs">미체결</span>
+              <span className="text-xs">미체결 ({openOrders.length})</span>
             </TabsTrigger>
             <TabsTrigger
               value="history"
               className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
             >
               <History className="h-3 w-3 mr-1" />
-              <span className="text-xs">주문내역</span>
+              <span className="text-xs">주문내역 ({orderHistory.length})</span>
             </TabsTrigger>
             <TabsTrigger
               value="trades"
               className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
             >
               <Clock className="h-3 w-3 mr-1" />
-              <span className="text-xs">거래내역</span>
+              <span className="text-xs">거래내역 ({trades.length})</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="mt-0 p-2 flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <div className="text-center py-4 text-muted-foreground text-xs">
-                미체결 주문이 없습니다
-              </div>
+              {isLoading ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  로딩중...
+                </div>
+              ) : openOrders.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  미체결 주문이 없습니다
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {openOrders.map((order) => (
+                    <div key={order.orderId} className="p-1.5 border-b border-[#2a2a2a] text-xs">
+                      <div className="flex justify-between">
+                        <span className={order.side === 'BUY' ? 'text-green-500' : 'text-red-500'}>
+                          {order.side === 'BUY' ? '매수' : '매도'}
+                        </span>
+                        <span>{order.symbol}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>수량: {formatPrice(order.origQty)}</span>
+                        <span>가격: {formatPrice(order.price)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="history" className="mt-0 p-2 flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <div className="text-center py-4 text-muted-foreground text-xs">
-                주문 내역이 없습니다
-              </div>
+              {isLoading ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  로딩중...
+                </div>
+              ) : orderHistory.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  주문 내역이 없습니다
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {orderHistory.map((order) => (
+                    <div key={order.orderId} className="p-1.5 border-b border-[#2a2a2a] text-xs">
+                      <div className="flex justify-between">
+                        <span className={order.side === 'BUY' ? 'text-green-500' : 'text-red-500'}>
+                          {order.side === 'BUY' ? '매수' : '매도'}
+                        </span>
+                        <span>{order.symbol}</span>
+                        <span className="text-muted-foreground">{order.status}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>수량: {formatPrice(order.origQty)}</span>
+                        <span>가격: {formatPrice(order.price)}</span>
+                        <span>{formatDate(order.time)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="trades" className="mt-0 p-2 flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <div className="text-center py-4 text-muted-foreground text-xs">
-                거래 내역이 없습니다
-              </div>
+              {isLoading ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  로딩중...
+                </div>
+              ) : trades.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground text-xs">
+                  거래 내역이 없습니다
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {trades.map((trade) => (
+                    <div key={trade.id} className="p-1.5 border-b border-[#2a2a2a] text-xs">
+                      <div className="flex justify-between">
+                        <span className={trade.side === 'BUY' ? 'text-green-500' : 'text-red-500'}>
+                          {trade.side === 'BUY' ? '매수' : '매도'}
+                        </span>
+                        <span>{trade.symbol}</span>
+                        <span className={trade.pnlPercent && trade.pnlPercent > 0 ? 'text-green-500' : 'text-red-500'}>
+                          {trade.pnlPercent ? `${trade.pnlPercent > 0 ? '+' : ''}${trade.pnlPercent.toFixed(2)}%` : '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>진입: {formatPrice(trade.entryPrice)}</span>
+                        {trade.exitPrice && <span>종료: {formatPrice(trade.exitPrice)}</span>}
+                        <span>{formatDate(trade.entryTime)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -200,7 +322,7 @@ export default function TradingSymbolPage() {
             </div>
 
             {/* 하단: 주문 및 거래 내역 */}
-            <TradingHistoryTabs />
+            <TradingHistoryTabs symbol={symbol} />
           </div>
         </div>
       </div>
