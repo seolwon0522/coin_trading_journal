@@ -5,7 +5,7 @@
  * @description 날짜 및 시간 포맷팅 관련 유틸리티
  */
 
-interface DateFormatOptions {
+export interface DateFormatOptions {
   locale?: string;
   includeTime?: boolean;
   includeSeconds?: boolean;

@@ -1,91 +1,37 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import { ProfessionalOrderBook } from '@/components/trading/professional-orderbook';
 import { ProfessionalOrderForm } from '@/components/trading/professional-order-form';
 import { TradingViewAdvancedChart } from '@/components/trading/tradingview-advanced-chart';
 import { MarketHeader } from '@/components/trading/market-header';
 import { MarketList } from '@/components/trading/market-list';
-import { BinanceApi, Ticker24hr } from '@/lib/api/binance-api';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, History, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
+import { useTicker } from '@/hooks/use-ticker';
 
-export default function TradingSymbolPage() {
-  const params = useParams();
-  const symbol = params.symbol as string;
-  const [ticker, setTicker] = useState<Ticker24hr | null>(null);
-  const [isCompactMode, setIsCompactMode] = useState(false);
-  const [showOrderBook, setShowOrderBook] = useState(true);
-  const [showOrderForm, setShowOrderForm] = useState(true);
-  const [showMarketList, setShowMarketList] = useState(true);
-  const api = new BinanceApi();
-
-  // 티커 데이터 페치
-  useEffect(() => {
-    const fetchTicker = async () => {
-      try {
-        const tickerData = await api.get24hrTicker(symbol);
-        setTicker(tickerData);
-      } catch (error) {
-        console.error('Failed to fetch ticker:', error);
-      }
-    };
-
-    if (symbol) {
-      fetchTicker();
-      const interval = setInterval(fetchTicker, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [symbol]);
-
-  // 화면 크기에 따른 반응형 처리
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      if (width < 768) { // 모바일
-        setShowMarketList(false);
-        setShowOrderBook(false);
-        setShowOrderForm(false);
-        setIsCompactMode(true);
-      } else if (width < 1280) { // 태블릿
-        setShowMarketList(false);
-        setShowOrderBook(true);
-        setShowOrderForm(false);
-        setIsCompactMode(true);
-      } else if (width < 1920) { // 랩톱
-        setShowMarketList(true);
-        setShowOrderBook(true);
-        setShowOrderForm(true);
-        setIsCompactMode(true);
-      } else { // 데스크톱
-        setShowMarketList(true);
-        setShowOrderBook(true);
-        setShowOrderForm(true);
-        setIsCompactMode(false);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const currentPrice = ticker ? parseFloat(ticker.lastPrice) : 0;
-
-  // 레이아웃 토글 버튼 (태블릿용)
-  const LayoutToggle = () => (
+// 레이아웃 토글 버튼 컴포넌트 분리
+function LayoutToggleButtons({
+  showOrderBook,
+  showOrderForm,
+  onToggleOrderBook,
+  onToggleOrderForm,
+}: {
+  showOrderBook: boolean;
+  showOrderForm: boolean;
+  onToggleOrderBook: () => void;
+  onToggleOrderForm: () => void;
+}) {
+  return (
     <div className="flex gap-1 lg:hidden absolute top-2 right-2 z-10">
       <Button
         size="sm"
         variant={showOrderBook ? "secondary" : "outline"}
-        onClick={() => {
-          setShowOrderBook(!showOrderBook);
-          if (!showOrderBook) setShowOrderForm(false);
-        }}
+        onClick={onToggleOrderBook}
         className="text-xs h-7"
       >
         호가창
@@ -93,25 +39,106 @@ export default function TradingSymbolPage() {
       <Button
         size="sm"
         variant={showOrderForm ? "secondary" : "outline"}
-        onClick={() => {
-          setShowOrderForm(!showOrderForm);
-          if (!showOrderForm) setShowOrderBook(false);
-        }}
+        onClick={onToggleOrderForm}
         className="text-xs h-7"
       >
         주문
       </Button>
     </div>
   );
+}
+
+// 주문/거래 내역 탭 컴포넌트 분리
+function TradingHistoryTabs() {
+  return (
+    <div className="flex-shrink-0 border-t border-[#2a2a2a] h-[120px] bg-[#0d0d0d]">
+      <Card className="bg-background/50 backdrop-blur border-0 rounded-none p-0 h-full">
+        <Tabs defaultValue="orders" className="w-full h-full flex flex-col">
+          <TabsList className="w-full justify-start rounded-none bg-transparent border-b border-border/50 h-9 p-0 flex-shrink-0">
+            <TabsTrigger
+              value="orders"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
+            >
+              <List className="h-3 w-3 mr-1" />
+              <span className="text-xs">미체결</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="history"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
+            >
+              <History className="h-3 w-3 mr-1" />
+              <span className="text-xs">주문내역</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="trades"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
+            >
+              <Clock className="h-3 w-3 mr-1" />
+              <span className="text-xs">거래내역</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders" className="mt-0 p-2 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <div className="text-center py-4 text-muted-foreground text-xs">
+                미체결 주문이 없습니다
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-0 p-2 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <div className="text-center py-4 text-muted-foreground text-xs">
+                주문 내역이 없습니다
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="trades" className="mt-0 p-2 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <div className="text-center py-4 text-muted-foreground text-xs">
+                거래 내역이 없습니다
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
+    </div>
+  );
+}
+
+// 메인 페이지 컴포넌트 - 훨씬 더 깔끔해짐
+export default function TradingSymbolPage() {
+  const params = useParams();
+  const symbol = params.symbol as string;
+
+  // 커스텀 훅으로 복잡한 로직 분리
+  const {
+    showMarketList,
+    showOrderBook,
+    showOrderForm,
+    isCompactMode,
+    toggleMarketList,
+    toggleOrderBook,
+    toggleOrderForm,
+  } = useResponsiveLayout();
+
+  const { ticker, currentPrice } = useTicker(symbol);
+
+  // 차트 높이 계산 - 상수로 분리
+  const HEADER_HEIGHT = 280;
+  const MIN_CHART_HEIGHT = 500;
+  const chartHeight = typeof window !== 'undefined'
+    ? Math.max(window.innerHeight - HEADER_HEIGHT, MIN_CHART_HEIGHT)
+    : MIN_CHART_HEIGHT;
 
   return (
     <div className="h-screen bg-[#0d0d0d] flex flex-col overflow-hidden">
-      {/* 메인 콘텐츠 영역 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 좌측: 마켓 리스트 */}
         <MarketList
           isCollapsed={!showMarketList}
-          onToggleCollapse={() => setShowMarketList(!showMarketList)}
+          onToggleCollapse={toggleMarketList}
         />
 
         {/* 오른쪽: 트레이딩 영역 */}
@@ -139,12 +166,17 @@ export default function TradingSymbolPage() {
 
               {/* 중앙: 차트 */}
               <div className="flex-1 min-w-0 relative bg-[#0d0d0d]">
-                <LayoutToggle />
+                <LayoutToggleButtons
+                  showOrderBook={showOrderBook}
+                  showOrderForm={showOrderForm}
+                  onToggleOrderBook={toggleOrderBook}
+                  onToggleOrderForm={toggleOrderForm}
+                />
                 <div className="h-full">
                   <TradingViewAdvancedChart
                     symbol={symbol}
                     theme="dark"
-                    height={typeof window !== 'undefined' ? Math.max(window.innerHeight - 280, 500) : 500}
+                    height={chartHeight}
                     interval="60"
                   />
                 </div>
@@ -168,59 +200,7 @@ export default function TradingSymbolPage() {
             </div>
 
             {/* 하단: 주문 및 거래 내역 */}
-            <div className="flex-shrink-0 border-t border-[#2a2a2a] h-[120px] bg-[#0d0d0d]">
-              <Card className="bg-background/50 backdrop-blur border-0 rounded-none p-0 h-full">
-                <Tabs defaultValue="orders" className="w-full h-full flex flex-col">
-                  <TabsList className="w-full justify-start rounded-none bg-transparent border-b border-border/50 h-9 p-0 flex-shrink-0">
-                    <TabsTrigger
-                      value="orders"
-                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
-                    >
-                      <List className="h-3 w-3 mr-1" />
-                      <span className="text-xs">미체결</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="history"
-                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
-                    >
-                      <History className="h-3 w-3 mr-1" />
-                      <span className="text-xs">주문내역</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="trades"
-                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
-                    >
-                      <Clock className="h-3 w-3 mr-1" />
-                      <span className="text-xs">거래내역</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="orders" className="mt-0 p-2 flex-1 overflow-hidden">
-                    <div className="h-full overflow-y-auto">
-                      <div className="text-center py-4 text-muted-foreground text-xs">
-                        미체결 주문이 없습니다
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="history" className="mt-0 p-2 flex-1 overflow-hidden">
-                    <div className="h-full overflow-y-auto">
-                      <div className="text-center py-4 text-muted-foreground text-xs">
-                        주문 내역이 없습니다
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="trades" className="mt-0 p-2 flex-1 overflow-hidden">
-                    <div className="h-full overflow-y-auto">
-                      <div className="text-center py-4 text-muted-foreground text-xs">
-                        거래 내역이 없습니다
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </Card>
-            </div>
+            <TradingHistoryTabs />
           </div>
         </div>
       </div>

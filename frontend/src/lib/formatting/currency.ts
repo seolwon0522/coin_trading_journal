@@ -5,7 +5,7 @@
  * @description 통화 포맷팅 관련 통합 유틸리티
  */
 
-interface CurrencyFormatOptions {
+export interface CurrencyFormatOptions {
   locale?: string;
   minimumFractionDigits?: number;
   maximumFractionDigits?: number;

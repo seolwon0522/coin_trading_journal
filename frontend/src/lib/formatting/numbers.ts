@@ -5,7 +5,7 @@
  * @description 숫자 포맷팅, 파싱, 변환 관련 통합 유틸리티
  */
 
-interface NumberFormatOptions {
+export interface NumberFormatOptions {
   locale?: string;
   minimumFractionDigits?: number;
   maximumFractionDigits?: number;
