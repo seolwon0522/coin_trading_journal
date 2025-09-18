@@ -36,6 +36,55 @@ export interface Ticker24hr {
   count: number;
 }
 
+// 마켓 아이템 검색 결과 인터페이스
+export interface MarketSearchResult {
+  symbol: string;
+  lastPrice: string;
+  priceChangePercent: string;
+  volume: string;
+  quoteVolume: string;
+  count?: number;
+}
+
+// 심볼 검색 함수 - 검색어와 일치하는 심볼 필터링
+export async function searchSymbols(query: string, limit: number = 10000): Promise<MarketSearchResult[]> {
+  try {
+    const response = await fetch('/api/binance/ticker');
+    if (!response.ok) {
+      throw new Error('Failed to fetch tickers');
+    }
+
+    const tickers: Ticker24hr[] = await response.json();
+
+    // 검색어로 필터링
+    const filtered = tickers.filter(ticker => {
+      const searchTerm = query.toUpperCase();
+      const symbol = ticker.symbol.toUpperCase();
+      const baseAsset = symbol.replace(/USDT|BUSD|BTC|ETH|BNB/, '');
+
+      return symbol.includes(searchTerm) ||
+             baseAsset.includes(searchTerm);
+    });
+
+    // 거래량 순으로 정렬 후 limit만큼 반환
+    // limit가 10000이면 사실상 모든 코인을 반환
+    return filtered
+      .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
+      .slice(0, limit)
+      .map(ticker => ({
+        symbol: ticker.symbol,
+        lastPrice: ticker.lastPrice,
+        priceChangePercent: ticker.priceChangePercent,
+        volume: ticker.volume,
+        quoteVolume: ticker.quoteVolume,
+        count: ticker.count
+      }));
+  } catch (error) {
+    console.error('Error searching symbols:', error);
+    return [];
+  }
+}
+
 export class BinanceApi {
   private baseUrl = '/api/binance';
 

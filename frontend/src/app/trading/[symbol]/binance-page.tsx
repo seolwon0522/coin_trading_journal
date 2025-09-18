@@ -7,6 +7,7 @@ import { BinanceOrderForm } from '@/components/trading/binance-order-form';
 import { BinanceMarketHeader } from '@/components/trading/binance-market-header';
 import { BinanceMarketList } from '@/components/trading/binance-market-list';
 import { TradingViewAdvancedChart } from '@/components/trading/tradingview-advanced-chart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   List,
   History,
@@ -24,9 +25,8 @@ import { useTicker } from '@/hooks/use-ticker';
 import { useOrders } from '@/hooks/use-orders';
 import { useTrades } from '@/hooks/use-trades';
 
-
-// Binance 스타일 거래 내역 탭 컴포넌트
-const TradingHistoryTabs = memo(function TradingHistoryTabs({ symbol }: { symbol: string }) {
+// 거래 내역 탭 컴포넌트
+const BinanceTradingHistory = memo(function BinanceTradingHistory({ symbol }: { symbol: string }) {
   const { openOrders, orderHistory, fetchOpenOrders, fetchOrderHistory } = useOrders();
   const { trades, loading: tradesLoading, refresh: refreshTrades } = useTrades();
   const [isLoading, setIsLoading] = useState(true);
@@ -224,48 +224,37 @@ const TradingHistoryTabs = memo(function TradingHistoryTabs({ symbol }: { symbol
   );
 });
 
-
-// Main Trading Page Component
-export default function TradingSymbolPage() {
+// 메인 Binance 트레이딩 페이지
+export default function BinanceTradingPage() {
   const params = useParams();
   const router = useRouter();
   const symbol = params.symbol as string;
   const { ticker, currentPrice } = useTicker(symbol);
 
-  const [showMarketList, setShowMarketList] = useState(false);
-  const [activeTab, setActiveTab] = useState<'orders' | 'history' | 'trades'>('orders');
+  const [showMarketList, setShowMarketList] = useState(true);
+  const [chartHeight, setChartHeight] = useState(60); // 차트 높이 비율 (%)
+  const [showAdvancedChart, setShowAdvancedChart] = useState(true);
 
   const handleSelectSymbol = useCallback((newSymbol: string) => {
     router.push(`/trading/${newSymbol}`);
-    setShowMarketList(false); // 코인 선택 후 마켓 리스트 닫기
   }, [router]);
 
-
-  // Desktop Layout - Binance Style
   return (
-    <div className="h-screen bg-[#0b0e11] flex flex-col overflow-hidden binance-theme">
+    <div className="h-screen bg-[#0b0e11] flex flex-col overflow-hidden">
       {/* 헤더 */}
       <div className="h-12 flex-shrink-0 border-b border-[#2b3139]">
         <BinanceMarketHeader
           symbol={symbol}
           ticker={ticker}
           onSymbolChange={handleSelectSymbol}
-          onToggleMarketList={() => setShowMarketList(!showMarketList)}
         />
       </div>
 
-      {/* 메인 콘텐츠 */}
+      {/* 메인 컨텐츠 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 왼쪽 사이드바 - 마켓 리스트 */}
         {showMarketList && (
-          <div className="w-72 bg-[#161a1e] border-r border-[#2b3139] flex flex-col relative">
-            {/* 닫기 버튼 */}
-            <button
-              onClick={() => setShowMarketList(false)}
-              className="absolute top-2 right-2 p-1 hover:bg-[#2b3139] rounded transition-colors z-10"
-            >
-              <X className="h-4 w-4 text-[#5e6673]" />
-            </button>
+          <div className="w-72 bg-[#161a1e] border-r border-[#2b3139] flex flex-col">
             <BinanceMarketList
               onSelectSymbol={handleSelectSymbol}
               selectedSymbol={symbol}
@@ -276,52 +265,65 @@ export default function TradingSymbolPage() {
         {/* 중앙 영역 */}
         <div className="flex-1 flex flex-col">
           {/* 상단 - 차트 영역 */}
-          <div className="flex-1 min-h-0 bg-[#0b0e11]">
-            <div className="h-full relative">
-              {/* 차트 툴바 */}
-              <div className="absolute top-0 left-0 right-0 h-8 bg-[#161a1e] border-b border-[#2b3139] flex items-center justify-between px-2 z-10">
-                <div className="flex items-center gap-1">
-                  {!showMarketList && (
-                    <button
-                      onClick={() => setShowMarketList(true)}
-                      className="p-1 hover:bg-[#2b3139] rounded transition-colors"
-                    >
-                      <Menu className="h-4 w-4 text-[#5e6673]" />
-                    </button>
+          <div
+            className="bg-[#0b0e11] border-b border-[#2b3139] relative"
+            style={{ height: `${chartHeight}%` }}
+          >
+            {/* 차트 툴바 */}
+            <div className="absolute top-0 left-0 right-0 h-8 bg-[#161a1e] border-b border-[#2b3139] flex items-center justify-between px-2 z-10">
+              <div className="flex items-center gap-1">
+                {!showMarketList && (
+                  <button
+                    onClick={() => setShowMarketList(true)}
+                    className="p-1 hover:bg-[#2b3139] rounded"
+                  >
+                    <Menu className="h-4 w-4 text-[#5e6673]" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowMarketList(false)}
+                  className={cn(
+                    "p-1 hover:bg-[#2b3139] rounded",
+                    !showMarketList && "hidden"
                   )}
-                  <span className="text-xs text-[#848e9c]">차트</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button className="p-1 hover:bg-[#2b3139] rounded">
-                    <Settings className="h-4 w-4 text-[#5e6673]" />
-                  </button>
-                  <button className="p-1 hover:bg-[#2b3139] rounded">
-                    <Maximize2 className="h-4 w-4 text-[#5e6673]" />
-                  </button>
-                </div>
+                >
+                  <ChevronLeft className="h-4 w-4 text-[#5e6673]" />
+                </button>
+                <span className="text-xs text-[#848e9c]">차트</span>
               </div>
+              <div className="flex items-center gap-1">
+                <button className="p-1 hover:bg-[#2b3139] rounded">
+                  <Grid3x3 className="h-4 w-4 text-[#5e6673]" />
+                </button>
+                <button className="p-1 hover:bg-[#2b3139] rounded">
+                  <Settings className="h-4 w-4 text-[#5e6673]" />
+                </button>
+                <button className="p-1 hover:bg-[#2b3139] rounded">
+                  <Maximize2 className="h-4 w-4 text-[#5e6673]" />
+                </button>
+              </div>
+            </div>
 
-              {/* TradingView 차트 */}
-              <div className="h-full pt-8">
-                {useMemo(() => (
-                  <TradingViewAdvancedChart
-                    symbol={symbol}
-                    theme="dark"
-                    height={typeof window !== 'undefined' ? window.innerHeight * 0.6 - 80 : 400}
-                    interval="60"
-                  />
-                ), [symbol])}
-              </div>
+            {/* TradingView 차트 */}
+            <div className="h-full pt-8">
+              {useMemo(() => (
+                <TradingViewAdvancedChart
+                  symbol={symbol}
+                  theme="dark"
+                  height={typeof window !== 'undefined' ? (window.innerHeight * chartHeight / 100) - 80 : 400}
+                  interval="60"
+                />
+              ), [symbol, chartHeight])}
             </div>
           </div>
 
           {/* 하단 - 거래 내역 */}
-          <div className="h-64 border-t border-[#2b3139] bg-[#161a1e]">
-            <TradingHistoryTabs symbol={symbol} />
+          <div className="flex-1 bg-[#161a1e]">
+            <BinanceTradingHistory symbol={symbol} />
           </div>
         </div>
 
-        {/* 오른쪽 사이드바 - 호가창 & 주문 */}
+        {/* 오른쪽 사이드바 */}
         <div className="w-80 bg-[#161a1e] border-l border-[#2b3139] flex flex-col">
           {/* 호가창 */}
           <div className="h-1/2 border-b border-[#2b3139]">

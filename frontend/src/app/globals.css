@@ -177,6 +177,57 @@
   --loss-rgb: 239, 68, 68;
 }
 
+/* Binance 전용 색상 변수 */
+.binance-theme {
+  /* 배경색 */
+  --bg-primary: #0b0e11;
+  --bg-secondary: #161a1e;
+  --bg-tertiary: #1e2024;
+  --bg-quaternary: #252930;
+  --bg-overlay: rgba(0, 0, 0, 0.9);
+
+  /* 테두리색 */
+  --border-default: #2b3139;
+  --border-hover: #474d57;
+  --border-active: #5e6673;
+
+  /* 텍스트색 */
+  --text-primary: #eaecef;
+  --text-secondary: #848e9c;
+  --text-tertiary: #5e6673;
+  --text-quaternary: #474d57;
+
+  /* 시장 색상 */
+  --market-up: #0ecb81;
+  --market-down: #f6465d;
+  --market-up-light: rgba(14, 203, 129, 0.1);
+  --market-down-light: rgba(246, 70, 93, 0.1);
+
+  /* 강조 색상 */
+  --accent-yellow: #fcd535;
+  --accent-yellow-light: rgba(252, 213, 53, 0.1);
+  --accent-blue: #1e60d8;
+  --accent-purple: #8b5cf6;
+
+  /* Binance 타이포그래피 */
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+
+  /* Binance 간격 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -532,4 +583,117 @@
     transparent
   );
   animation: shimmer 2s infinite;
+}
+
+/* Binance 스타일 애니메이션 */
+@keyframes price-flash-up {
+  0%, 100% {
+    background: transparent;
+  }
+  50% {
+    background: rgba(14, 203, 129, 0.2);
+  }
+}
+
+@keyframes price-flash-down {
+  0%, 100% {
+    background: transparent;
+  }
+  50% {
+    background: rgba(246, 70, 93, 0.2);
+  }
+}
+
+@keyframes market-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes orderbook-update {
+  0% {
+    background: rgba(14, 203, 129, 0.3);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+/* Binance 가격 플래시 애니메이션 */
+.price-flash-up {
+  animation: price-flash-up 0.3s ease-out;
+}
+
+.price-flash-down {
+  animation: price-flash-down 0.3s ease-out;
+}
+
+.market-pulse {
+  animation: market-pulse 2s ease-in-out infinite;
+}
+
+.orderbook-update {
+  animation: orderbook-update 0.5s ease-out;
+}
+
+/* Binance 호버 효과 */
+.binance-hover {
+  transition: background-color 0.15s ease;
+}
+
+.binance-hover:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Binance 테이블 행 호버 */
+.binance-row-hover {
+  transition: background-color 0.15s ease;
+}
+
+.binance-row-hover:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Binance 버튼 스타일 */
+.binance-button {
+  transition: all 0.15s ease;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.binance-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.binance-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Binance 스크롤바 스타일 */
+.binance-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #474d57 transparent;
+}
+
+.binance-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.binance-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.binance-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #474d57;
+  border-radius: 3px;
+}
+
+.binance-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #5e6673;
 }
