@@ -24,13 +24,15 @@ export function useTrades() {
     setError(null);
     try {
       const response = await tradeApi.list(pageNum);
-      setTrades(response.content);
-      setPage(response.number);
-      setTotalPages(response.totalPages);
-      setTotalElements(response.totalElements);
+      // Ensure response.content is an array
+      const tradesArray = Array.isArray(response?.content) ? response.content : [];
+      setTrades(tradesArray);
+      setPage(response?.number || 0);
+      setTotalPages(response?.totalPages || 0);
+      setTotalElements(response?.totalElements || 0);
     } catch (err: unknown) {
       const apiError = err as ApiError;
-      
+
       // 401 인증 에러는 조용히 처리 (메인 페이지 등에서 로그인 전 접근)
       if (apiError.response?.status === 401) {
         console.log('로그인이 필요한 기능입니다.');
@@ -44,6 +46,8 @@ export function useTrades() {
         if (!apiError.response || (apiError.response.status !== 401 && apiError.response.status !== 403)) {
           toast.error(message);
         }
+        // 에러 시에도 빈 배열로 설정
+        setTrades([]);
       }
     } finally {
       setLoading(false);

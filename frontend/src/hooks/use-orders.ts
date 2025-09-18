@@ -57,10 +57,13 @@ export function useOrders() {
   const fetchOpenOrders = useCallback(async (symbol?: string) => {
     try {
       const orders = await orderApi.getOpenOrders(symbol);
-      setOpenOrders(orders);
-      return orders;
+      // Ensure orders is an array
+      const ordersArray = Array.isArray(orders) ? orders : [];
+      setOpenOrders(ordersArray);
+      return ordersArray;
     } catch (error) {
       console.error('Failed to fetch open orders:', error);
+      setOpenOrders([]);
       return [];
     }
   }, []);
@@ -68,10 +71,13 @@ export function useOrders() {
   const fetchOrderHistory = useCallback(async () => {
     try {
       const orders = await orderApi.getOrderHistory();
-      setOrderHistory(orders);
-      return orders;
+      // Ensure orders is an array
+      const ordersArray = Array.isArray(orders) ? orders : [];
+      setOrderHistory(ordersArray);
+      return ordersArray;
     } catch (error) {
       console.error('Failed to fetch order history:', error);
+      setOrderHistory([]);
       return [];
     }
   }, []);
@@ -80,10 +86,13 @@ export function useOrders() {
     try {
       const balances = await orderApi.getBalance();
       console.log('Fetched balances:', balances); // 디버깅용
-      setBalance(balances);
-      return balances;
+      // Ensure balances is an array
+      const balancesArray = Array.isArray(balances) ? balances : [];
+      setBalance(balancesArray);
+      return balancesArray;
     } catch (error) {
       console.error('Failed to fetch balance:', error);
+      setBalance([]);
       return [];
     }
   }, []);

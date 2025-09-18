@@ -208,6 +208,7 @@ export default function OptimizedMarketList({
   // 검색 처리
   const handleSearch = useCallback(
     debounce(async (query: string) => {
+
       if (!query.trim()) {
         loadTieredData();
         return;

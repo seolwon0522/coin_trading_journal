@@ -111,21 +111,21 @@ const TradingHistoryTabs = memo(function TradingHistoryTabs({ symbol }: { symbol
               className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
             >
               <List className="h-3 w-3 mr-1" />
-              <span className="text-xs">미체결 ({openOrders.length})</span>
+              <span className="text-xs">미체결 ({openOrders?.length || 0})</span>
             </TabsTrigger>
             <TabsTrigger
               value="history"
               className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
             >
               <History className="h-3 w-3 mr-1" />
-              <span className="text-xs">주문내역 ({orderHistory.length})</span>
+              <span className="text-xs">주문내역 ({orderHistory?.length || 0})</span>
             </TabsTrigger>
             <TabsTrigger
               value="trades"
               className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3"
             >
               <Clock className="h-3 w-3 mr-1" />
-              <span className="text-xs">거래내역 ({trades.length})</span>
+              <span className="text-xs">거래내역 ({trades?.length || 0})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -135,13 +135,13 @@ const TradingHistoryTabs = memo(function TradingHistoryTabs({ symbol }: { symbol
                 <div className="text-center py-4 text-muted-foreground text-xs">
                   로딩중...
                 </div>
-              ) : openOrders.length === 0 ? (
+              ) : !openOrders || openOrders.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground text-xs">
                   미체결 주문이 없습니다
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {openOrders.map((order) => (
+                  {(openOrders || []).map((order) => (
                     <div key={order.orderId} className="p-1.5 border-b border-[#2a2a2a] text-xs">
                       <div className="flex justify-between">
                         <span className={order.side === 'BUY' ? 'text-green-500' : 'text-red-500'}>
@@ -166,13 +166,13 @@ const TradingHistoryTabs = memo(function TradingHistoryTabs({ symbol }: { symbol
                 <div className="text-center py-4 text-muted-foreground text-xs">
                   로딩중...
                 </div>
-              ) : orderHistory.length === 0 ? (
+              ) : !orderHistory || orderHistory.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground text-xs">
                   주문 내역이 없습니다
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {orderHistory.map((order) => (
+                  {(orderHistory || []).map((order) => (
                     <div key={order.orderId} className="p-1.5 border-b border-[#2a2a2a] text-xs">
                       <div className="flex justify-between">
                         <span className={order.side === 'BUY' ? 'text-green-500' : 'text-red-500'}>
@@ -199,13 +199,13 @@ const TradingHistoryTabs = memo(function TradingHistoryTabs({ symbol }: { symbol
                 <div className="text-center py-4 text-muted-foreground text-xs">
                   로딩중...
                 </div>
-              ) : trades.length === 0 ? (
+              ) : !trades || trades.length === 0 ? (
                 <div className="text-center py-4 text-muted-foreground text-xs">
                   거래 내역이 없습니다
                 </div>
               ) : (
                 <div className="space-y-1">
-                  {trades.map((trade) => (
+                  {(trades || []).map((trade) => (
                     <div key={trade.id} className="p-1.5 border-b border-[#2a2a2a] text-xs">
                       <div className="flex justify-between">
                         <span className={trade.side === 'BUY' ? 'text-green-500' : 'text-red-500'}>
