@@ -59,40 +59,88 @@ export function MarketList({ isCollapsed = false, onToggleCollapse }: MarketList
     };
 
     fetchMarkets();
-    const interval = setInterval(fetchMarkets, 10000); // 10초마다 업데이트
+    const interval = setInterval(fetchMarkets, 30000); // 30초마다 업데이트 (성능 개선)
     return () => clearInterval(interval);
   }, []);
 
-  // WebSocket으로 실시간 가격 업데이트
+  // WebSocket으로 실시간 가격 업데이트 - 비활성화 (성능 문제로 인해)
+  // 대신 10초마다 API로 업데이트
+  /*
   useEffect(() => {
-    const ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+    let ws: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout;
+    let mounted = true;
 
-    ws.onmessage = (event) => {
-      const updates = JSON.parse(event.data);
-      setMarkets(prev => {
-        const updatedMarkets = [...prev];
-        updates.forEach((update: any) => {
-          const index = updatedMarkets.findIndex(m => m.symbol === update.s);
-          if (index !== -1) {
-            updatedMarkets[index] = {
-              symbol: update.s,
-              lastPrice: update.c,
-              priceChange: update.p,
-              priceChangePercent: update.P,
-              volume: update.v,
-              quoteVolume: update.q,
-              count: update.n,
-            };
+    const connect = () => {
+      if (!mounted) return;
+
+      try {
+        // Binance WebSocket URL (포트 없이)
+        ws = new WebSocket('wss://stream.binance.com/ws/!ticker@arr');
+
+        ws.onopen = () => {
+          console.log('MarketList WebSocket connected');
+        };
+
+        ws.onmessage = (event) => {
+          if (!mounted) return;
+          try {
+            const updates = JSON.parse(event.data);
+            setMarkets(prev => {
+              const marketMap = new Map(prev.map(m => [m.symbol, m]));
+
+              updates.forEach((update: any) => {
+                if (marketMap.has(update.s)) {
+                  marketMap.set(update.s, {
+                    symbol: update.s,
+                    lastPrice: update.c,
+                    priceChange: update.p,
+                    priceChangePercent: update.P,
+                    volume: update.v,
+                    quoteVolume: update.q,
+                    count: update.n,
+                  });
+                }
+              });
+
+              return Array.from(marketMap.values());
+            });
+          } catch (err) {
+            console.error('Failed to parse market data:', err);
           }
-        });
-        return updatedMarkets;
-      });
+        };
+
+        ws.onerror = (error) => {
+          console.warn('MarketList WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+          console.log('MarketList WebSocket closed, reconnecting...');
+          if (mounted) {
+            reconnectTimeout = setTimeout(connect, 5000);
+          }
+        };
+      } catch (error) {
+        console.error('Failed to connect WebSocket:', error);
+        if (mounted) {
+          reconnectTimeout = setTimeout(connect, 5000);
+        }
+      }
     };
+
+    // 초기 연결 지연 (성능 최적화)
+    const initTimeout = setTimeout(connect, 1000);
 
     return () => {
-      ws.close();
+      mounted = false;
+      clearTimeout(initTimeout);
+      clearTimeout(reconnectTimeout);
+      if (ws) {
+        ws.close();
+      }
     };
   }, []);
+  */
 
   // 즐겨찾기 토글
   const toggleFavorite = (symbol: string) => {

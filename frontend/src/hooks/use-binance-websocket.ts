@@ -51,8 +51,8 @@ export function useBinanceWebSocket({
 
       // Create WebSocket URL for multiple streams
       const streamNames = streams.join('/');
-      // Use the correct Binance WebSocket endpoint without port
-      const wsUrl = `wss://stream.binance.com/stream?streams=${streamNames}`;
+      // Use the correct Binance WebSocket endpoint WITH port 9443
+      const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streamNames}`;
 
       console.log('Attempting to connect to Binance WebSocket:', {
         streams: streams,
@@ -97,11 +97,11 @@ export function useBinanceWebSocket({
         if (!mountedRef.current) return;
         // WebSocket error 이벤트는 상세 정보를 제공하지 않으므로,
         // readyState와 URL을 함께 로깅
-        console.error('Binance WebSocket error occurred', {
+        // WebSocket error events don't provide detailed information
+        // Log the error but don't panic - it will auto-reconnect
+        console.warn('Binance WebSocket error (will auto-reconnect):', {
           readyState: ws.readyState,
           url: wsUrl,
-          error: error,
-          type: error.type,
           streams: streams
         });
         onError?.(error);
@@ -123,7 +123,7 @@ export function useBinanceWebSocket({
           1011: 'Internal server error',
         }[event.code] || 'Unknown reason';
 
-        console.log(`❌ Binance WebSocket disconnected: ${closeCodeDescription}`, {
+        console.log(`WebSocket disconnected: ${closeCodeDescription}`, {
           code: event.code,
           reason: event.reason || 'No reason provided',
           wasClean: event.wasClean,

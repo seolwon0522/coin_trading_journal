@@ -81,13 +81,14 @@ export function useBinanceOrderBook(symbol: string, limit: number = 20) {
       ask.total = askTotal;
     });
 
-    setOrderBook({
+    // Use functional update to avoid race conditions
+    setOrderBook(prev => ({
       lastUpdateId: lastUpdateIdRef.current,
       bids: sortedBids,
       asks: sortedAsks,
       spread,
       spreadPercent,
-    });
+    }));
   }, [limit]);
 
   const fetchOrderBookSnapshot = useCallback(async () => {
@@ -137,10 +138,13 @@ export function useBinanceOrderBook(symbol: string, limit: number = 20) {
 
     const streamData = data.data || data;
 
-    // depth20@100ms sends snapshot data, not depthUpdate events
+    // Log for debugging
+    console.log('OrderBook WebSocket message received:', streamData.lastUpdateId ? 'snapshot' : streamData.e || 'unknown');
+
+    // depth@100ms and depth20 send snapshot data, not depthUpdate events
     // It has format: { lastUpdateId, bids: [[price, qty], ...], asks: [[price, qty], ...] }
     if (streamData.lastUpdateId && streamData.bids && streamData.asks) {
-      // This is a depth snapshot from depth5/10/20 streams
+      // This is a depth snapshot from depth streams
 
       // Clear and update with snapshot data
       bidsRef.current.clear();
@@ -192,9 +196,11 @@ export function useBinanceOrderBook(symbol: string, limit: number = 20) {
     }
   }, [processOrderBookData]);
 
-  // Use depth20@100ms for fast updates with 20 levels
+  // Use depth@100ms for real-time updates or depth20 for 20 levels
+  // depth@100ms provides faster updates but only 5 levels
+  // depth20 provides 20 levels but updates at 1000ms
   const { isConnected, isReconnecting } = useBinanceWebSocket({
-    streams: [`${symbol.toLowerCase()}@depth20@100ms`], // 100ms updates with 20 levels
+    streams: [`${symbol.toLowerCase()}@depth@100ms`], // Fast updates with 5 levels
     onMessage: handleWebSocketMessage,
     enabled: !!symbol,
   });

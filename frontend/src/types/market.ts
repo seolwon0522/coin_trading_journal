@@ -135,3 +135,77 @@ export interface StreamTicker {
   L: number; // 마지막 거래 ID
   n: number; // 거래 횟수
 }
+
+// 계층적 마켓 데이터 타입 (최적화된 로딩)
+export interface CoinRanking {
+  id?: number;
+  symbol: string;
+  baseAsset: string;
+  quoteAsset: string;
+  rank: number;
+  volume24h: number;
+  quoteVolume24h: number;
+  priceChangePercent24h: number;
+  lastPrice: number;
+  bidPrice: number;
+  askPrice: number;
+  highPrice24h: number;
+  lowPrice24h: number;
+  openPrice24h: number;
+  prevClosePrice: number;
+  weightedAvgPrice: number;
+  count24h: number;
+  tier: number; // 1: Premium, 2: Standard, 3: Extended
+  isActive: boolean;
+  lastUpdateTime: string;
+}
+
+export interface TieredMarketData {
+  premium: CoinRanking[];    // Top 20 coins (실시간 업데이트)
+  standard: CoinRanking[];   // 21-100 coins (3초 업데이트)
+  extended: CoinRanking[];   // Rest (온디맨드)
+  totalCount: number;
+  lastUpdate: string;
+  quoteAsset?: string;
+  currentPage?: number;
+  pageSize?: number;
+  hasMore?: boolean;
+  loadTime?: number;
+  cacheStatus?: 'HIT' | 'MISS' | 'PARTIAL';
+}
+
+export interface MarketDataResponse {
+  symbol: string;
+  baseAsset: string;
+  quoteAsset: string;
+  rank: number;
+  price: number;
+  volume24h: number;
+  quoteVolume24h: number;
+  priceChangePercent24h: number;
+  highPrice24h: number;
+  lowPrice24h: number;
+  marketCap?: number;
+  tier: number;
+  lastUpdate: string;
+  isFavorite?: boolean;
+  displayName?: string;
+  logoUrl?: string;
+}
+
+export interface MarketListProps {
+  onSelectSymbol: (symbol: string) => void;
+  selectedSymbol?: string;
+}
+
+export enum MarketTier {
+  PREMIUM = 1,
+  STANDARD = 2,
+  EXTENDED = 3
+}
+
+export interface LoadMoreParams {
+  offset: number;
+  limit: number;
+  quoteAsset?: string;
+}

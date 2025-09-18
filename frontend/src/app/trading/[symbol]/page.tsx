@@ -1,21 +1,22 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ProfessionalOrderBook } from '@/components/trading/professional-orderbook';
 import { ProfessionalOrderForm } from '@/components/trading/professional-order-form';
 import { TradingViewAdvancedChart } from '@/components/trading/tradingview-advanced-chart';
 import { MarketHeader } from '@/components/trading/market-header';
-import { MarketList } from '@/components/trading/market-list';
+import OptimizedMarketList from '@/components/trading/optimized-market-list';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, History, List } from 'lucide-react';
+import { Clock, History, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useResponsiveLayout } from '@/hooks/use-responsive-layout';
 import { useTicker } from '@/hooks/use-ticker';
+import { memo, useCallback, useMemo } from 'react';
 
-// 레이아웃 토글 버튼 컴포넌트 분리
-function LayoutToggleButtons({
+// 레이아웃 토글 버튼 컴포넌트 분리 - Memoized
+const LayoutToggleButtons = memo(function LayoutToggleButtons({
   showOrderBook,
   showOrderForm,
   onToggleOrderBook,
@@ -46,10 +47,14 @@ function LayoutToggleButtons({
       </Button>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return prevProps.showOrderBook === nextProps.showOrderBook &&
+         prevProps.showOrderForm === nextProps.showOrderForm;
+});
 
-// 주문/거래 내역 탭 컴포넌트 분리
-function TradingHistoryTabs() {
+// 주문/거래 내역 탭 컴포넌트 분리 - Memoized
+const TradingHistoryTabs = memo(function TradingHistoryTabs() {
   return (
     <div className="flex-shrink-0 border-t border-[#2a2a2a] h-[120px] bg-[#0d0d0d]">
       <Card className="bg-background/50 backdrop-blur border-0 rounded-none p-0 h-full">
@@ -105,11 +110,13 @@ function TradingHistoryTabs() {
       </Card>
     </div>
   );
-}
+});
+
 
 // 메인 페이지 컴포넌트 - 훨씬 더 깔끔해짐
 export default function TradingSymbolPage() {
   const params = useParams();
+  const router = useRouter();
   const symbol = params.symbol as string;
 
   // 커스텀 훅으로 복잡한 로직 분리
@@ -125,21 +132,57 @@ export default function TradingSymbolPage() {
 
   const { ticker, currentPrice } = useTicker(symbol);
 
-  // 차트 높이 계산 - 상수로 분리
-  const HEADER_HEIGHT = 280;
-  const MIN_CHART_HEIGHT = 500;
-  const chartHeight = typeof window !== 'undefined'
-    ? Math.max(window.innerHeight - HEADER_HEIGHT, MIN_CHART_HEIGHT)
-    : MIN_CHART_HEIGHT;
+  // 심볼 선택 핸들러 - Memoized
+  const handleSelectSymbol = useCallback((newSymbol: string) => {
+    router.push(`/trading/${newSymbol}`);
+  }, [router]);
+
+  // 차트 높이 계산 - Memoized
+  const chartHeight = useMemo(() => {
+    const HEADER_HEIGHT = 280;
+    const MIN_CHART_HEIGHT = 500;
+    return typeof window !== 'undefined'
+      ? Math.max(window.innerHeight - HEADER_HEIGHT, MIN_CHART_HEIGHT)
+      : MIN_CHART_HEIGHT;
+  }, []);
 
   return (
     <div className="h-screen bg-[#0d0d0d] flex flex-col overflow-hidden">
       <div className="flex-1 flex overflow-hidden">
         {/* 좌측: 마켓 리스트 */}
-        <MarketList
-          isCollapsed={!showMarketList}
-          onToggleCollapse={toggleMarketList}
-        />
+        <div className={cn(
+          "transition-all duration-300 overflow-hidden",
+          showMarketList ? "w-[350px]" : "w-0"
+        )}>
+          {showMarketList && (
+            <div className="relative h-full">
+              <OptimizedMarketList
+                onSelectSymbol={handleSelectSymbol}
+                selectedSymbol={symbol}
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="absolute top-2 right-2 z-10 h-6 w-6 p-0"
+                onClick={toggleMarketList}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* 마켓 리스트 토글 버튼 (축소 시) */}
+        {!showMarketList && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-12 w-6 rounded-none"
+            onClick={toggleMarketList}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
 
         {/* 오른쪽: 트레이딩 영역 */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -173,12 +216,14 @@ export default function TradingSymbolPage() {
                   onToggleOrderForm={toggleOrderForm}
                 />
                 <div className="h-full">
-                  <TradingViewAdvancedChart
-                    symbol={symbol}
-                    theme="dark"
-                    height={chartHeight}
-                    interval="60"
-                  />
+                  {useMemo(() => (
+                    <TradingViewAdvancedChart
+                      symbol={symbol}
+                      theme="dark"
+                      height={chartHeight}
+                      interval="60"
+                    />
+                  ), [symbol, chartHeight])}
                 </div>
               </div>
 

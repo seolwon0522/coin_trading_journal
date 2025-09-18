@@ -5,14 +5,15 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatPrice, formatQuantity, formatCompact, getPriceColorClass } from '@/lib/format';
 import { Loader2, WifiOff, Wifi, TrendingUp, TrendingDown } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 
 interface ProfessionalOrderBookProps {
   symbol: string;
   limit?: number;
 }
 
-export function ProfessionalOrderBook({ symbol, limit = 20 }: ProfessionalOrderBookProps) {
+// Memoized for better performance
+export const ProfessionalOrderBook = memo(function ProfessionalOrderBook({ symbol, limit = 20 }: ProfessionalOrderBookProps) {
   const { orderBook, isLoading, error, isConnected, isReconnecting } = useBinanceOrderBook(symbol, limit);
 
   // 최대값 계산 (깊이 표시용)
@@ -108,8 +109,8 @@ export function ProfessionalOrderBook({ symbol, limit = 20 }: ProfessionalOrderB
                   className="relative hover:bg-emerald-500/5 transition-colors"
                 >
                   <div
-                    className="absolute inset-0 bg-emerald-500/10"
-                    style={{ width: `${depthPercent}%` }}
+                    className="absolute inset-0 bg-emerald-500/10 transition-all"
+                    style={{ width: `${Math.min(depthPercent, 100)}%` }}
                   />
                   <div className="relative grid grid-cols-3 px-2 py-1.5 text-[10px]">
                     <span className="text-emerald-400 font-medium tabular-nums">
@@ -137,8 +138,8 @@ export function ProfessionalOrderBook({ symbol, limit = 20 }: ProfessionalOrderB
                   className="relative hover:bg-red-500/5 transition-colors"
                 >
                   <div
-                    className="absolute inset-0 bg-red-500/10"
-                    style={{ width: `${depthPercent}%` }}
+                    className="absolute inset-0 bg-red-500/10 transition-all"
+                    style={{ width: `${Math.min(depthPercent, 100)}%` }}
                   />
                   <div className="relative grid grid-cols-3 px-2 py-1.5 text-[10px]">
                     <span className="text-red-400 font-medium tabular-nums">
@@ -203,4 +204,4 @@ export function ProfessionalOrderBook({ symbol, limit = 20 }: ProfessionalOrderB
       `}</style>
     </Card>
   );
-}
+});
