@@ -9,11 +9,29 @@ export function useOrders() {
   const [openOrders, setOpenOrders] = useState<OrderResponse[]>([]);
   const [orderHistory, setOrderHistory] = useState<OrderResponse[]>([]);
   const [balance, setBalance] = useState<BalanceInfo[]>([]);
+  const [balanceMap, setBalanceMap] = useState<{ [key: string]: number }>({});
+  const [loading, setLoading] = useState(false);
   const orderApi = new OrderApi();
 
-  const placeOrder = useCallback(async (orderRequest: OrderRequest) => {
+  const placeOrder = useCallback(async (
+    symbol: string,
+    side: 'BUY' | 'SELL',
+    type: 'LIMIT' | 'MARKET' | 'STOP_LOSS' | 'STOP_LOSS_LIMIT' | 'TAKE_PROFIT' | 'TAKE_PROFIT_LIMIT' | 'LIMIT_MAKER',
+    quantity: string,
+    price?: string,
+    stopPrice?: string
+  ) => {
     setIsPlacingOrder(true);
     try {
+      const orderRequest: OrderRequest = {
+        symbol,
+        side,
+        type,
+        quantity: parseFloat(quantity),
+        price: price ? parseFloat(price) : undefined,
+        stopPrice: stopPrice ? parseFloat(stopPrice) : undefined,
+        timeInForce: type === 'LIMIT' ? 'GTC' : undefined
+      };
       const response = await orderApi.placeOrder(orderRequest);
 
       toast.success('주문 체결 완료', {
@@ -21,7 +39,7 @@ export function useOrders() {
       });
 
       // Refresh open orders
-      await fetchOpenOrders(orderRequest.symbol);
+      await fetchOpenOrders(symbol);
 
       return response;
     } catch (error) {
@@ -83,17 +101,30 @@ export function useOrders() {
   }, []);
 
   const fetchBalance = useCallback(async () => {
+    setLoading(true);
     try {
       const balances = await orderApi.getBalance();
       console.log('Fetched balances:', balances); // 디버깅용
       // Ensure balances is an array
       const balancesArray = Array.isArray(balances) ? balances : [];
       setBalance(balancesArray);
+
+      // Create a map for easy access
+      const map: { [key: string]: number } = {};
+      balancesArray.forEach(b => {
+        map[b.asset] = b.free || 0; // Use free balance for trading
+      });
+      setBalanceMap(map);
+      console.log('Balance map:', map); // 디버깅용
+
       return balancesArray;
     } catch (error) {
       console.error('Failed to fetch balance:', error);
       setBalance([]);
+      setBalanceMap({});
       return [];
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -111,6 +142,8 @@ export function useOrders() {
     isPlacingOrder,
     openOrders,
     orderHistory,
-    balance,
+    balance: balanceMap, // Use balanceMap for easy access
+    balanceArray: balance, // Original array format
+    loading,
   };
 }

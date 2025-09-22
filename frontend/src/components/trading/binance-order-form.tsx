@@ -51,12 +51,14 @@ export const BinanceOrderForm = memo(function BinanceOrderForm({
   // 잔액 업데이트
   useEffect(() => {
     fetchBalance();
-    const interval = setInterval(fetchBalance, 5000);
+    const interval = setInterval(fetchBalance, 10000); // 10초마다 업데이트
     return () => clearInterval(interval);
-  }, [symbol]);
+  }, [symbol, fetchBalance]);
 
   // 가용 잔액 계산
   const availableBalance = useMemo(() => {
+    if (!balance) return 0;
+
     if (orderSide === 'BUY') {
       return balance[quoteAsset] || 0;
     } else {
@@ -198,12 +200,18 @@ export const BinanceOrderForm = memo(function BinanceOrderForm({
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-[#848e9c]">가용</span>
           <div className="flex items-center gap-1">
-            <span className="text-[#eaecef] font-medium tabular-nums">
-              {formatQuantity(availableBalance)}
-            </span>
-            <span className="text-[#848e9c]">
-              {orderSide === 'BUY' ? quoteAsset : baseAsset}
-            </span>
+            {loading ? (
+              <span className="text-[#5e6673] text-xs animate-pulse">로딩...</span>
+            ) : (
+              <>
+                <span className="text-[#eaecef] font-medium tabular-nums">
+                  {formatQuantity(availableBalance)}
+                </span>
+                <span className="text-[#848e9c]">
+                  {orderSide === 'BUY' ? quoteAsset : baseAsset}
+                </span>
+              </>
+            )}
           </div>
         </div>
 

@@ -153,12 +153,20 @@ export class OrderApi {
 
   async getBalance(): Promise<BalanceInfo[]> {
     try {
+      const headers = this.getHeaders();
+      console.log('Requesting balance with headers:', headers); // 디버깅용
+
       const response = await fetch(`${this.baseUrl}/portfolio/balance`, {
-        headers: this.getHeaders(),
+        method: 'GET',
+        headers,
+        credentials: 'include', // 쿠키 포함
       });
 
+      console.log('Balance API Response Status:', response.status); // 디버깅용
+
       if (!response.ok) {
-        const error = await response.json();
+        const error = await response.json().catch(() => ({ message: 'Failed to fetch balance' }));
+        console.error('Balance API Error:', error); // 디버깅용
         throw new Error(error.message || 'Failed to fetch balance');
       }
 
@@ -171,9 +179,12 @@ export class OrderApi {
         console.log('Portfolio Data:', portfolioData); // 디버깅용
 
         // balances 배열 반환
-        return portfolioData.balances || [];
+        const balances = portfolioData.balances || [];
+        console.log('Extracted balances:', balances); // 디버깅용
+        return balances;
       } else if (result.balances) {
         // 직접 balances가 있는 경우
+        console.log('Direct balances:', result.balances); // 디버깅용
         return result.balances;
       } else {
         console.warn('Unexpected balance response structure:', result);
@@ -181,7 +192,8 @@ export class OrderApi {
       }
     } catch (error) {
       console.error('Failed to fetch balance:', error);
-      throw error;
+      // 에러 발생 시 빈 배열 반환하여 UI가 깨지지 않도록 처리
+      return [];
     }
   }
 
