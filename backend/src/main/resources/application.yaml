@@ -21,22 +21,6 @@ spring:
       hibernate:
         format_sql: true
 
-  # Redis 설정
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
-
-  # 캐시 설정
-  cache:
-    type: redis
-    redis:
-      time-to-live: 300000  # 5분
 
 # JWT 설정
 jwt:

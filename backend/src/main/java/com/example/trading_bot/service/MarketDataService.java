@@ -1,32 +1,23 @@
 package com.example.trading_bot.service;
 
-import com.example.trading_bot.dto.MarketDataResponse;
 import com.example.trading_bot.dto.TieredMarketData;
 import com.example.trading_bot.model.CoinRanking;
 import com.example.trading_bot.repository.CoinRankingRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.ParameterizedTypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +25,6 @@ import java.util.stream.Collectors;
 public class MarketDataService {
 
     private final CoinRankingRepository coinRankingRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
     private final WebClient.Builder webClientBuilder;
     private final ObjectMapper objectMapper;
 
@@ -56,7 +46,7 @@ public class MarketDataService {
         List<CoinRanking> premiumCoins = getPremiumCoins(quoteAsset);
         tieredData.setPremium(premiumCoins);
 
-        // Standard tier (21-100) - 캐시 우선
+        // Standard tier (21-100)
         List<CoinRanking> standardCoins = getStandardCoins(quoteAsset);
         tieredData.setStandard(standardCoins);
 
@@ -72,7 +62,6 @@ public class MarketDataService {
     /**
      * Premium Tier 코인 조회 (Top 20)
      */
-    @Cacheable(value = "premium-coins", key = "#quoteAsset", unless = "#result.isEmpty()")
     public List<CoinRanking> getPremiumCoins(String quoteAsset) {
         Pageable pageable = PageRequest.of(0, PREMIUM_TIER_SIZE);
 
@@ -86,7 +75,6 @@ public class MarketDataService {
     /**
      * Standard Tier 코인 조회 (21-100)
      */
-    @Cacheable(value = "standard-coins", key = "#quoteAsset", unless = "#result.isEmpty()")
     public List<CoinRanking> getStandardCoins(String quoteAsset) {
         Pageable pageable = PageRequest.of(1, STANDARD_TIER_SIZE - PREMIUM_TIER_SIZE);
 
@@ -101,27 +89,13 @@ public class MarketDataService {
      * Progressive Loading - 추가 데이터 로드
      */
     public List<CoinRanking> loadMoreCoins(int offset, int limit, String quoteAsset) {
-        String cacheKey = String.format("coins:%s:%d:%d", quoteAsset, offset, limit);
-
-        // Redis 캐시 확인
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) {
-            return objectMapper.convertValue(cached, new TypeReference<List<CoinRanking>>() {});
-        }
-
-        // DB에서 조회
-        List<CoinRanking> coins = coinRankingRepository.findWithPagination(limit, offset);
-
-        // 캐시에 저장 (30초)
-        redisTemplate.opsForValue().set(cacheKey, coins, Duration.ofSeconds(30));
-
-        return coins;
+        // DB에서 직접 조회
+        return coinRankingRepository.findWithPagination(limit, offset);
     }
 
     /**
      * 코인 검색
      */
-    @Cacheable(value = "search-results", key = "#query + ':' + #limit", unless = "#result.isEmpty()")
     public List<CoinRanking> searchCoins(String query, int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return coinRankingRepository.searchCoins(query, pageable);
@@ -149,9 +123,6 @@ public class MarketDataService {
                 updateCoinRankings(tickers);
                 updateTiers();
                 cleanupStaleData();
-
-                // 캐시 무효화
-                evictCaches();
 
                 log.info("Market data sync completed. Updated {} coins", tickers.size());
             }
@@ -236,21 +207,6 @@ public class MarketDataService {
     }
 
     /**
-     * 캐시 무효화
-     */
-    private void evictCaches() {
-        Set<String> keys = redisTemplate.keys("premium-coins:*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-        }
-
-        keys = redisTemplate.keys("standard-coins:*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-        }
-    }
-
-    /**
      * 심볼에서 Base Asset 추출
      */
     private String extractBaseAsset(String symbol) {
@@ -292,20 +248,7 @@ public class MarketDataService {
             return new ArrayList<>();
         }
 
-        // 캐시 키
-        String cacheKey = "realtime:" + String.join(",", symbols);
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
-
-        if (cached != null) {
-            return objectMapper.convertValue(cached, new TypeReference<List<CoinRanking>>() {});
-        }
-
-        // DB에서 조회
-        List<CoinRanking> coins = coinRankingRepository.findBySymbolIn(symbols);
-
-        // 1초 캐싱
-        redisTemplate.opsForValue().set(cacheKey, coins, Duration.ofSeconds(1));
-
-        return coins;
+        // DB에서 직접 조회
+        return coinRankingRepository.findBySymbolIn(symbols);
     }
 }
