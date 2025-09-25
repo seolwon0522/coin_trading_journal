@@ -1,269 +1,270 @@
 """
-Grid Trading Strategy for Nautilus Trader
-그리드 트레이딩 - 일정 간격으로 매수/매도 주문을 배치
+Grid Trading Strategy Implementation
+Nautilus Actor Pattern을 활용한 그리드 트레이딩 전략
 """
 
 from decimal import Decimal
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional, Any
+import numpy as np
 
-from nautilus_trader.common.enums import LogColor
-from nautilus_trader.config import StrategyConfig
-from nautilus_trader.core.data import Data
-from nautilus_trader.core.message import Event
-from nautilus_trader.model.data import Bar, BarType, QuoteTick
-from nautilus_trader.model.enums import OrderSide, OrderType, TimeInForce
-from nautilus_trader.model.identifiers import InstrumentId, ClientOrderId
-from nautilus_trader.model.instruments import Instrument
+from nautilus_trader.model.data import QuoteTick, TradeTick, Bar
+from nautilus_trader.model.enums import OrderSide
+from nautilus_trader.model.events import OrderFilled
+from nautilus_trader.model.objects import Price, Quantity
 from nautilus_trader.model.orders import LimitOrder
-from nautilus_trader.trading.strategy import Strategy
+
+from app.strategies.base_strategy import BaseStrategy
 
 
-class GridTradingConfig(StrategyConfig):
-    """Configuration for Grid Trading Strategy."""
-
-    instrument_id: str
-    bar_type: str
-    grid_levels: int = 10  # Number of grid levels
-    grid_spacing: float = 0.01  # 1% spacing between levels
-    position_size: Decimal = Decimal("0.01")  # Size per grid level
-    max_positions: int = 10  # Maximum concurrent positions
-    upper_price: Optional[float] = None  # Upper bound (auto-calculate if None)
-    lower_price: Optional[float] = None  # Lower bound (auto-calculate if None)
-
-
-class GridTradingStrategy(Strategy):
+class GridTradingStrategy(BaseStrategy):
     """
-    Grid Trading Strategy implementation.
-
-    Places buy and sell orders at regular intervals (grid levels).
-    Profits from market volatility in ranging markets.
+    그리드 트레이딩 전략
+    지정된 가격 범위 내에서 일정 간격으로 매수/매도 주문을 배치
     """
 
-    def __init__(self, config: GridTradingConfig) -> None:
-        super().__init__(config)
+    def __init__(self, strategy_id: str, config: Dict[str, Any]):
+        """
+        전략 초기화
 
-        # Configuration
-        self.instrument_id = InstrumentId.from_str(config.instrument_id)
-        self.bar_type = BarType.from_str(config.bar_type)
-        self.grid_levels = config.grid_levels
-        self.grid_spacing = config.grid_spacing
-        self.position_size = config.position_size
-        self.max_positions = config.max_positions
-        self.upper_price = config.upper_price
-        self.lower_price = config.lower_price
+        Parameters:
+            strategy_id: 전략 ID
+            config: 전략 설정
+                - upper_price: 그리드 상한가
+                - lower_price: 그리드 하한가
+                - grid_levels: 그리드 레벨 수
+                - position_size: 각 그리드 주문 크기
+                - max_positions: 최대 포지션 수
+        """
+        super().__init__(strategy_id, config)
 
-        # State
-        self.instrument: Optional[Instrument] = None
-        self.grid_orders: Dict[ClientOrderId, Dict] = {}  # order_id: {side, price, level}
-        self.active_grids: Dict[int, ClientOrderId] = {}  # level: order_id
-        self.current_price: Optional[float] = None
-        self.grid_initialized = False
+        # 그리드 설정
+        self.upper_price = Decimal(str(config["upper_price"]))
+        self.lower_price = Decimal(str(config["lower_price"]))
+        self.grid_levels = config["grid_levels"]
 
-    def on_start(self) -> None:
-        """Actions to be performed on strategy start."""
-        self.instrument = self.cache.instrument(self.instrument_id)
-        if self.instrument is None:
-            self.log.error(f"Could not find instrument for {self.instrument_id}")
-            self.stop()
-            return
+        # 그리드 가격 계산
+        self.grid_prices = self._calculate_grid_prices()
+        self.grid_orders: Dict[Decimal, LimitOrder] = {}
 
-        # Subscribe to market data
-        self.subscribe_bars(self.bar_type)
-        self.subscribe_quote_ticks(self.instrument_id)
+        # 현재 가격 추적
+        self.current_price: Optional[Decimal] = None
+        self.last_filled_price: Optional[Decimal] = None
+
+    def on_start(self):
+        """
+        전략 시작
+        """
+        super().on_start()
 
         self.log.info(
-            f"Grid Trading Strategy started: levels={self.grid_levels}, spacing={self.grid_spacing:.2%}",
-            color=LogColor.GREEN,
+            f"Grid Trading Strategy started: "
+            f"Range [{self.lower_price} - {self.upper_price}], "
+            f"Levels: {self.grid_levels}"
         )
 
-    def on_stop(self) -> None:
-        """Actions to be performed on strategy stop."""
-        self.unsubscribe_bars(self.bar_type)
-        self.unsubscribe_quote_ticks(self.instrument_id)
+        # 초기 그리드 설정은 첫 가격 수신 후 진행
 
-        # Cancel all grid orders
+    def on_stop(self):
+        """
+        전략 중지
+        """
+        # 모든 그리드 주문 취소
         self._cancel_all_grid_orders()
 
-        # Close all positions
-        self.close_all_positions(self.instrument_id)
+        super().on_stop()
 
-        self.log.info("Grid Trading Strategy stopped", color=LogColor.RED)
+    def _process_quote_tick(self, tick: QuoteTick):
+        """
+        Quote tick 처리
+        """
+        # 현재 가격 업데이트
+        mid_price = (float(tick.bid_price) + float(tick.ask_price)) / 2
+        self.current_price = Decimal(str(mid_price))
 
-    def on_reset(self) -> None:
-        """Actions to be performed on strategy reset."""
-        self.grid_orders.clear()
-        self.active_grids.clear()
-        self.current_price = None
-        self.grid_initialized = False
+        # 첫 가격 수신 시 그리드 설정
+        if not self.grid_orders and self.is_running:
+            self._setup_initial_grid()
 
-    def on_bar(self, bar: Bar) -> None:
-        """Handle bar data."""
-        self.current_price = float(bar.close)
+        # 그리드 주문 업데이트
+        self._update_grid_orders()
 
-        # Initialize grid on first bar
-        if not self.grid_initialized:
-            self._initialize_grid(self.current_price)
-            self.grid_initialized = True
-
-    def on_quote_tick(self, tick: QuoteTick) -> None:
-        """Handle quote tick data for more responsive grid management."""
-        self.current_price = float((tick.bid_price + tick.ask_price) / 2)
-
-        # Check if grid needs rebalancing
-        if self.grid_initialized:
-            self._check_grid_rebalance()
-
-    def on_order_filled(self, event) -> None:
-        """Handle order fill events."""
-        if event.client_order_id not in self.grid_orders:
-            return
-
-        order_info = self.grid_orders[event.client_order_id]
-        level = order_info["level"]
-
-        self.log.info(
-            f"Grid order filled: Level {level}, Side {order_info['side']}, Price {order_info['price']}",
-            color=LogColor.GREEN,
-        )
-
-        # Place opposite order at the same level
-        self._place_opposite_order(level, order_info)
-
-        # Remove filled order from tracking
-        del self.grid_orders[event.client_order_id]
-        if level in self.active_grids and self.active_grids[level] == event.client_order_id:
-            del self.active_grids[level]
-
-    def _initialize_grid(self, current_price: float) -> None:
-        """Initialize the grid with buy and sell orders."""
-        if not self.upper_price:
-            self.upper_price = current_price * (1 + self.grid_spacing * self.grid_levels / 2)
-        if not self.lower_price:
-            self.lower_price = current_price * (1 - self.grid_spacing * self.grid_levels / 2)
-
-        self.log.info(
-            f"Initializing grid: Range [{self.lower_price:.2f} - {self.upper_price:.2f}], "
-            f"Current price: {current_price:.2f}",
-            color=LogColor.BLUE,
-        )
-
-        # Calculate grid levels
-        price_range = self.upper_price - self.lower_price
-        level_spacing = price_range / (self.grid_levels - 1)
-
-        # Place grid orders
-        for i in range(self.grid_levels):
-            grid_price = self.lower_price + (level_spacing * i)
-
-            # Determine order side based on current price
-            if grid_price < current_price * 0.999:  # Below current price - place buy orders
-                self._place_grid_order(i, grid_price, OrderSide.BUY)
-            elif grid_price > current_price * 1.001:  # Above current price - place sell orders
-                self._place_grid_order(i, grid_price, OrderSide.SELL)
-
-    def _place_grid_order(self, level: int, price: float, side: OrderSide) -> None:
-        """Place a single grid order."""
-        if level in self.active_grids:
-            # Grid level already has an active order
-            return
-
-        # Check position limits
-        positions = self.cache.positions_open(venue=None, instrument_id=self.instrument_id)
-        if len(positions) >= self.max_positions:
-            return
-
-        try:
-            order = self.order_factory.limit(
-                instrument_id=self.instrument_id,
-                order_side=side,
-                quantity=self.instrument.make_qty(self.position_size),
-                price=self.instrument.make_price(Decimal(str(price))),
-                time_in_force=TimeInForce.GTC,  # Good Till Cancel
-            )
-
-            self.submit_order(order)
-
-            # Track the order
-            self.grid_orders[order.client_order_id] = {
-                "side": side,
-                "price": price,
-                "level": level
-            }
-            self.active_grids[level] = order.client_order_id
-
-            self.log.debug(
-                f"Placed grid order: Level {level}, Side {side}, Price {price:.2f}"
-            )
-
-        except Exception as e:
-            self.log.error(f"Failed to place grid order: {e}")
-
-    def _place_opposite_order(self, level: int, previous_order: Dict) -> None:
-        """Place opposite order after a fill."""
-        # Determine opposite side and new price
-        if previous_order["side"] == OrderSide.BUY:
-            # Was a buy, place a sell higher
-            new_side = OrderSide.SELL
-            new_price = previous_order["price"] * (1 + self.grid_spacing)
-        else:
-            # Was a sell, place a buy lower
-            new_side = OrderSide.BUY
-            new_price = previous_order["price"] * (1 - self.grid_spacing)
-
-        # Check if new price is within bounds
-        if self.lower_price <= new_price <= self.upper_price:
-            self._place_grid_order(level, new_price, new_side)
-
-    def _check_grid_rebalance(self) -> None:
-        """Check if grid needs rebalancing based on current price."""
+    def _setup_initial_grid(self):
+        """
+        초기 그리드 설정
+        """
         if not self.current_price:
             return
 
-        # Check if price has moved outside grid bounds
-        if self.current_price > self.upper_price * 1.1:
-            # Price broke above - shift grid up
-            self.log.warning(
-                f"Price {self.current_price:.2f} above grid upper bound {self.upper_price:.2f}, rebalancing",
-                color=LogColor.YELLOW,
-            )
-            self._rebalance_grid()
-        elif self.current_price < self.lower_price * 0.9:
-            # Price broke below - shift grid down
-            self.log.warning(
-                f"Price {self.current_price:.2f} below grid lower bound {self.lower_price:.2f}, rebalancing",
-                color=LogColor.YELLOW,
-            )
-            self._rebalance_grid()
+        self.log.info(f"Setting up initial grid at price {self.current_price}")
 
-    def _rebalance_grid(self) -> None:
-        """Rebalance the grid around current price."""
-        # Cancel all existing orders
-        self._cancel_all_grid_orders()
+        for grid_price in self.grid_prices:
+            if grid_price < self.current_price:
+                # 현재 가격보다 낮은 레벨에 매수 주문
+                self._place_grid_order(OrderSide.BUY, grid_price)
+            elif grid_price > self.current_price:
+                # 현재 가격보다 높은 레벨에 매도 주문
+                self._place_grid_order(OrderSide.SELL, grid_price)
 
-        # Reset grid state
-        self.grid_orders.clear()
-        self.active_grids.clear()
+        self.log.info(f"Initial grid setup complete with {len(self.grid_orders)} orders")
 
-        # Reinitialize grid at current price
-        if self.current_price:
-            self.upper_price = None
-            self.lower_price = None
-            self._initialize_grid(self.current_price)
-
-    def _cancel_all_grid_orders(self) -> None:
-        """Cancel all active grid orders."""
-        for order_id in list(self.grid_orders.keys()):
-            order = self.cache.order(order_id)
-            if order and order.is_open:
-                self.cancel_order(order)
-
-    def on_data(self, data: Data) -> None:
-        """Handle generic data."""
+    def _update_grid_orders(self):
+        """
+        그리드 주문 업데이트
+        체결된 주문의 반대 주문 생성
+        """
+        # 체결된 주문 확인 및 재배치는 on_order_filled에서 처리
         pass
 
-    def on_event(self, event: Event) -> None:
-        """Handle generic events."""
-        # Handle order events
-        if hasattr(event, "client_order_id"):
-            if event.__class__.__name__ == "OrderFilled":
-                self.on_order_filled(event)
+    def _on_order_filled(self, event: OrderFilled):
+        """
+        주문 체결 처리
+        """
+        filled_price = Decimal(str(event.last_px))
+        filled_side = event.order_side
+
+        self.log.info(
+            f"Grid order filled: {filled_side.name} @ {filled_price}"
+        )
+
+        # 체결된 그리드 주문 제거
+        if filled_price in self.grid_orders:
+            del self.grid_orders[filled_price]
+
+        # 반대 방향 주문 생성
+        if filled_side == OrderSide.BUY:
+            # 매수 체결 -> 상위 레벨에 매도 주문
+            next_sell_price = self._get_next_grid_price(filled_price, direction="up")
+            if next_sell_price and next_sell_price not in self.grid_orders:
+                self._place_grid_order(OrderSide.SELL, next_sell_price)
+
+        elif filled_side == OrderSide.SELL:
+            # 매도 체결 -> 하위 레벨에 매수 주문
+            next_buy_price = self._get_next_grid_price(filled_price, direction="down")
+            if next_buy_price and next_buy_price not in self.grid_orders:
+                self._place_grid_order(OrderSide.BUY, next_buy_price)
+
+        self.last_filled_price = filled_price
+
+        # 성과 로깅
+        total_pnl = self.get_total_pnl()
+        self.log.info(f"Current total PnL: {total_pnl}")
+
+    def _place_grid_order(
+        self,
+        side: OrderSide,
+        price: Decimal
+    ) -> Optional[LimitOrder]:
+        """
+        그리드 주문 생성 및 제출
+
+        Parameters:
+            side: 주문 방향
+            price: 주문 가격
+
+        Returns:
+            생성된 주문 또는 None
+        """
+        try:
+            order = self.submit_limit_order(
+                side=side,
+                price=price,
+                quantity=self._position_size,
+                post_only=True
+            )
+
+            self.grid_orders[price] = order
+
+            self.log.debug(
+                f"Grid order placed: {side.name} "
+                f"{self._position_size} @ {price}"
+            )
+
+            return order
+
+        except Exception as e:
+            self.log.error(f"Failed to place grid order: {e}")
+            return None
+
+    def _cancel_all_grid_orders(self):
+        """
+        모든 그리드 주문 취소
+        """
+        for price, order in list(self.grid_orders.items()):
+            try:
+                self.cancel_order(order)
+                del self.grid_orders[price]
+            except Exception as e:
+                self.log.error(f"Failed to cancel grid order: {e}")
+
+        self.log.info("All grid orders cancelled")
+
+    def _calculate_grid_prices(self) -> List[Decimal]:
+        """
+        그리드 가격 레벨 계산
+
+        Returns:
+            그리드 가격 리스트
+        """
+        price_range = self.upper_price - self.lower_price
+        grid_spacing = price_range / (self.grid_levels - 1)
+
+        prices = []
+        for i in range(self.grid_levels):
+            price = self.lower_price + (grid_spacing * i)
+            # 가격 정밀도 조정 (Binance는 보통 소수점 2자리)
+            price = Decimal(str(round(float(price), 2)))
+            prices.append(price)
+
+        return prices
+
+    def _get_next_grid_price(
+        self,
+        current_price: Decimal,
+        direction: str
+    ) -> Optional[Decimal]:
+        """
+        다음 그리드 가격 찾기
+
+        Parameters:
+            current_price: 현재 가격
+            direction: "up" 또는 "down"
+
+        Returns:
+            다음 그리드 가격 또는 None
+        """
+        if direction == "up":
+            higher_prices = [p for p in self.grid_prices if p > current_price]
+            return min(higher_prices) if higher_prices else None
+        else:  # direction == "down"
+            lower_prices = [p for p in self.grid_prices if p < current_price]
+            return max(lower_prices) if lower_prices else None
+
+    def get_grid_status(self) -> Dict[str, Any]:
+        """
+        그리드 상태 반환
+
+        Returns:
+            그리드 상태 정보
+        """
+        buy_orders = sum(
+            1 for order in self.grid_orders.values()
+            if order.side == OrderSide.BUY
+        )
+        sell_orders = sum(
+            1 for order in self.grid_orders.values()
+            if order.side == OrderSide.SELL
+        )
+
+        return {
+            "strategy_id": str(self.id),
+            "upper_price": float(self.upper_price),
+            "lower_price": float(self.lower_price),
+            "grid_levels": self.grid_levels,
+            "current_price": float(self.current_price) if self.current_price else None,
+            "active_orders": len(self.grid_orders),
+            "buy_orders": buy_orders,
+            "sell_orders": sell_orders,
+            "last_filled_price": float(self.last_filled_price) if self.last_filled_price else None,
+            "total_pnl": float(self.get_total_pnl()),
+            "position_count": self.get_position_count(),
+        }

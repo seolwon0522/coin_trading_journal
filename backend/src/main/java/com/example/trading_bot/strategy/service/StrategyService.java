@@ -36,7 +36,7 @@ public class StrategyService {
     private final UserRepository userRepository;
     private final RestTemplate restTemplate;
 
-    @Value("${nautilus.service.url:http://localhost:8001}")
+    @Value("${nautilus.service.url:http://localhost:8002}")
     private String nautilusServiceUrl;
 
     /**

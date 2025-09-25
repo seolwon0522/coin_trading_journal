@@ -49,6 +49,11 @@ binance:
     websocket-url: wss://stream.binance.com:9443
     testnet-websocket-url: wss://testnet.binance.vision
 
+# Nautilus Service 설정
+nautilus:
+  service:
+    url: http://localhost:8002
+
 # CORS 설정 (로컬 개발용)
 cors:
   allowed-origins: http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000
