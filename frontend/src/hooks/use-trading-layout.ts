@@ -134,7 +134,7 @@ export function useTradingLayout() {
   const applyPreset = useCallback((presetId: string) => {
     setCurrentPreset(presetId);
     setCustomConfig(null);
-    saveLayout(presetId, null);
+    saveLayout(presetId, undefined);
   }, [saveLayout]);
 
   // Save custom layout

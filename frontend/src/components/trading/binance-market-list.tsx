@@ -51,7 +51,7 @@ export const BinanceMarketList = memo(function BinanceMarketList({
   const [sortBy, setSortBy] = useState<'volume' | 'change' | 'name'>('volume');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const itemsRef = useRef<Map<string, MarketItem>>(new Map());
 
   // WebSocket 연결 - 모든 USDT 페어의 미니 티커 스트림

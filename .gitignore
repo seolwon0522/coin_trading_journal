@@ -146,7 +146,7 @@ docs/
 
 # ML and Trading Engine internal docs
 ml_scoring/**/*.md
-trading-engine/**/*.md
+# trading-engine removed - using nautilus-service
 nautilus-ml-pipeline/**/*.md
 ml-dashboard-frontend/**/*.md
 

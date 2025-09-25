@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
       extended: coins.filter(c => c.tier === 3).slice(0, 100),
       totalCount: coins.length,
       lastUpdate: new Date().toISOString(),
-      quoteAsset,
+      quoteAsset: quoteAsset || undefined,
       loadTime: 100, // 예시 로드 시간
       cacheStatus: 'MISS', // 실제로는 캐시 로직 구현 필요
     };
