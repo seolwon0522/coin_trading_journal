@@ -1,4 +1,4 @@
-"""
+﻿"""
 API Request/Response Models for Nautilus Trading Service
 """
 
@@ -48,6 +48,9 @@ class NodeStartRequest(BaseModel):
 class StrategyAddRequest(BaseModel):
     """Request to add a strategy"""
     strategy_type: StrategyType
+    strategy_id: Optional[str] = Field(
+        default=None, description="Optional external identifier"
+    )
     instrument_id: str = Field(default="BTCUSDT.BINANCE")
     timeframe: TimeFrame = Field(default=TimeFrame.ONE_MIN)
     parameters: Dict[str, Any] = Field(default_factory=dict)
@@ -56,6 +59,7 @@ class StrategyAddRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "strategy_type": "ema_cross",
+                "strategy_id": "EMA_CROSS_DEMO",
                 "instrument_id": "BTCUSDT.BINANCE",
                 "timeframe": "1m",
                 "parameters": {
@@ -90,6 +94,7 @@ class BacktestRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "strategy_type": "ema_cross",
+                "strategy_id": "EMA_CROSS_DEMO",
                 "instrument_id": "BTCUSDT.BINANCE",
                 "timeframe": "1m",
                 "start_date": "2024-01-01",
@@ -252,3 +257,5 @@ class TradeExecutionMessage(WSMessage):
     price: float
     commission: float
     commission_asset: str
+
+

@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { MainLayout } from '@/components/layout/main-layout';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { NautilusRealtimeProvider } from '@/hooks/use-nautilus-websocket';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -19,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: '코인 트레이딩 저널',
-  description: 'Next.js 14 + TypeScript + Tailwind + Shadcn UI + React Query 기반 웹 애플리케이션',
+  description: 'Next.js 14 + TypeScript + Tailwind + shadcn/ui + React Query 기반 대시보드',
 };
 
 export default function RootLayout({
@@ -38,8 +39,10 @@ export default function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              <MainLayout>{children}</MainLayout>
-              <ToastProvider />
+              <NautilusRealtimeProvider>
+                <MainLayout>{children}</MainLayout>
+                <ToastProvider />
+              </NautilusRealtimeProvider>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

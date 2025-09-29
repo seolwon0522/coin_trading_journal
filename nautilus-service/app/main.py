@@ -1,74 +1,43 @@
-"""
-Main FastAPI Application for Nautilus Trading Service
-"""
-from fastapi import FastAPI, Request, WebSocket
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+﻿"""FastAPI application entrypoint for Nautilus service."""
+from __future__ import annotations
+
 from contextlib import asynccontextmanager
-import logging
-import time
+from copy import deepcopy
 from datetime import datetime
-import sys
-import os
+import logging
+from typing import Any, Dict
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.config.settings import settings
-from app.core.strategy_manager import StrategyManager
-from app.core.exceptions import NautilusServiceError
-from app.api.v1 import strategies
-from app.models.strategy import HealthCheckResponse
+from app.api.models import NodeMode
+from app.api.routes import backtest_router, node_router, portfolio_router, strategy_router
+from app.config import settings
+from app.core.node_manager import NodeManager
+from app.websocket.manager import ws_manager
 
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Manage application lifecycle
-    """
-    # Startup
-    logger.info("Starting Nautilus Trading Service...")
-
-    # Initialize strategy manager
-    app.state.strategy_manager = StrategyManager()
-    await app.state.strategy_manager.initialize()
-
-    # Store start time for uptime calculation
-    app.state.start_time = time.time()
-
-    logger.info("Nautilus Trading Service started successfully")
-
-    yield
-
-    # Shutdown
-    logger.info("Shutting down Nautilus Trading Service...")
-
-    # Stop all strategies
-    if hasattr(app.state, 'strategy_manager'):
-        await app.state.strategy_manager.emergency_stop_all()
-
-    logger.info("Nautilus Trading Service stopped")
+    manager = NodeManager.get_instance()
+    try:
+        yield
+    finally:
+        await manager.shutdown()
 
 
-# Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -77,157 +46,113 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
-# Add trusted host middleware
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Configure as needed
-)
+# ------------------------------------------------------------------
+# Routers
+# ------------------------------------------------------------------
+app.include_router(node_router, prefix=settings.api_prefix)
+app.include_router(strategy_router, prefix=settings.api_prefix)
+app.include_router(portfolio_router, prefix=settings.api_prefix)
+app.include_router(backtest_router, prefix=settings.api_prefix)
 
 
-# Exception handlers
-@app.exception_handler(NautilusServiceError)
-async def nautilus_error_handler(request: Request, exc: NautilusServiceError):
-    """
-    Handle custom Nautilus service errors
-    """
-    return JSONResponse(
-        status_code=400,
-        content={
-            "error": exc.code,
-            "message": exc.message,
-            "details": exc.details
-        }
-    )
-
-
-@app.exception_handler(Exception)
-async def general_error_handler(request: Request, exc: Exception):
-    """
-    Handle general exceptions
-    """
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "INTERNAL_SERVER_ERROR",
-            "message": "An unexpected error occurred",
-            "details": {"error": str(exc)} if settings.debug else {}
-        }
-    )
-
-
-# Middleware for request logging
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    """
-    Log all requests
-    """
-    start_time = time.time()
-
-    # Log request
-    logger.info(f"Request: {request.method} {request.url.path}")
-
-    # Process request
-    response = await call_next(request)
-
-    # Calculate duration
-    duration = time.time() - start_time
-
-    # Log response
-    logger.info(f"Response: {request.method} {request.url.path} - {response.status_code} - {duration:.3f}s")
-
-    # Add custom headers
-    response.headers["X-Response-Time"] = f"{duration:.3f}"
-
-    return response
-
-
-# Root endpoint
 @app.get("/")
 async def root():
-    """
-    Root endpoint
-    """
     return {
         "name": settings.app_name,
         "version": settings.app_version,
-        "status": "running",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-# Health check endpoint
-@app.get("/health", response_model=HealthCheckResponse)
-async def health_check():
-    """
-    Health check endpoint
-    """
-    # Calculate uptime
-    uptime = time.time() - app.state.start_time if hasattr(app.state, 'start_time') else 0
-
-    # Get strategy manager status
-    strategy_manager = getattr(app.state, 'strategy_manager', None)
-    active_strategies = 0
-    total_positions = 0
-
-    if strategy_manager:
-        strategies = await strategy_manager.list_strategies()
-        active_strategies = len([s for s in strategies if s.status == "running"])
-
-        # Count positions
-        for strategy in strategies:
-            try:
-                positions = await strategy_manager.get_strategy_positions(strategy.id)
-                total_positions += len(positions)
-            except:
-                pass
-
-    return HealthCheckResponse(
-        status="healthy",
-        version=settings.app_version,
-        uptime=uptime,
-        active_strategies=active_strategies,
-        total_positions=total_positions,
-        trading_node_active=True,  # Would check actual status
-        binance_connected=settings.has_credentials,
-        database_connected=True,  # Would check actual connection
-        redis_connected=True,  # Would check actual connection
-        timestamp=datetime.utcnow()
-    )
-
-
-# Include API routers
-app.include_router(strategies.router, prefix=settings.api_prefix)
-
-# WebSocket endpoint
-from app.api.websocket import websocket_endpoint
-
-@app.websocket("/ws/{client_id}")
-async def websocket_route(websocket: WebSocket, client_id: str):
-    await websocket_endpoint(websocket, client_id)
-
-# Additional API endpoints can be added here
-@app.get(f"{settings.api_prefix}/config")
-async def get_config():
-    """
-    Get service configuration (non-sensitive)
-    """
+@app.get("/health")
+async def health():
+    manager = NodeManager.get_instance()
+    status = await manager.get_node_status()
     return {
-        "testnet": settings.is_testnet,
-        "max_strategies": settings.max_strategies,
-        "default_capital": settings.default_capital,
-        "default_leverage": settings.default_leverage,
-        "risk_check_enabled": settings.risk_check_enabled,
-        "max_position_size": settings.max_position_size
+        "status": "ok" if status.is_running else "idle",
+        "node": status.dict(),
+        "websocket": ws_manager.get_stats(),
     }
 
 
-if __name__ == "__main__":
-    import uvicorn
+# ------------------------------------------------------------------
+# Internal endpoints (Spring backend compatibility)
+# ------------------------------------------------------------------
+@app.post("/internal/strategy/start")
+async def internal_start_strategy(payload: Dict[str, Any]):
+    manager = NodeManager.get_instance()
 
-    uvicorn.run(
-        app,
-        host=settings.host,
-        port=settings.port,
-        log_level=settings.log_level.lower()
+    strategy_id = str(payload.get("strategy_id") or "").strip() or None
+    strategy_type = payload.get("type") or payload.get("strategy_type")
+    if not strategy_type:
+        raise HTTPException(status_code=400, detail="strategy type is required")
+
+    instrument_id = payload.get("symbol", "BTCUSDT.BINANCE")
+    params = deepcopy(payload.get("params") or {})
+    timeframe = params.pop("timeframe", payload.get("timeframe", "1m"))
+    testnet_enabled = bool(payload.get("testnet", True))
+    mode = NodeMode.PAPER if testnet_enabled else NodeMode.LIVE
+
+    await manager.ensure_node_running(mode=mode)
+
+    existing = strategy_id and await manager.get_strategy(strategy_id)
+    if existing:
+        if not existing.is_running:
+            await manager.start_strategy(existing.id)
+        return {"status": "success", "strategy_id": existing.id}
+
+    info = await manager.add_strategy(
+        strategy_type=strategy_type,
+        instrument_id=instrument_id,
+        timeframe=timeframe,
+        parameters=params,
+        strategy_id=strategy_id,
+        auto_start=True,
     )
+    return {"status": "success", "strategy_id": info.id}
+
+
+@app.post("/internal/strategy/stop")
+async def internal_stop_strategy(strategy_id: str):
+    manager = NodeManager.get_instance()
+    info = await manager.get_strategy(strategy_id)
+    if not info:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    await manager.stop_strategy(strategy_id)
+    return {"status": "success", "strategy_id": strategy_id}
+
+
+@app.get("/internal/strategy/status/{strategy_id}")
+async def internal_strategy_status(strategy_id: str):
+    manager = NodeManager.get_instance()
+    info = await manager.get_strategy(strategy_id)
+    if not info:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    return {
+        "strategy_id": info.id,
+        "active": info.is_running,
+        "realized_pnl": info.total_pnl,
+        "unrealized_pnl": 0.0,
+        "total_trades": 0,
+        "updated_at": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+# ------------------------------------------------------------------
+# WebSocket endpoint
+# ------------------------------------------------------------------
+@app.websocket("/ws/trading")
+async def websocket_trading(websocket: WebSocket):
+    await ws_manager.connect(websocket, channel="system")
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await ws_manager.handle_client_message(websocket, message)
+    except WebSocketDisconnect:
+        await ws_manager.disconnect(websocket)
+    except Exception as exc:
+        logger.error("WebSocket error: %s", exc)
+        await ws_manager.disconnect(websocket)
+
+
+

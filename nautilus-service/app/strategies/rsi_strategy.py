@@ -1,4 +1,4 @@
-"""
+﻿"""
 RSI Strategy for Nautilus Trader
 RSI 기반 과매수/과매도 전략
 """
@@ -10,7 +10,7 @@ from nautilus_trader.common.enums import LogColor
 from nautilus_trader.config import StrategyConfig
 from nautilus_trader.core.data import Data
 from nautilus_trader.core.message import Event
-from nautilus_trader.indicators.rsi import RelativeStrengthIndex
+from nautilus_trader.indicators import RelativeStrengthIndex
 from nautilus_trader.model.data import Bar, BarType
 from nautilus_trader.model.enums import OrderSide, TimeInForce
 from nautilus_trader.model.identifiers import InstrumentId

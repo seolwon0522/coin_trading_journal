@@ -1,4 +1,4 @@
-"""
+﻿"""
 Bollinger Bands Strategy for Nautilus Trader
 볼린저 밴드 평균회귀 전략
 """
@@ -15,7 +15,7 @@ from nautilus_trader.model.enums import OrderSide, TimeInForce
 from nautilus_trader.model.identifiers import InstrumentId
 from nautilus_trader.model.instruments import Instrument
 from nautilus_trader.trading.strategy import Strategy
-from nautilus_trader.indicators.bollinger_bands import BollingerBands
+from nautilus_trader.indicators import BollingerBands
 
 
 class BollingerBandsConfig(StrategyConfig):

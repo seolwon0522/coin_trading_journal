@@ -45,6 +45,7 @@ interface BacktestRequest {
 interface BacktestResult {
   backtest_id: string;
   status: string;
+  period?: string;
   total_return: number;
   total_trades: number;
   winning_trades: number;
@@ -105,7 +106,7 @@ export const BacktestRunner: React.FC = () => {
       const { data } = await axios.post(`${NAUTILUS_API}/api/v1/backtest/run`, request);
       setBacktestId(data.backtest_id);
 
-      toast.success('백테스트 시작됨');
+      toast.success('?袁⑸즲??????덉쉐 ??筌믨퀣援??);
 
       // Poll for status
       const pollInterval = setInterval(async () => {
@@ -121,11 +122,11 @@ export const BacktestRunner: React.FC = () => {
             // Get result
             const resultRes = await axios.get(`${NAUTILUS_API}/api/v1/backtest/${data.backtest_id}/result`);
             setResult(resultRes.data);
-            toast.success('백테스트 완료');
+            toast.success('?袁⑸즲??????덉쉐 ??ш끽維??);
             setIsRunning(false);
           } else if (status.status === 'failed') {
             clearInterval(pollInterval);
-            toast.error(`백테스트 실패: ${status.message}`);
+            toast.error(`?袁⑸즲??????덉쉐 ????됰꽡: ${status.message}`);
             setIsRunning(false);
           }
         } catch (error) {
@@ -138,7 +139,7 @@ export const BacktestRunner: React.FC = () => {
 
     } catch (error) {
       console.error('Backtest error:', error);
-      toast.error('백테스트 실행 실패');
+      toast.error('?袁⑸즲??????덉쉐 ????덈틖 ????됰꽡');
       setIsRunning(false);
     }
   };
@@ -180,16 +181,16 @@ export const BacktestRunner: React.FC = () => {
       {/* Configuration Form */}
       <Card>
         <CardHeader>
-          <CardTitle>백테스트 설정</CardTitle>
+          <CardTitle>?袁⑸즲??????덉쉐 ???源놁젳</CardTitle>
           <CardDescription>
-            Nautilus Trader를 사용한 전략 백테스팅
+            Nautilus Trader?????????ш끽維???袁⑸즲??????됯튅
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Strategy Selection */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="strategy">전략 선택</Label>
+              <Label htmlFor="strategy">??ш끽維?????ャ뀕??/Label>
               <Select value={strategyType} onValueChange={updateStrategyParameters}>
                 <SelectTrigger>
                   <SelectValue />
@@ -203,7 +204,7 @@ export const BacktestRunner: React.FC = () => {
             </div>
 
             <div>
-              <Label htmlFor="symbol">심볼</Label>
+              <Label htmlFor="symbol">????/Label>
               <Input
                 id="symbol"
                 value={symbol}
@@ -216,7 +217,7 @@ export const BacktestRunner: React.FC = () => {
           {/* Date Range */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>시작일</Label>
+              <Label>??筌믨퀣援??/Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -242,7 +243,7 @@ export const BacktestRunner: React.FC = () => {
             </div>
 
             <div>
-              <Label>종료일</Label>
+              <Label>???ろ꼤嶺??/Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -270,7 +271,7 @@ export const BacktestRunner: React.FC = () => {
 
           {/* Initial Balance */}
           <div>
-            <Label htmlFor="balance">초기 자본 (USDT)</Label>
+            <Label htmlFor="balance">?縕?猿녿뎨????亦?(USDT)</Label>
             <Input
               id="balance"
               type="number"
@@ -281,7 +282,7 @@ export const BacktestRunner: React.FC = () => {
 
           {/* Strategy Parameters */}
           <div>
-            <Label>전략 파라미터</Label>
+            <Label>??ш끽維??????앗꾩쒀?濡?뎄??/Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
               {Object.entries(parameters).map(([key, value]) => (
                 <div key={key} className="flex items-center gap-2">
@@ -310,14 +311,14 @@ export const BacktestRunner: React.FC = () => {
             size="lg"
           >
             <PlayCircle className="mr-2 h-4 w-4" />
-            {isRunning ? '실행 중...' : '백테스트 실행'}
+            {isRunning ? '????덈틖 濚?..' : '?袁⑸즲??????덉쉐 ????덈틖'}
           </Button>
 
           {/* Progress */}
           {isRunning && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>진행률</span>
+                <span>癲ル슣???몄춿?臾먦걫?/span>
                 <span>{progress.toFixed(0)}%</span>
               </div>
               <Progress value={progress} />
@@ -330,17 +331,17 @@ export const BacktestRunner: React.FC = () => {
       {result && (
         <Card>
           <CardHeader>
-            <CardTitle>백테스트 결과</CardTitle>
+            <CardTitle>?袁⑸즲??????덉쉐 ?濡ろ뜏???/CardTitle>
             <CardDescription>
-              {result.period} · {result.total_trades}개 거래
+              {result.period} 勇?{result.total_trades}??癲꾧퀗????
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="overview">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">개요</TabsTrigger>
-                <TabsTrigger value="chart">차트</TabsTrigger>
-                <TabsTrigger value="trades">거래 내역</TabsTrigger>
+                <TabsTrigger value="overview">??좊즵獒??/TabsTrigger>
+                <TabsTrigger value="chart">癲ル슓堉곁땟??/TabsTrigger>
+                <TabsTrigger value="trades">癲꾧퀗???????⑤９肉?/TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -348,7 +349,7 @@ export const BacktestRunner: React.FC = () => {
                 {/* Key Metrics */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">총 수익률</p>
+                    <p className="text-sm text-muted-foreground">?????쒓낮???/p>
                     <p className={cn(
                       "text-2xl font-bold",
                       result.total_return > 0 ? "text-green-600" : "text-red-600"
@@ -357,15 +358,15 @@ export const BacktestRunner: React.FC = () => {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">승률</p>
+                    <p className="text-sm text-muted-foreground">??꾩룆梨??/p>
                     <p className="text-2xl font-bold">{result.win_rate.toFixed(1)}%</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">샤프 비율</p>
+                    <p className="text-sm text-muted-foreground">????덈뭷 ?????/p>
                     <p className="text-2xl font-bold">{result.sharpe_ratio.toFixed(2)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">최대 손실</p>
+                    <p className="text-sm text-muted-foreground">癲ル슔?됭짆? ?????/p>
                     <p className="text-2xl font-bold text-red-600">
                       -{result.max_drawdown.toFixed(2)}%
                     </p>
@@ -375,33 +376,33 @@ export const BacktestRunner: React.FC = () => {
                 {/* Detailed Metrics */}
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div>
-                    <h4 className="font-medium mb-2">거래 통계</h4>
+                    <h4 className="font-medium mb-2">癲꾧퀗?????????/h4>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">총 거래</span>
+                        <span className="text-muted-foreground">??癲꾧퀗????/span>
                         <span>{result.total_trades}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">승리</span>
+                        <span className="text-muted-foreground">??꾩룆침??/span>
                         <span className="text-green-600">{result.winning_trades}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">패배</span>
+                        <span className="text-muted-foreground">???釉먮틯</span>
                         <span className="text-red-600">{result.losing_trades}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">평균 수익</span>
+                        <span className="text-muted-foreground">????????쒓낮??/span>
                         <span className="text-green-600">+{result.avg_win.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">평균 손실</span>
+                        <span className="text-muted-foreground">??????????/span>
                         <span className="text-red-600">-{result.avg_loss.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="font-medium mb-2">리스크 메트릭</h4>
+                    <h4 className="font-medium mb-2">?域밸Ŧ遊얕짆??癲ル슢????용끏??/h4>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Sortino Ratio</span>
@@ -412,15 +413,15 @@ export const BacktestRunner: React.FC = () => {
                         <span>{result.profit_factor.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">기대값</span>
+                        <span className="text-muted-foreground">??れ삀????/span>
                         <span>{result.expectancy.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">초기 자본</span>
+                        <span className="text-muted-foreground">?縕?猿녿뎨????亦?/span>
                         <span>${initialBalance}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">최종 잔고</span>
+                        <span className="text-muted-foreground">癲ル슔?됭짆?륂렭???釉???/span>
                         <span className="font-medium">${result.final_balance.toFixed(2)}</span>
                       </div>
                     </div>
@@ -432,7 +433,7 @@ export const BacktestRunner: React.FC = () => {
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      최대 손실이 20%를 초과했습니다. 리스크 관리 파라미터 조정을 고려하세요.
+                      癲ル슔?됭짆? ??????20%???縕?????怨?????덊렡. ?域밸Ŧ遊얕짆?????굿??????앗꾩쒀?濡?뎄???釉뚰??????關履???筌뚯뼚???
                     </AlertDescription>
                   </Alert>
                 )}
@@ -466,12 +467,12 @@ export const BacktestRunner: React.FC = () => {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2">시간</th>
-                        <th className="text-left p-2">방향</th>
-                        <th className="text-right p-2">진입가</th>
-                        <th className="text-right p-2">청산가</th>
-                        <th className="text-right p-2">수량</th>
-                        <th className="text-right p-2">손익</th>
+                        <th className="text-left p-2">??癰???/th>
+                        <th className="text-left p-2">?袁⑸젻泳?떑??/th>
+                        <th className="text-right p-2">癲ル슣????筌?</th>
+                        <th className="text-right p-2">癲?雅?굞?깍㎗?</th>
+                        <th className="text-right p-2">??嚥???/th>
+                        <th className="text-right p-2">?????/th>
                       </tr>
                     </thead>
                     <tbody>

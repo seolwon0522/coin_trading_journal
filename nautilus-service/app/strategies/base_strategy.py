@@ -5,27 +5,14 @@ Nautilus Best Practice에 따른 전략 베이스 클래스
 
 from decimal import Decimal
 from typing import Optional, Dict, Any
-import pandas as pd
 
-from nautilus_trader.common.actor import Actor
-from nautilus_trader.core.data import Data
-from nautilus_trader.core.message import Event
-from nautilus_trader.model.data import Bar
-from nautilus_trader.model.data import OrderBookDeltas
-from nautilus_trader.model.data import QuoteTick
-from nautilus_trader.model.data import TradeTick
-from nautilus_trader.model.enums import OrderSide
-from nautilus_trader.model.enums import OrderType
-from nautilus_trader.model.enums import TimeInForce
+from nautilus_trader.config import StrategyConfig
+from nautilus_trader.model.data import Bar, QuoteTick, TradeTick
+from nautilus_trader.model.enums import OrderSide, TimeInForce
 from nautilus_trader.model.events import OrderFilled
 from nautilus_trader.model.identifiers import InstrumentId
-from nautilus_trader.model.identifiers import StrategyId
-from nautilus_trader.model.instruments import Instrument
-from nautilus_trader.model.objects import Price
-from nautilus_trader.model.objects import Quantity
-from nautilus_trader.model.orders import LimitOrder
-from nautilus_trader.model.orders import MarketOrder
-from nautilus_trader.model.orders import Order
+from nautilus_trader.model.objects import Price, Quantity
+from nautilus_trader.model.orders import LimitOrder, MarketOrder
 from nautilus_trader.trading.strategy import Strategy
 
 
@@ -35,28 +22,24 @@ class BaseStrategy(Strategy):
     모든 전략은 이 클래스를 상속받아 구현
     """
 
-    def __init__(
-        self,
-        strategy_id: str,
-        config: Dict[str, Any]
-    ):
+    def __init__(self, config: StrategyConfig):
         """
         전략 초기화
 
         Parameters:
-            strategy_id: 전략 고유 ID
-            config: 전략 설정
+            config: 전략 설정 모델
         """
-        super().__init__(StrategyId(strategy_id))
+        super().__init__(config)
 
-        # 설정 저장
         self.config = config
-        self.instrument_id = InstrumentId.from_str(config.get("symbol", "BTCUSDT.BINANCE"))
 
-        # 상태 관리
+        instrument = getattr(config, "instrument_id", getattr(config, "symbol", "BTCUSDT.BINANCE"))
+        self.instrument_id = InstrumentId.from_str(str(instrument))
+
         self.is_running = False
-        self._position_size = Decimal(str(config.get("position_size", "0.001")))
-        self._max_positions = config.get("max_positions", 1)
+        position_size = getattr(config, "position_size", getattr(config, "trade_size", Decimal("0.001")))
+        self._position_size = Decimal(str(position_size))
+        self._max_positions = int(getattr(config, "max_positions", 1))
 
     def on_start(self):
         """

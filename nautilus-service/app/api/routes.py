@@ -1,4 +1,4 @@
-"""
+﻿"""
 API Routes for Nautilus Trading Service
 """
 
@@ -110,7 +110,8 @@ async def add_strategy(
             strategy_type=request.strategy_type,
             instrument_id=request.instrument_id,
             timeframe=request.timeframe,
-            parameters=request.parameters
+            parameters=request.parameters,
+            strategy_id=request.strategy_id,
         )
         return strategy_info
     except ValueError as e:
@@ -155,6 +156,11 @@ async def get_strategy(
         return strategy
     except HTTPException:
         raise
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error(f"Failed to get strategy: {e}")
         raise HTTPException(
@@ -310,11 +316,16 @@ async def close_position(
     position_id: str,
     manager: NodeManager = Depends(get_node_manager)
 ):
-    """Close a specific position"""
+    """Close a specific position"""
     try:
         await manager.close_position(position_id)
         return SuccessResponse(
             message=f"Position {position_id} closed successfully"
+        )
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e)
         )
     except ValueError as e:
         raise HTTPException(
@@ -331,12 +342,17 @@ async def close_position(
 
 @portfolio_router.post("/positions/close-all", response_model=SuccessResponse)
 async def close_all_positions(manager: NodeManager = Depends(get_node_manager)):
-    """Close all open positions"""
+    """Close all open positions"""
     try:
         count = await manager.close_all_positions()
         return SuccessResponse(
             message=f"Closed {count} positions successfully",
             data={"closed_count": count}
+        )
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e)
         )
     except Exception as e:
         logger.error(f"Failed to close all positions: {e}")
@@ -352,7 +368,7 @@ async def run_backtest(
     request: BacktestRequest,
     manager: NodeManager = Depends(get_node_manager)
 ):
-    """Run a backtest with specified parameters"""
+    """Run a backtest with specified parameters"""
     try:
         result = await manager.run_backtest(
             strategy_type=request.strategy_type,
@@ -361,9 +377,14 @@ async def run_backtest(
             start_date=request.start_date,
             end_date=request.end_date,
             parameters=request.parameters,
-            initial_balance=request.initial_balance
+            initial_balance=request.initial_balance,
         )
         return result
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e)
+        )
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -393,6 +414,11 @@ async def get_backtest_result(
         return result
     except HTTPException:
         raise
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error(f"Failed to get backtest result: {e}")
         raise HTTPException(
@@ -406,12 +432,29 @@ async def get_backtest_history(
     limit: int = 10,
     manager: NodeManager = Depends(get_node_manager)
 ):
-    """Get history of recent backtests"""
+    """Get history of recent backtests"""
     try:
         return await manager.get_backtest_history(limit=limit)
+    except NotImplementedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error(f"Failed to get backtest history: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
+
+
+
+
+
+
+
+
+
+
+
