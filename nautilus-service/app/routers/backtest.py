@@ -323,24 +323,83 @@ def calculate_advanced_metrics(returns: List[float], risk_free_rate: float) -> d
     drawdown = (cumulative - running_max) / running_max
     max_drawdown = abs(drawdown.min()) * 100 if len(drawdown) > 0 else 0
 
+    # Max drawdown duration calculation
+    max_drawdown_days = 0
+    if len(drawdown) > 0:
+        in_drawdown = False
+        current_duration = 0
+        for dd_value in drawdown:
+            if dd_value < -0.001:  # In drawdown (more than 0.1%)
+                in_drawdown = True
+                current_duration += 1
+                max_drawdown_days = max(max_drawdown_days, current_duration)
+            else:
+                in_drawdown = False
+                current_duration = 0
+
+    # Commission calculation from account state
+    commission_paid = 0.0
+    try:
+        account = engine.cache.account(account_id=engine.engine.portfolio.account.id)
+        if account:
+            # Calculate total commission from filled orders
+            for event in account.events:
+                if hasattr(event, 'commission') and event.commission:
+                    commission_paid += float(event.commission.as_double())
+    except Exception as e:
+        logger.warning(f"Could not extract commission: {e}")
+
     return {
         "total_return": float(total_return),
         "sharpe_ratio": float(sharpe),
         "sortino_ratio": float(sortino),
         "max_drawdown": float(max_drawdown),
-        "max_drawdown_days": 0,  # TODO: Calculate duration
+        "max_drawdown_days": int(max_drawdown_days),
         "avg_win": float(avg_win),
         "avg_loss": float(avg_loss),
         "profit_factor": float(profit_factor),
         "expectancy": float(expectancy),
-        "commission_paid": 0.0  # TODO: Extract from engine
+        "commission_paid": float(commission_paid)
     }
 
 
 def get_equity_curve(engine: BacktestEngine) -> List[Dict[str, Any]]:
     """Extract equity curve from backtest engine"""
-    # TODO: Implement proper equity curve extraction
-    return []
+    try:
+        account = engine.cache.account(account_id=engine.engine.portfolio.account.id)
+        if not account:
+            return []
+
+        # Extract balance snapshots over time
+        equity_curve = []
+        last_balance = float(account.balance_total().as_double())
+
+        # Get all position events to build equity curve
+        positions = engine.cache.positions()
+        for position in positions:
+            if position.is_closed and position.ts_closed:
+                # Calculate equity at each position close
+                equity_point = {
+                    "timestamp": position.ts_closed.isoformat(),
+                    "equity": last_balance + float(position.realized_pnl),
+                    "pnl": float(position.realized_pnl)
+                }
+                equity_curve.append(equity_point)
+                last_balance = equity_point["equity"]
+
+        # If no closed positions, return initial balance
+        if not equity_curve:
+            equity_curve.append({
+                "timestamp": engine.engine.clock.timestamp.isoformat(),
+                "equity": last_balance,
+                "pnl": 0.0
+            })
+
+        return equity_curve
+
+    except Exception as e:
+        logger.warning(f"Could not extract equity curve: {e}")
+        return []
 
 
 def format_trades(positions) -> List[Dict[str, Any]]:

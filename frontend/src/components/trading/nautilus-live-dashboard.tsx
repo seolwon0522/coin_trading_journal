@@ -4,8 +4,9 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNautilusWebSocket, useNautilusPositions, useNautilusStrategyStatus } from '@/hooks/use-nautilus-websocket';
-import { WifiIcon, WifiOffIcon, ActivityIcon, TrendingUpIcon } from 'lucide-react';
+import { useUnifiedWebSocket, useNautilusPositions, useNautilusStrategy } from '@/providers/unified-websocket-provider';
+import { useNautilusRealtime } from '@/hooks/use-nautilus-realtime';
+import { WifiIcon, WifiOffIcon, ActivityIcon, TrendingUpIcon, ClockIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NautilusLiveDashboardProps {
@@ -17,9 +18,24 @@ export const NautilusLiveDashboard: React.FC<NautilusLiveDashboardProps> = ({
   strategyId,
   className
 }) => {
-  const { isConnected, reconnectAttempts } = useNautilusWebSocket();
+  const { isConnected, getStats } = useUnifiedWebSocket();
   const { positions } = useNautilusPositions(strategyId);
-  const { status } = strategyId ? useNautilusStrategyStatus(strategyId) : { status: null };
+  const { status } = strategyId ? useNautilusStrategy(strategyId) : { status: null };
+
+  // Backend STOMP WebSocket (Redis → Backend → Frontend)
+  const {
+    isConnected: backendConnected,
+    trades: backendTrades,
+    positions: backendPositions,
+    orders: backendOrders,
+  } = useNautilusRealtime();
+
+  const nautilusConnected = isConnected('nautilus');
+  const stats = getStats();
+  const reconnectAttempts = stats.nautilus.reconnectAttempts;
+
+  // Combine positions from both sources (prefer backend positions if available)
+  const allPositions = backendPositions.length > 0 ? backendPositions : positions;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -27,23 +43,41 @@ export const NautilusLiveDashboard: React.FC<NautilusLiveDashboardProps> = ({
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {isConnected ? (
-                <>
-                  <WifiIcon className="h-4 w-4 text-green-500" />
-                  <span className="text-sm font-medium">Nautilus 실시간 연결됨</span>
-                </>
-              ) : (
-                <>
-                  <WifiOffIcon className="h-4 w-4 text-red-500" />
-                  <span className="text-sm font-medium">
-                    연결 끊김 {reconnectAttempts > 0 && `(재시도: ${reconnectAttempts})`}
-                  </span>
-                </>
-              )}
+            <div className="flex items-center gap-4">
+              {/* Nautilus WebSocket */}
+              <div className="flex items-center gap-2">
+                {nautilusConnected ? (
+                  <>
+                    <WifiIcon className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium">Nautilus</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOffIcon className="h-4 w-4 text-red-500" />
+                    <span className="text-sm font-medium">
+                      Nautilus {reconnectAttempts > 0 && `(${reconnectAttempts})`}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Backend WebSocket */}
+              <div className="flex items-center gap-2">
+                {backendConnected ? (
+                  <>
+                    <WifiIcon className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium">Backend</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOffIcon className="h-4 w-4 text-red-500" />
+                    <span className="text-sm font-medium">Backend</span>
+                  </>
+                )}
+              </div>
             </div>
-            <Badge variant={isConnected ? "default" : "destructive"}>
-              {isConnected ? "LIVE" : "OFFLINE"}
+            <Badge variant={(nautilusConnected && backendConnected) ? "default" : "destructive"}>
+              {(nautilusConnected && backendConnected) ? "LIVE" : "PARTIAL"}
             </Badge>
           </div>
         </CardHeader>
@@ -71,32 +105,41 @@ export const NautilusLiveDashboard: React.FC<NautilusLiveDashboardProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {positions.length > 0 ? (
+              {allPositions.length > 0 ? (
                 <div className="space-y-2">
-                  {positions.map((position, idx) => (
-                    <div
-                      key={position.id || idx}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div>
-                        <div className="font-medium">{position.symbol}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {position.side} · {position.quantity}
+                  {allPositions.map((position, idx) => {
+                    const isBackendPos = 'positionId' in position;
+                    return (
+                      <div
+                        key={isBackendPos ? position.positionId : (position.id || idx)}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div>
+                          <div className="font-medium">{position.symbol}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {position.side} · {position.quantity}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={cn(
+                            "font-medium",
+                            (isBackendPos ? position.unrealizedPnl : position.unrealized_pnl) > 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          )}>
+                            {(isBackendPos
+                              ? position.unrealizedPnl?.toFixed(2)
+                              : position.unrealized_pnl?.toFixed(2)) || '0.00'}{' '}
+                            USDT
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Entry:{' '}
+                            {isBackendPos ? position.entryPrice : position.entry_price}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={cn(
-                          "font-medium",
-                          position.unrealized_pnl > 0 ? "text-green-600" : "text-red-600"
-                        )}>
-                          {position.unrealized_pnl?.toFixed(2)} USDT
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Entry: {position.entry_price}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
@@ -163,13 +206,59 @@ export const NautilusLiveDashboard: React.FC<NautilusLiveDashboardProps> = ({
             <CardHeader>
               <CardTitle>실시간 주문</CardTitle>
               <CardDescription>
-                대기 중인 주문과 최근 체결 내역
+                {backendOrders.length > 0
+                  ? `${backendOrders.length}개의 주문 (최근 100개)`
+                  : '주문 내역 없음'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                주문 데이터를 구현 예정
-              </div>
+              {backendOrders.length > 0 ? (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {backendOrders.map((order) => (
+                    <div
+                      key={order.orderId}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{order.symbol}</span>
+                          <Badge
+                            variant={
+                              order.status === 'FILLED'
+                                ? 'default'
+                                : order.status === 'CANCELLED'
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                          >
+                            {order.status}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {order.side} {order.orderType} · {order.quantity}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">
+                          {order.avgFillPrice > 0
+                            ? `${order.avgFillPrice.toFixed(2)} USDT`
+                            : order.price
+                              ? `${order.price.toFixed(2)} USDT`
+                              : '-'}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <ClockIcon className="h-3 w-3" />
+                          {new Date(order.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  주문 내역이 없습니다
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

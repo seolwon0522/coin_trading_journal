@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTrades } from '@/hooks/use-trades';
+import { useDashboardSummary } from '@/hooks/use-dashboard';
 import { BinanceCoinSelector } from '@/components/binance-coin-selector';
 import { TradingCard } from '@/components/ui/trading-card';
 import { PageHeader } from '@/components/ui/page-header';
@@ -188,11 +189,17 @@ function RecentTradesSummary() {
 export default function Dashboard() {
   const { trades, totalElements } = useTrades();
 
+  // Dashboard summary data
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary();
+
   // 간단한 통계 계산
-  const totalTrades = totalElements || 0;
+  const totalTrades = summary?.totalTrades || totalElements || 0;
   const recentTrades = trades || [];
-  const totalPnL: number = 0; // TODO: 실제 손익 계산 로직 추가
-  const openPositions: number = 0; // TODO: 실제 오픈 포지션 계산
+  const totalPnL = summary?.totalPnl || 0;
+  const openPositions = summary?.openPositions || 0;
+  const monthlyPnl = summary?.monthlyPnl || 0;
+  const winRate = summary?.winRate || 0;
+  const activeStrategies = summary?.activeStrategies || 0;
   const totalViolations: number = 0; // TODO: 위반 계산 로직 추가
   const totalPenaltyScore: number = 0;
   const riskScore: number = 100;
@@ -233,21 +240,24 @@ export default function Dashboard() {
 
           <StatCard
             title="총 손익"
-            value={`$${totalPnL.toLocaleString()}`}
+            value={summaryLoading ? '...' : `$${totalPnL.toFixed(2)}`}
             description="누적 손익"
             icon={DollarSign}
             trend={totalPnL > 0 ? 'up' : totalPnL < 0 ? 'down' : 'neutral'}
             trendValue={
-              totalPnL !== 0 ? `${totalPnL > 0 ? '+' : ''}${totalPnL.toFixed(1)}%` : undefined
+              winRate > 0 ? `승률 ${winRate.toFixed(1)}%` : undefined
             }
           />
 
           <StatCard
             title="이번 달"
-            value="$0"
+            value={summaryLoading ? '...' : `$${monthlyPnl.toFixed(2)}`}
             description="월간 손익"
             icon={Calendar}
-            trend="neutral"
+            trend={monthlyPnl > 0 ? 'up' : monthlyPnl < 0 ? 'down' : 'neutral'}
+            trendValue={
+              monthlyPnl !== 0 ? `${monthlyPnl > 0 ? '+' : ''}${monthlyPnl.toFixed(1)}%` : undefined
+            }
           />
 
           <StatCard

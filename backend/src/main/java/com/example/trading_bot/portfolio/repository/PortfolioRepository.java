@@ -6,16 +6,27 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
-    
+
     /**
      * 사용자의 모든 포트폴리오 조회
      */
     List<Portfolio> findByUserIdOrderByCurrentValueDesc(Long userId);
+
+    /**
+     * 사용자의 모든 포트폴리오 조회 (전체 리스트)
+     */
+    List<Portfolio> findAllByUserId(Long userId);
+
+    /**
+     * 특정 수량 이상인 포트폴리오 카운트 (오픈 포지션 수)
+     */
+    Integer countByUserIdAndQuantityGreaterThan(Long userId, BigDecimal quantity);
     
     /**
      * 사용자의 특정 심볼 포트폴리오 조회

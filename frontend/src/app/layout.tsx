@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ToastProvider } from '@/components/providers/toast-provider';
 import { MainLayout } from '@/components/layout/main-layout';
 import { AuthProvider } from '@/components/providers/auth-provider';
-import { NautilusRealtimeProvider } from '@/hooks/use-nautilus-websocket';
+import { UnifiedWebSocketProvider } from '@/providers/unified-websocket-provider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -39,10 +39,10 @@ export default function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              <NautilusRealtimeProvider>
+              <UnifiedWebSocketProvider>
                 <MainLayout>{children}</MainLayout>
                 <ToastProvider />
-              </NautilusRealtimeProvider>
+              </UnifiedWebSocketProvider>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

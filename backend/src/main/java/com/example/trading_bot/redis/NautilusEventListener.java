@@ -27,6 +27,8 @@ public class NautilusEventListener implements MessageListener {
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
     private final StrategyService strategyService;
+    private final NautilusEventPersister eventPersister;
+    private final DeadLetterService deadLetterService;
 
     @Override
     public void onMessage(Message message, byte[] pattern) {
@@ -93,17 +95,28 @@ public class NautilusEventListener implements MessageListener {
             Map<String, Object> data = (Map<String, Object>) eventData.get("data");
             String strategyId = extractStrategyId(eventData);
 
+            // 1. DB에 저장 (새로 추가)
+            try {
+                eventPersister.persistTradeEvent(eventData);
+            } catch (Exception e) {
+                log.error("Failed to persist trade event, saving to DLQ", e);
+                deadLetterService.saveToDeadLetterQueue("trades", eventData, e);
+                throw e; // 재전파하여 외부 catch에서도 처리
+            }
+
+            // 2. Strategy 거래 카운트 업데이트
             if (strategyId != null) {
                 strategyService.recordTradeByNautilusId(strategyId);
             }
 
-            log.info("Trade executed: strategyId={}, symbol={}, side={}, qty={}",
+            log.info("Trade executed and persisted: strategyId={}, symbol={}, side={}, qty={}",
                     strategyId,
                     data != null ? data.get("symbol") : null,
                     data != null ? data.get("side") : null,
                     data != null ? data.get("filled_qty") : null);
         } catch (Exception e) {
             log.error("Error processing trade event", e);
+            // WebSocket 전송은 계속 진행
         }
     }
 
@@ -113,12 +126,22 @@ public class NautilusEventListener implements MessageListener {
             Map<String, Object> data = (Map<String, Object>) eventData.get("data");
             String strategyId = extractStrategyId(eventData);
 
-            log.info("Position updated: strategyId={}, symbol={}, pnl={}",
+            // DB에 Position 정보 저장 (새로 추가)
+            try {
+                eventPersister.persistPositionEvent(eventData);
+            } catch (Exception e) {
+                log.error("Failed to persist position event, saving to DLQ", e);
+                deadLetterService.saveToDeadLetterQueue("positions", eventData, e);
+                throw e;
+            }
+
+            log.info("Position updated and persisted: strategyId={}, symbol={}, pnl={}",
                     strategyId,
                     data != null ? data.get("symbol") : null,
                     data != null ? data.get("unrealized_pnl") : null);
         } catch (Exception e) {
             log.error("Error processing position event", e);
+            // WebSocket 전송은 계속 진행
         }
     }
 
@@ -132,6 +155,10 @@ public class NautilusEventListener implements MessageListener {
                     event,
                     data != null ? data.get("order_id") : null,
                     data != null ? data.get("status") : null);
+
+            // Order 데이터를 DB에 저장 (FILLED 주문은 Trade로 저장)
+            eventPersister.persistOrderEvent(eventData);
+
         } catch (Exception e) {
             log.error("Error processing order event", e);
         }

@@ -55,6 +55,11 @@ public interface StrategyRepository extends JpaRepository<Strategy, Long> {
     long countActiveStrategiesByUserId(@Param("userId") Long userId);
 
     /**
+     * 활성화된 전략 수 카운트 (Integer 반환)
+     */
+    Integer countByUserIdAndActive(Long userId, boolean active);
+
+    /**
      * 전체 전략의 평균 수익률 조회
      */
     @Query("SELECT AVG(s.totalReturn) FROM Strategy s WHERE s.user.id = :userId AND s.totalReturn IS NOT NULL")

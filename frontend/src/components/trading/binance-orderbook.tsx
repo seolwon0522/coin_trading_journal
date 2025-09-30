@@ -1,6 +1,6 @@
 'use client';
 
-import { useBinanceOrderBook } from '@/hooks/use-binance-orderbook';
+import { useOrderbook } from '@/providers/unified-websocket-provider';
 import { cn } from '@/lib/utils';
 import { formatPrice, formatQuantity, formatCompact } from '@/lib/format';
 import {
@@ -24,16 +24,31 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
   symbol,
   limit = 15
 }: BinanceOrderBookProps) {
-  const { orderBook, isLoading, error, isConnected, isReconnecting } = useBinanceOrderBook(symbol, limit);
+  const { orderbook, bids, asks, isConnected } = useOrderbook(symbol, limit);
   const [depthLevel, setDepthLevel] = useState<'0.01' | '0.1' | '1' | '10'>('0.01');
   const [flashItems, setFlashItems] = useState<Map<string, 'up' | 'down'>>(new Map());
-  const prevOrderBook = useRef(orderBook);
+  const prevBids = useRef(bids);
+  const prevAsks = useRef(asks);
+
+  // 오더북 객체 생성 (호환성)
+  const orderBook = useMemo(() => ({
+    bids: bids.map(([price, quantity]: string[], index: number) => ({
+      price,
+      quantity,
+      total: bids.slice(0, index + 1).reduce((sum: number, [_, qty]: string[]) => sum + parseFloat(qty), 0),
+    })),
+    asks: asks.map(([price, quantity]: string[], index: number) => ({
+      price,
+      quantity,
+      total: asks.slice(0, index + 1).reduce((sum: number, [_, qty]: string[]) => sum + parseFloat(qty), 0),
+    })),
+  }), [bids, asks]);
 
   // 최대 누적 거래량 계산
   const maxTotal = useMemo(() => {
     return Math.max(
-      ...orderBook.bids.slice(0, limit).map(b => b.total || 0),
-      ...orderBook.asks.slice(0, limit).map(a => a.total || 0)
+      ...orderBook.bids.slice(0, limit).map((b: any) => b.total || 0),
+      ...orderBook.asks.slice(0, limit).map((a: any) => a.total || 0)
     );
   }, [orderBook, limit]);
 
@@ -51,22 +66,24 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
 
   // 가격 변화 감지 및 플래시 효과
   useEffect(() => {
+    if (!bids.length && !asks.length) return;
+    
     const newFlashItems = new Map<string, 'up' | 'down'>();
 
     // Bids 비교
-    orderBook.bids.forEach((bid, index) => {
-      const prevBid = prevOrderBook.current.bids[index];
-      if (prevBid && prevBid.quantity !== bid.quantity) {
-        const isUp = parseFloat(bid.quantity) > parseFloat(prevBid.quantity);
+    orderBook.bids.forEach((bid: any, index: number) => {
+      const prevBid = prevBids.current[index];
+      if (prevBid && prevBid[1] !== bid.quantity) {
+        const isUp = parseFloat(bid.quantity) > parseFloat(prevBid[1]);
         newFlashItems.set(`bid-${index}`, isUp ? 'up' : 'down');
       }
     });
 
     // Asks 비교
-    orderBook.asks.forEach((ask, index) => {
-      const prevAsk = prevOrderBook.current.asks[index];
-      if (prevAsk && prevAsk.quantity !== ask.quantity) {
-        const isUp = parseFloat(ask.quantity) > parseFloat(prevAsk.quantity);
+    orderBook.asks.forEach((ask: any, index: number) => {
+      const prevAsk = prevAsks.current[index];
+      if (prevAsk && prevAsk[1] !== ask.quantity) {
+        const isUp = parseFloat(ask.quantity) > parseFloat(prevAsk[1]);
         newFlashItems.set(`ask-${index}`, isUp ? 'up' : 'down');
       }
     });
@@ -76,22 +93,25 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
       setTimeout(() => setFlashItems(new Map()), 300);
     }
 
-    prevOrderBook.current = orderBook;
-  }, [orderBook]);
+    prevBids.current = bids;
+    prevAsks.current = asks;
+  }, [bids, asks, orderBook]);
 
-  if (isLoading) {
+  // 연결 안 됨
+  if (!isConnected) {
     return (
-      <div className="h-full bg-[#161a1e] flex items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-[#5e6673]" />
+      <div className="h-full bg-[#161a1e] flex flex-col items-center justify-center">
+        <WifiOff className="h-5 w-5 text-[#5e6673] mb-2" />
+        <p className="text-xs text-[#5e6673]">연결 중...</p>
       </div>
     );
   }
 
-  if (error) {
+  // 데이터 없음
+  if (!bids.length && !asks.length) {
     return (
-      <div className="h-full bg-[#161a1e] flex flex-col items-center justify-center">
-        <WifiOff className="h-5 w-5 text-[#5e6673] mb-2" />
-        <p className="text-xs text-[#5e6673]">{error}</p>
+      <div className="h-full bg-[#161a1e] flex items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-[#5e6673]" />
       </div>
     );
   }
@@ -129,11 +149,7 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
           </button>
 
           {/* 연결 상태 */}
-          {isReconnecting ? (
-            <div className="flex items-center gap-1">
-              <Loader2 className="h-2.5 w-2.5 animate-spin text-[#fcd535]" />
-            </div>
-          ) : isConnected ? (
+          {isConnected ? (
             <div className="h-2 w-2 bg-[#0ecb81] rounded-full animate-pulse" />
           ) : (
             <div className="h-2 w-2 bg-[#f6465d] rounded-full" />
@@ -153,7 +169,7 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
         {/* 매도 호가 (역순 표시) */}
         <div className="flex-1 overflow-hidden">
           <div className="flex flex-col-reverse h-full overflow-y-auto binance-scrollbar">
-            {orderBook.asks.slice(0, limit).reverse().map((ask, index) => {
+            {orderBook.asks.slice(0, limit).reverse().map((ask: any, index: number) => {
               const actualIndex = limit - 1 - index;
               const depthPercent = ((ask.total || 0) / maxTotal) * 100;
               const flashClass = flashItems.get(`ask-${actualIndex}`);
@@ -222,7 +238,7 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
         {/* 매수 호가 */}
         <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto binance-scrollbar">
-            {orderBook.bids.slice(0, limit).map((bid, index) => {
+            {orderBook.bids.slice(0, limit).map((bid: any, index: number) => {
               const depthPercent = ((bid.total || 0) / maxTotal) * 100;
               const flashClass = flashItems.get(`bid-${index}`);
 

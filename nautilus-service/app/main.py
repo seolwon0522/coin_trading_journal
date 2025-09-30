@@ -12,9 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.models import NodeMode
 from app.api.routes import backtest_router, node_router, portfolio_router, strategy_router
+from app.api.validation import validate_strategy_params, translate_validation_error, get_strategy_schema
 from app.config import settings
 from app.core.node_manager import NodeManager
 from app.websocket.manager import ws_manager
+from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
@@ -93,6 +95,25 @@ async def internal_start_strategy(payload: Dict[str, Any]):
     testnet_enabled = bool(payload.get("testnet", True))
     mode = NodeMode.PAPER if testnet_enabled else NodeMode.LIVE
 
+    # ✨ NEW: 파라미터 검증
+    try:
+        validated_params = validate_strategy_params(strategy_type, params)
+        logger.info(f"Strategy params validated: {strategy_type}")
+    except ValidationError as e:
+        error_msg = translate_validation_error(e)
+        logger.warning(f"Strategy validation failed: {error_msg}")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "파라미터 검증 실패",
+                "message": error_msg,
+                "strategy_type": strategy_type,
+                "params": params
+            }
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     await manager.ensure_node_running(mode=mode)
 
     existing = strategy_id and await manager.get_strategy(strategy_id)
@@ -105,7 +126,7 @@ async def internal_start_strategy(payload: Dict[str, Any]):
         strategy_type=strategy_type,
         instrument_id=instrument_id,
         timeframe=timeframe,
-        parameters=params,
+        parameters=validated_params,  # ✨ 검증된 파라미터 사용
         strategy_id=strategy_id,
         auto_start=True,
     )
@@ -136,6 +157,58 @@ async def internal_strategy_status(strategy_id: str):
         "total_trades": 0,
         "updated_at": datetime.utcnow().isoformat() + "Z",
     }
+
+
+# ------------------------------------------------------------------
+# Validation endpoints
+# ------------------------------------------------------------------
+@app.get("/api/strategies/schema/{strategy_type}")
+async def get_strategy_param_schema(strategy_type: str):
+    """
+    전략 파라미터 스키마 조회
+    Frontend에서 동적 폼 생성에 사용
+    """
+    try:
+        schema = get_strategy_schema(strategy_type)
+        return {
+            "strategy_type": strategy_type,
+            "schema": schema,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.post("/api/strategies/validate")
+async def validate_strategy_parameters(payload: Dict[str, Any]):
+    """
+    전략 파라미터 검증 테스트
+    실제 전략 실행 없이 파라미터만 검증
+    """
+    strategy_type = payload.get("strategy_type")
+    params = payload.get("params", {})
+    
+    if not strategy_type:
+        raise HTTPException(status_code=400, detail="strategy_type is required")
+    
+    try:
+        validated_params = validate_strategy_params(strategy_type, params)
+        return {
+            "valid": True,
+            "strategy_type": strategy_type,
+            "validated_params": validated_params,
+            "message": "파라미터 검증 성공"
+        }
+    except ValidationError as e:
+        error_msg = translate_validation_error(e)
+        return {
+            "valid": False,
+            "strategy_type": strategy_type,
+            "errors": error_msg,
+            "message": "파라미터 검증 실패"
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ------------------------------------------------------------------
