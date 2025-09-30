@@ -28,7 +28,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     Integer countByUserId(Long userId);
 
     // 특정 날짜 이후 거래 조회 (월간 PnL 계산용)
-    List<Trade> findByUserIdAndExecutedAtAfter(Long userId, LocalDateTime startDate);
+    List<Trade> findByUserIdAndEntryTimeAfter(Long userId, LocalDateTime startDate);
 
     // Binance API 동기화 관련 메서드
     boolean existsByUserIdAndExchangeTradeId(Long userId, String exchangeTradeId);

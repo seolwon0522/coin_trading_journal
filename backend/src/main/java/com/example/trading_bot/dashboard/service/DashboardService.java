@@ -30,18 +30,23 @@ public class DashboardService {
         // Open positions count (from portfolio)
         Integer openPositions = portfolioRepository.countByUserIdAndQuantityGreaterThan(userId, BigDecimal.ZERO);
 
-        // Total PnL (from all portfolios)
-        BigDecimal totalPnl = portfolioRepository.findAllByUserId(userId).stream()
-                .map(portfolio -> {
-                    BigDecimal realizedPnl = portfolio.getRealizedPnl() != null ? portfolio.getRealizedPnl() : BigDecimal.ZERO;
-                    BigDecimal unrealizedPnl = portfolio.getUnrealizedPnl() != null ? portfolio.getUnrealizedPnl() : BigDecimal.ZERO;
-                    return realizedPnl.add(unrealizedPnl);
-                })
+        // Total PnL calculation
+        // Realized PnL from all trades
+        BigDecimal realizedPnl = tradeRepository.findByUserId(userId).stream()
+                .map(trade -> trade.getRealizedPnl() != null ? trade.getRealizedPnl() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Unrealized PnL from open positions
+        BigDecimal unrealizedPnl = portfolioRepository.findAllByUserId(userId).stream()
+                .map(portfolio -> portfolio.getUnrealizedPnl() != null ? portfolio.getUnrealizedPnl() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Total PnL = Realized + Unrealized
+        BigDecimal totalPnl = realizedPnl.add(unrealizedPnl);
 
         // Monthly PnL (trades from this month)
         LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-        BigDecimal monthlyPnl = tradeRepository.findByUserIdAndExecutedAtAfter(userId, startOfMonth).stream()
+        BigDecimal monthlyPnl = tradeRepository.findByUserIdAndEntryTimeAfter(userId, startOfMonth).stream()
                 .map(trade -> trade.getRealizedPnl() != null ? trade.getRealizedPnl() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 

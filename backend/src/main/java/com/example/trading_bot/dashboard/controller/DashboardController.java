@@ -2,7 +2,7 @@ package com.example.trading_bot.dashboard.controller;
 
 import com.example.trading_bot.dashboard.dto.DashboardSummaryResponse;
 import com.example.trading_bot.dashboard.service.DashboardService;
-import com.example.trading_bot.user.model.CustomUserDetails;
+import com.example.trading_bot.auth.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +21,11 @@ public class DashboardController {
 
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummaryResponse> getSummary(
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     ) {
-        log.info("GET /api/dashboard/summary - user: {}", userDetails.getUsername());
+        log.info("GET /api/dashboard/summary - user: {}", userPrincipal.getUsername());
 
-        DashboardSummaryResponse summary = dashboardService.getSummary(userDetails.getId());
+        DashboardSummaryResponse summary = dashboardService.getSummary(userPrincipal.getId());
         return ResponseEntity.ok(summary);
     }
 }

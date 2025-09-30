@@ -1,4 +1,4 @@
-import apiClient from './axios-client'
+import { apiClient } from '@/lib/axios'
 
 export interface DashboardSummary {
   totalTrades: number
