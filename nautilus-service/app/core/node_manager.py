@@ -21,7 +21,7 @@ from app.api.models import (
     StrategyInfo,
 )
 from app.config import settings
-from app.core.nautilus_engine_v2 import NautilusEngineV2
+from app.core.nautilus_engine import NautilusEngine
 from app.redis_bridge import RedisEventBridge
 from app.strategies.factory import StrategyFactory
 from app.websocket.manager import ws_manager
@@ -56,7 +56,7 @@ class NodeManager:
     _instance: Optional["NodeManager"] = None
 
     def __init__(self) -> None:
-        self._engine = NautilusEngineV2()
+        self._engine = NautilusEngine()
         self._mode: Optional[NodeMode] = None
         self._started_at: Optional[datetime] = None
         self._lock = asyncio.Lock()

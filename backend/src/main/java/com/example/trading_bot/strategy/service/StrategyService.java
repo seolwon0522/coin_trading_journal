@@ -3,7 +3,7 @@ package com.example.trading_bot.strategy.service;
 import com.example.trading_bot.auth.entity.User;
 import com.example.trading_bot.auth.repository.UserRepository;
 import com.example.trading_bot.common.exception.BusinessException;
-import com.example.trading_bot.nautilus.NautilusClient;
+import com.example.trading_bot.nautilus.TradingEngineClient;
 import com.example.trading_bot.nautilus.NautilusClientException;
 import com.example.trading_bot.nautilus.dto.NautilusStartStrategyRequest;
 import com.example.trading_bot.nautilus.dto.NautilusStrategyStatus;
@@ -26,7 +26,10 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * ?꾨왂 愿由??쒕퉬??
+ * Strategy Management Service
+ *
+ * Handles CRUD operations and lifecycle management for trading strategies.
+ * Integrates with TradingEngineClient (Nautilus) for strategy execution.
  */
 @Slf4j
 @Service
@@ -36,18 +39,23 @@ public class StrategyService {
 
     private final StrategyRepository strategyRepository;
     private final UserRepository userRepository;
-    private final NautilusClient nautilusClient;
+    private final TradingEngineClient tradingEngineClient;
 
     /**
-     * ?꾨왂 ?앹꽦
+     * Create a new trading strategy
+     *
+     * @param userId User ID
+     * @param request Strategy creation request
+     * @return Created strategy response
+     * @throws BusinessException if user not found or duplicate strategy name
      */
     @Transactional
     public StrategyResponse createStrategy(Long userId, StrategyRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("?ъ슜?먮? 李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
         if (strategyRepository.existsByUserIdAndName(userId, request.getName())) {
-            throw new BusinessException("?숈씪???대쫫???꾨왂???대? 議댁옱?⑸땲??", HttpStatus.CONFLICT);
+            throw new BusinessException("동일한 이름의 전략이 이미 존재합니다.", HttpStatus.CONFLICT);
         }
 
         String nautilusStrategyId = generateNautilusStrategyId(userId);
@@ -65,20 +73,26 @@ public class StrategyService {
                 .build();
 
         strategy = strategyRepository.save(strategy);
-        log.info("?꾨왂 ?앹꽦 ?꾨즺: userId={}, strategyId={}, type={}", userId, strategy.getId(), strategy.getType());
+        log.info("전략 생성 완료: userId={}, strategyId={}, type={}", userId, strategy.getId(), strategy.getType());
         return StrategyResponse.from(strategy);
     }
 
     /**
-     * ?꾨왂 ?섏젙
+     * Update an existing strategy
+     *
+     * @param userId User ID
+     * @param strategyId Strategy ID
+     * @param request Update request
+     * @return Updated strategy response
+     * @throws BusinessException if strategy not found or currently active
      */
     @Transactional
     public StrategyResponse updateStrategy(Long userId, Long strategyId, StrategyRequest request) {
         Strategy strategy = strategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BusinessException("?꾨왂??李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("전략을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
         if (strategy.isActive()) {
-            throw new BusinessException("?ㅽ뻾 以묒씤 ?꾨왂? ?섏젙?????놁뒿?덈떎. 癒쇱? 以묒???二쇱꽭??", HttpStatus.BAD_REQUEST);
+            throw new BusinessException("실행 중인 전략은 수정할 수 없습니다. 먼저 중지해주세요.", HttpStatus.BAD_REQUEST);
         }
 
         strategy.setName(request.getName());
@@ -89,37 +103,50 @@ public class StrategyService {
         strategy.setTestnet(request.getTestnet() != null ? request.getTestnet() : true);
 
         strategy = strategyRepository.save(strategy);
-        log.info("?꾨왂 ?섏젙 ?꾨즺: strategyId={}", strategyId);
+        log.info("전략 수정 완료: strategyId={}", strategyId);
         return StrategyResponse.from(strategy);
     }
 
     /**
-     * ?꾨왂 ??젣
+     * Delete a strategy
+     *
+     * @param userId User ID
+     * @param strategyId Strategy ID
+     * @throws BusinessException if strategy not found or currently active
      */
     @Transactional
     public void deleteStrategy(Long userId, Long strategyId) {
         Strategy strategy = strategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BusinessException("?꾨왂??李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("전략을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
         if (strategy.isActive()) {
-            throw new BusinessException("?ㅽ뻾 以묒씤 ?꾨왂? ??젣?????놁뒿?덈떎. 癒쇱? 以묒???二쇱꽭??", HttpStatus.BAD_REQUEST);
+            throw new BusinessException("실행 중인 전략은 삭제할 수 없습니다. 먼저 중지해주세요.", HttpStatus.BAD_REQUEST);
         }
 
         strategyRepository.delete(strategy);
-        log.info("?꾨왂 ??젣 ?꾨즺: strategyId={}", strategyId);
+        log.info("전략 삭제 완료: strategyId={}", strategyId);
     }
 
     /**
-     * ?꾨왂 ?④굔 議고쉶
+     * Get a single strategy
+     *
+     * @param userId User ID
+     * @param strategyId Strategy ID
+     * @return Strategy response
+     * @throws BusinessException if strategy not found
      */
     public StrategyResponse getStrategy(Long userId, Long strategyId) {
         Strategy strategy = strategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BusinessException("?꾨왂??李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("전략을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
         return StrategyResponse.from(strategy);
     }
 
     /**
-     * ?섏씠吏 ?꾨왂 議고쉶
+     * Get paginated list of user's strategies
+     *
+     * @param userId User ID
+     * @param pageable Pagination parameters
+     * @return Page of strategies
      */
     public Page<StrategyResponse> getStrategies(Long userId, Pageable pageable) {
         Page<Strategy> strategies = strategyRepository.findByUserId(userId, pageable);
@@ -127,20 +154,28 @@ public class StrategyService {
     }
 
     /**
-     * ?꾨왂 ?쒖꽦??
+     * Activate a strategy (start trading)
+     *
+     * Uses Circuit Breaker pattern via TradingEngineClient.
+     * If Nautilus service is unavailable, Circuit Breaker will fail fast.
+     *
+     * @param userId User ID
+     * @param strategyId Strategy ID
+     * @throws BusinessException if strategy not found, already active, or Nautilus service fails
      */
     @Transactional
     public void activateStrategy(Long userId, Long strategyId) {
         Strategy strategy = strategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BusinessException("?꾨왂??李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("전략을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
         if (strategy.isActive()) {
-            throw new BusinessException("?대? ?쒖꽦?붾맂 ?꾨왂?낅땲??", HttpStatus.BAD_REQUEST);
+            throw new BusinessException("이미 활성화된 전략입니다.", HttpStatus.BAD_REQUEST);
         }
 
         try {
             Map<String, Object> params = cloneParameters(strategy.getParams());
             String timeframe = extractTimeframe(params);
+
             NautilusStartStrategyRequest request = new NautilusStartStrategyRequest(
                     strategy.getNautilusStrategyId(),
                     strategy.getType().toNautilusType(),
@@ -150,41 +185,54 @@ public class StrategyService {
                     strategy.isTestnet()
             );
 
-            nautilusClient.startStrategy(request);
+            // Circuit Breaker will handle failures and retries
+            tradingEngineClient.startStrategy(request);
+
             strategy.activate();
             strategyRepository.save(strategy);
-            log.info("?꾨왂 ?쒖꽦???꾨즺: strategyId={}, nautilusId={}", strategyId, strategy.getNautilusStrategyId());
+
+            log.info("전략 활성화 완료: strategyId={}, nautilusId={}", strategyId, strategy.getNautilusStrategyId());
         } catch (NautilusClientException e) {
-            log.error("Nautilus start failed: strategyId={}, error={}", strategyId, e.getMessage());
-            throw new BusinessException("Nautilus ?꾨왂 ?쒖옉 ?ㅽ뙣: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Nautilus 전략 시작 실패: strategyId={}, error={}", strategyId, e.getMessage());
+            throw new BusinessException("트레이딩 엔진 시작 실패: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * ?꾨왂 鍮꾪솢?깊솕
+     * Deactivate a strategy (stop trading)
+     *
+     * @param userId User ID
+     * @param strategyId Strategy ID
+     * @throws BusinessException if strategy not found, not active, or Nautilus service fails
      */
     @Transactional
     public void deactivateStrategy(Long userId, Long strategyId) {
         Strategy strategy = strategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BusinessException("?꾨왂??李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("전략을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
         if (!strategy.isActive()) {
-            throw new BusinessException("?대? 鍮꾪솢?깊솕???꾨왂?낅땲??", HttpStatus.BAD_REQUEST);
+            throw new BusinessException("이미 비활성화된 전략입니다.", HttpStatus.BAD_REQUEST);
         }
 
         try {
-            nautilusClient.stopStrategy(strategy.getNautilusStrategyId());
+            // Circuit Breaker will handle failures and retries
+            tradingEngineClient.stopStrategy(strategy.getNautilusStrategyId());
+
             strategy.deactivate();
             strategyRepository.save(strategy);
-            log.info("?꾨왂 鍮꾪솢?깊솕 ?꾨즺: strategyId={}, nautilusId={}", strategyId, strategy.getNautilusStrategyId());
+
+            log.info("전략 비활성화 완료: strategyId={}, nautilusId={}", strategyId, strategy.getNautilusStrategyId());
         } catch (NautilusClientException e) {
-            log.error("Nautilus stop failed: strategyId={}, error={}", strategyId, e.getMessage());
-            throw new BusinessException("Nautilus ?꾨왂 以묒? ?ㅽ뙣: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            log.error("Nautilus 전략 중지 실패: strategyId={}, error={}", strategyId, e.getMessage());
+            throw new BusinessException("트레이딩 엔진 중지 실패: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     /**
-     * ?쒖꽦?붾맂 ?꾨왂 紐⑸줉 議고쉶
+     * Get list of active strategies for a user
+     *
+     * @param userId User ID
+     * @return List of active strategies
      */
     public List<StrategyResponse> getActiveStrategies(Long userId) {
         return strategyRepository.findByUserIdAndActive(userId, true)
@@ -194,17 +242,22 @@ public class StrategyService {
     }
 
     /**
-     * ?꾨왂 ?곹깭 ?숆린??(Nautilus ?곕룞)
+     * Sync strategy status from Nautilus (manual trigger)
+     *
+     * @param strategyId Strategy ID
+     * @throws BusinessException if strategy not found
      */
     @Transactional
     public void syncStrategyStatus(Long strategyId) {
         Strategy strategy = strategyRepository.findById(strategyId)
-                .orElseThrow(() -> new BusinessException("?꾨왂??李얠쓣 ???놁뒿?덈떎.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("전략을 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
         syncStrategyStatusInternal(strategy);
     }
 
     /**
-     * Nautilus ID濡??곹깭 ?숆린??
+     * Sync strategy status by Nautilus ID (called by Redis event listener)
+     *
+     * @param nautilusStrategyId Nautilus strategy identifier
      */
     @Transactional
     public void syncStrategyStatusByNautilusId(String nautilusStrategyId) {
@@ -213,7 +266,9 @@ public class StrategyService {
     }
 
     /**
-     * 嫄곕옒 ?대깽??諛섏쁺
+     * Record a trade execution (called by Redis event listener)
+     *
+     * @param nautilusStrategyId Nautilus strategy identifier
      */
     @Transactional
     public void recordTradeByNautilusId(String nautilusStrategyId) {
@@ -221,27 +276,43 @@ public class StrategyService {
                 .ifPresent(strategy -> {
                     strategy.recordTrade();
                     strategyRepository.save(strategy);
+                    log.debug("거래 기록 완료: nautilusId={}, totalTrades={}",
+                            nautilusStrategyId, strategy.getTotalTrades());
                 });
     }
 
+    /**
+     * Internal method to sync strategy status from Nautilus
+     *
+     * Fetches current status from trading engine and updates local database.
+     * Circuit Breaker pattern ensures resilience if Nautilus is unavailable.
+     *
+     * @param strategy Strategy entity to sync
+     */
     private void syncStrategyStatusInternal(Strategy strategy) {
         if (strategy == null || strategy.getNautilusStrategyId() == null) {
             return;
         }
 
-        Optional<NautilusStrategyStatus> statusOpt = nautilusClient.getStrategyStatus(strategy.getNautilusStrategyId());
+        // Circuit Breaker will return empty Optional if service is down
+        Optional<NautilusStrategyStatus> statusOpt = tradingEngineClient.getStrategyStatus(
+                strategy.getNautilusStrategyId());
+
         if (statusOpt.isEmpty()) {
-            log.debug("No Nautilus status for strategy {}", strategy.getNautilusStrategyId());
+            log.debug("Nautilus 상태 없음: strategy={}", strategy.getNautilusStrategyId());
             return;
         }
 
         NautilusStrategyStatus status = statusOpt.get();
+
+        // Sync active status
         if (status.active() && !strategy.isActive()) {
             strategy.activate();
         } else if (!status.active() && strategy.isActive()) {
             strategy.deactivate();
         }
 
+        // Sync performance metrics
         if (status.realizedPnl() != null) {
             strategy.setRealizedPnl(status.realizedPnl());
         }
@@ -253,9 +324,16 @@ public class StrategyService {
         }
 
         strategyRepository.save(strategy);
-        log.debug("?꾨왂 ?곹깭 ?숆린???꾨즺: strategyId={}, active={}", strategy.getId(), strategy.isActive());
+        log.debug("전략 상태 동기화 완료: strategyId={}, active={}", strategy.getId(), strategy.isActive());
     }
 
+    // -------------------------------------------------------------------------
+    // Helper Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Clone strategy parameters map to avoid mutation
+     */
     private Map<String, Object> cloneParameters(Map<String, Object> params) {
         Map<String, Object> copy = new HashMap<>();
         if (params != null) {
@@ -264,6 +342,9 @@ public class StrategyService {
         return copy;
     }
 
+    /**
+     * Extract timeframe from parameters, with fallback to 1m
+     */
     private String extractTimeframe(Map<String, Object> params) {
         Object timeframe = params.remove("timeframe");
         if (timeframe == null) {
@@ -272,6 +353,14 @@ public class StrategyService {
         return timeframe != null ? timeframe.toString() : "1m";
     }
 
+    /**
+     * Resolve instrument ID with venue suffix
+     *
+     * Examples:
+     * - "BTCUSDT" -> "BTCUSDT.BINANCE"
+     * - "ETHUSDT.BINANCE" -> "ETHUSDT.BINANCE"
+     * - null -> "BTCUSDT.BINANCE" (default)
+     */
     private String resolveInstrumentId(String symbol) {
         if (symbol == null) {
             return "BTCUSDT.BINANCE";
@@ -284,9 +373,13 @@ public class StrategyService {
     }
 
     /**
-     * Nautilus Strategy ID ?앹꽦
+     * Generate unique Nautilus strategy ID
+     *
+     * Format: STRATEGY_{userId}_{randomString}
+     * Example: STRATEGY_123_A1B2C3D4
      */
     private String generateNautilusStrategyId(Long userId) {
-        return String.format("STRATEGY_%d_%s", userId, UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        return String.format("STRATEGY_%d_%s", userId,
+                UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 }

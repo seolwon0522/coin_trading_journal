@@ -13,7 +13,10 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 /**
- * Redis Pub/Sub listener for Nautilus events.
+ * Nautilus 이벤트를 위한 Redis Pub/Sub 리스너
+ *
+ * Nautilus 트레이딩 엔진에서 발생하는 다양한 이벤트(거래, 포지션, 주문 등)를
+ * Redis 채널을 통해 수신하고 WebSocket으로 프론트엔드에 전파합니다.
  */
 @Slf4j
 @Service

@@ -122,7 +122,7 @@ Binance API와 실시간 연동하여 거래를 자동으로 추적하고, ML �
 
 ### 📋 사전 요구사항
 
-- Node.js 20+ 및 npm 9+
+- Node.js 20+ 및 npm 9+ 
 - Java 17+ (OpenJDK 권장)
 - Python 3.11+
 - Docker 및 Docker Compose
