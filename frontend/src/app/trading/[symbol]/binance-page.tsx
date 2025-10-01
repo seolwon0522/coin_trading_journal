@@ -327,7 +327,7 @@ export default function BinanceTradingPage() {
         <div className="w-80 bg-[#161a1e] border-l border-[#2b3139] flex flex-col">
           {/* 호가창 */}
           <div className="h-1/2 border-b border-[#2b3139]">
-            <BinanceOrderBook symbol={symbol} limit={15} />
+            <BinanceOrderBook symbol={symbol} limit={20} />
           </div>
 
           {/* 주문 폼 */}

@@ -39,8 +39,8 @@ interface UnifiedWebSocketContextValue {
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 const BASE_RECONNECT_DELAY = 3000;
-const BINANCE_WS_URL = 'wss://stream.binance.com:9443/stream?streams=';
-const NAUTILUS_WS_URL = process.env.NEXT_PUBLIC_NAUTILUS_WS_URL || 'ws://localhost:8002/ws/trading';
+const BINANCE_WS_BASE = 'wss://stream.binance.com:9443';
+const NAUTILUS_WS_URL = process.env.NEXT_PUBLIC_NAUTILUS_WS_URL || 'ws://localhost:8001/ws/trading';
 
 // ==================== Context ====================
 
@@ -102,8 +102,13 @@ export const UnifiedWebSocketProvider = ({ children }: PropsWithChildren) => {
       state.socket = null;
     }
 
-    const url = BINANCE_WS_URL + streams.join('/');
-    console.log('[Binance WS] Connecting...', { streams });
+    // Build WebSocket URL
+    let url: string;
+    if (streams.length === 1) {
+      url = `${BINANCE_WS_BASE}/ws/${streams[0]}`;
+    } else {
+      url = `${BINANCE_WS_BASE}/stream?streams=${streams.join('/')}`;
+    }
 
     const socket = new WebSocket(url);
     state.socket = socket;
@@ -124,20 +129,35 @@ export const UnifiedWebSocketProvider = ({ children }: PropsWithChildren) => {
     socket.onmessage = (event) => {
       try {
         const parsed = JSON.parse(event.data);
-        
-        // Binance format: { stream: "btcusdt@ticker", data: {...} }
+
         if (parsed.stream && parsed.data) {
-          const [symbolPart, channelPart] = parsed.stream.split('@');
-          const key = buildKey('binance', channelPart, { symbol: symbolPart });
-          const entry = subscriptionsRef.current.get(key);
-          
-          if (entry) {
-            const message = {
-              ...parsed.data,
-              symbol: symbolPart.toUpperCase(),
-            };
-            entry.callbacks.forEach(cb => cb(message));
+          // Handle special streams like !miniTicker@arr
+          if (parsed.stream.startsWith('!')) {
+            const key = buildKey('binance', parsed.stream, {});
+            const entry = subscriptionsRef.current.get(key);
+            if (entry) {
+              entry.callbacks.forEach(cb => cb(parsed.data));
+            }
+          } else {
+            // Normal symbol@channel format
+            const [symbolPart, channelPart] = parsed.stream.split('@');
+            const key = buildKey('binance', channelPart, { symbol: symbolPart });
+            const entry = subscriptionsRef.current.get(key);
+
+            if (entry) {
+              const message = {
+                ...parsed.data,
+                symbol: symbolPart.toUpperCase(),
+              };
+              entry.callbacks.forEach(cb => cb(message));
+            }
           }
+        } else if (parsed.e) {
+          subscriptionsRef.current.forEach((entry, key) => {
+            if (key.startsWith('binance:')) {
+              entry.callbacks.forEach(cb => cb(parsed));
+            }
+          });
         }
       } catch (error) {
         console.error('[Binance WS] Parse error:', error);
@@ -271,11 +291,19 @@ export const UnifiedWebSocketProvider = ({ children }: PropsWithChildren) => {
 
       // Handle source-specific subscription
       if (source === 'binance') {
-        const symbol = params.symbol?.toLowerCase() || '';
-        const stream = `${symbol}@${channel}`;
+        let stream: string;
+
+        // Handle special streams (starting with !)
+        if (channel.startsWith('!')) {
+          stream = channel;
+        } else {
+          const symbol = params.symbol?.toLowerCase() || '';
+          stream = `${symbol}@${channel}`;
+        }
+
         const wasEmpty = binanceStreamsRef.current.size === 0;
         binanceStreamsRef.current.add(stream);
-        
+
         if (wasEmpty || !binanceRef.current.isConnected) {
           connectBinance();
         } else {
@@ -312,10 +340,16 @@ export const UnifiedWebSocketProvider = ({ children }: PropsWithChildren) => {
         subscriptionsRef.current.delete(key);
 
         if (source === 'binance') {
-          const symbol = params.symbol?.toLowerCase() || '';
-          const stream = `${symbol}@${channel}`;
+          let stream: string;
+          if (channel.startsWith('!')) {
+            stream = channel;
+          } else {
+            const symbol = params.symbol?.toLowerCase() || '';
+            stream = `${symbol}@${channel}`;
+          }
+
           binanceStreamsRef.current.delete(stream);
-          
+
           if (binanceStreamsRef.current.size === 0) {
             binanceManualDisconnect.current = true;
             binanceRef.current.socket?.close();
@@ -441,22 +475,66 @@ function buildKey(source: WebSocketSource, channel: string, params: Record<strin
 export function useTicker(symbol: string) {
   const { subscribe, isConnected } = useUnifiedWebSocket();
   const [ticker, setTicker] = useState<any>(null);
+  const [hasData, setHasData] = useState(false);
+  const hasDataRef = useRef(false);
 
   useEffect(() => {
     if (!symbol) return;
 
-    const unsubscribe = subscribe('binance', 'ticker', { symbol: symbol.toLowerCase() }, setTicker);
-    return unsubscribe;
+    hasDataRef.current = false;
+    setHasData(false);
+
+    const handleTickerUpdate = (data: any) => {
+      setTicker(data);
+      if (!hasDataRef.current) {
+        hasDataRef.current = true;
+        setHasData(true);
+      }
+    };
+
+    const unsubscribe = subscribe('binance', 'ticker', { symbol: symbol.toLowerCase() }, handleTickerUpdate);
+
+    return () => {
+      unsubscribe();
+      hasDataRef.current = false;
+      setHasData(false);
+    };
   }, [symbol, subscribe]);
 
+  // Convert WebSocket ticker format to Ticker24hr format
+  // Only return ticker data if we have received valid data
+  const ticker24hr = (ticker && hasData) ? {
+    symbol: ticker.s || symbol.toUpperCase(),
+    priceChange: ticker.p ?? '0',
+    priceChangePercent: ticker.P ?? '0',
+    weightedAvgPrice: ticker.w ?? '0',
+    lastPrice: ticker.c ?? '0',
+    lastQty: ticker.Q ?? '0',
+    bidPrice: ticker.b ?? '0',
+    bidQty: ticker.B ?? '0',
+    askPrice: ticker.a ?? '0',
+    askQty: ticker.A ?? '0',
+    openPrice: ticker.o ?? '0',
+    highPrice: ticker.h ?? '0',
+    lowPrice: ticker.l ?? '0',
+    volume: ticker.v ?? '0',
+    quoteVolume: ticker.q ?? '0',
+    openTime: ticker.O ?? 0,
+    closeTime: ticker.C ?? 0,
+    firstId: ticker.F ?? 0,
+    lastId: ticker.L ?? 0,
+    count: ticker.n ?? 0,
+  } : null;
+
   return {
-    ticker,
+    ticker: ticker24hr,
     isConnected: isConnected('binance'),
-    currentPrice: ticker ? parseFloat(ticker.c || '0') : 0,
-    priceChange: ticker ? parseFloat(ticker.p || '0') : 0,
-    priceChangePercent: ticker ? parseFloat(ticker.P || '0') : 0,
-    volume: ticker ? parseFloat(ticker.v || '0') : 0,
-    quoteVolume: ticker ? parseFloat(ticker.q || '0') : 0,
+    hasData,
+    currentPrice: (ticker && hasData) ? parseFloat(ticker.c || '0') : 0,
+    priceChange: (ticker && hasData) ? parseFloat(ticker.p || '0') : 0,
+    priceChangePercent: (ticker && hasData) ? parseFloat(ticker.P || '0') : 0,
+    volume: (ticker && hasData) ? parseFloat(ticker.v || '0') : 0,
+    quoteVolume: (ticker && hasData) ? parseFloat(ticker.q || '0') : 0,
   };
 }
 
@@ -466,20 +544,42 @@ export function useTicker(symbol: string) {
 export function useOrderbook(symbol: string, limit: number = 20) {
   const { subscribe, isConnected } = useUnifiedWebSocket();
   const [orderbook, setOrderbook] = useState<any>(null);
+  const [hasData, setHasData] = useState(false);
+  const hasDataRef = useRef(false);
 
   useEffect(() => {
     if (!symbol) return;
 
+    hasDataRef.current = false;
+    setHasData(false);
+
+    const handleOrderbookUpdate = (data: any) => {
+      setOrderbook(data);
+      const bids = data?.b || data?.bids || [];
+      const asks = data?.a || data?.asks || [];
+
+      if (!hasDataRef.current && (bids.length > 0 || asks.length > 0)) {
+        hasDataRef.current = true;
+        setHasData(true);
+      }
+    };
+
     const channel = `depth${limit}`;
-    const unsubscribe = subscribe('binance', channel, { symbol: symbol.toLowerCase() }, setOrderbook);
-    return unsubscribe;
+    const unsubscribe = subscribe('binance', channel, { symbol: symbol.toLowerCase() }, handleOrderbookUpdate);
+
+    return () => {
+      unsubscribe();
+      hasDataRef.current = false;
+      setHasData(false);
+    };
   }, [symbol, limit, subscribe]);
 
   return {
     orderbook,
-    bids: orderbook?.b || [],
-    asks: orderbook?.a || [],
+    bids: orderbook?.b || orderbook?.bids || [],
+    asks: orderbook?.a || orderbook?.asks || [],
     isConnected: isConnected('binance'),
+    hasData,
   };
 }
 
@@ -619,6 +719,44 @@ export function useKlines(symbol: string, interval: string = '1m') {
 
   return {
     kline,
+    isConnected: isConnected('binance'),
+  };
+}
+
+/**
+ * Binance All Market Mini Tickers Hook
+ * Subscribes to all market mini tickers for market list
+ */
+export function useAllMarketTickers() {
+  const { subscribe, isConnected } = useUnifiedWebSocket();
+  const [tickers, setTickers] = useState<Map<string, any>>(new Map());
+
+  useEffect(() => {
+    const handleTickerUpdate = (data: any) => {
+      // Handle array of tickers from !miniTicker@arr stream
+      if (Array.isArray(data)) {
+        setTickers(prevTickers => {
+          const newTickers = new Map(prevTickers);
+          data.forEach((ticker: any) => {
+            if (ticker.s) {
+              newTickers.set(ticker.s, ticker);
+            }
+          });
+          return newTickers;
+        });
+      }
+    };
+
+    // Subscribe to all market mini ticker stream
+    const unsubscribe = subscribe('binance', '!miniTicker@arr', {}, handleTickerUpdate);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [subscribe]);
+
+  return {
+    tickers,
     isConnected: isConnected('binance'),
   };
 }

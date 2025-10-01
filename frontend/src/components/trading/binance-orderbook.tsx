@@ -22,9 +22,9 @@ interface BinanceOrderBookProps {
 // Binance 스타일 호가창
 export const BinanceOrderBook = memo(function BinanceOrderBook({
   symbol,
-  limit = 15
+  limit = 20
 }: BinanceOrderBookProps) {
-  const { orderbook, bids, asks, isConnected } = useOrderbook(symbol, limit);
+  const { orderbook, bids, asks, isConnected, hasData } = useOrderbook(symbol, limit);
   const [depthLevel, setDepthLevel] = useState<'0.01' | '0.1' | '1' | '10'>('0.01');
   const [flashItems, setFlashItems] = useState<Map<string, 'up' | 'down'>>(new Map());
   const prevBids = useRef(bids);
@@ -107,11 +107,22 @@ export const BinanceOrderBook = memo(function BinanceOrderBook({
     );
   }
 
+  // 데이터 로딩 중
+  if (isConnected && !hasData) {
+    return (
+      <div className="h-full bg-[#161a1e] flex flex-col items-center justify-center gap-2">
+        <Loader2 className="h-5 w-5 animate-spin text-[#5e6673]" />
+        <p className="text-xs text-[#5e6673]">호가 데이터 로딩 중...</p>
+      </div>
+    );
+  }
+
   // 데이터 없음
   if (!bids.length && !asks.length) {
     return (
-      <div className="h-full bg-[#161a1e] flex items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-[#5e6673]" />
+      <div className="h-full bg-[#161a1e] flex flex-col items-center justify-center gap-2">
+        <WifiOff className="h-5 w-5 text-[#5e6673]" />
+        <p className="text-xs text-[#5e6673]">호가 데이터 없음</p>
       </div>
     );
   }
