@@ -71,6 +71,10 @@ class StrategyFactory:
 
         if strategy_id:
             config_params["strategy_id"] = strategy_id
+            # Generate unique order_id_tag from strategy_id
+            # Extract last 8 chars from strategy_id (e.g., EMA_CROSS_abc123de -> abc123de)
+            order_id_tag = strategy_id.split("_")[-1][:8] if "_" in strategy_id else strategy_id[:8]
+            config_params["order_id_tag"] = order_id_tag
 
         config_params.update(cls._prepare_parameters(strategy_type, parameters))
 

@@ -68,13 +68,30 @@ async def root():
 
 @app.get("/health")
 async def health():
-    manager = NodeManager.get_instance()
-    status = await manager.get_node_status()
-    return {
-        "status": "ok" if status.is_running else "idle",
-        "node": status.dict(),
-        "websocket": ws_manager.get_stats(),
-    }
+    try:
+        manager = NodeManager.get_instance()
+        # Timeout 추가하여 무한 대기 방지
+        import asyncio
+        status = await asyncio.wait_for(manager.get_node_status(), timeout=1.0)
+        return {
+            "status": "ok" if status.is_running else "idle",
+            "node": status.dict(),
+            "websocket": ws_manager.get_stats(),
+        }
+    except asyncio.TimeoutError:
+        # Timeout 시 기본 응답 반환
+        return {
+            "status": "idle",
+            "node": {"status": "idle", "is_running": False},
+            "websocket": ws_manager.get_stats(),
+        }
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "websocket": ws_manager.get_stats(),
+        }
 
 
 # ------------------------------------------------------------------
@@ -114,14 +131,24 @@ async def internal_start_strategy(payload: Dict[str, Any]):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    await manager.ensure_node_running(mode=mode)
-
+    # Check if strategy already exists
     existing = strategy_id and await manager.get_strategy(strategy_id)
     if existing:
+        # Ensure node is running before starting strategy
+        await manager.ensure_node_running(mode=mode)
         if not existing.is_running:
             await manager.start_strategy(existing.id)
         return {"status": "success", "strategy_id": existing.id}
 
+    # Add new strategy (this will handle node initialization/restart internally)
+    # Set the mode via environment variable before adding strategy
+    if mode == NodeMode.PAPER:
+        import os
+        os.environ["BINANCE_TESTNET"] = "true"
+    elif mode == NodeMode.LIVE:
+        import os
+        os.environ["BINANCE_TESTNET"] = "false"
+    
     info = await manager.add_strategy(
         strategy_type=strategy_type,
         instrument_id=instrument_id,
@@ -212,10 +239,58 @@ async def validate_strategy_parameters(payload: Dict[str, Any]):
 
 
 # ------------------------------------------------------------------
-# WebSocket endpoint
+# WebSocket endpoints
 # ------------------------------------------------------------------
 @app.websocket("/ws/trading")
 async def websocket_trading(websocket: WebSocket):
+    """WebSocket endpoint for real-time trading updates"""
+    client_ip = websocket.client.host if websocket.client else "unknown"
+    logger.info("WebSocket connection attempt from %s", client_ip)
+    
+    try:
+        await ws_manager.connect(websocket, channel="system")
+        logger.info("WebSocket connected successfully from %s", client_ip)
+        
+        while True:
+            try:
+                message = await websocket.receive_text()
+                logger.debug("Received message from %s: %s", client_ip, message[:100])
+                await ws_manager.handle_client_message(websocket, message)
+            except WebSocketDisconnect:
+                logger.info("WebSocket disconnected by client %s", client_ip)
+                break
+            except Exception as exc:
+                logger.error("Error processing message from %s: %s", client_ip, exc)
+                # Continue processing other messages instead of breaking
+                continue
+                
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected during connection from %s", client_ip)
+    except Exception as exc:
+        logger.error("WebSocket connection error from %s: %s", client_ip, exc)
+    finally:
+        await ws_manager.disconnect(websocket)
+        logger.info("WebSocket cleanup completed for %s", client_ip)
+
+
+@app.websocket("/ws/backtest")
+async def websocket_backtest(websocket: WebSocket):
+    """WebSocket endpoint for backtest progress updates"""
+    await ws_manager.connect(websocket, channel="backtest")
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await ws_manager.handle_client_message(websocket, message)
+    except WebSocketDisconnect:
+        await ws_manager.disconnect(websocket, channel="backtest")
+    except Exception as exc:
+        logger.error("WebSocket backtest error: %s", exc)
+        await ws_manager.disconnect(websocket, channel="backtest")
+
+
+@app.websocket("/ws")
+async def websocket_main(websocket: WebSocket):
+    """Main WebSocket endpoint - clients can subscribe to multiple channels"""
     await ws_manager.connect(websocket, channel="system")
     try:
         while True:

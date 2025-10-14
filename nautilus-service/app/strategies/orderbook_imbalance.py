@@ -17,11 +17,12 @@ from nautilus_trader.model.instruments import Instrument
 from nautilus_trader.trading.strategy import Strategy
 
 
-class OrderbookImbalanceConfig(StrategyConfig):
+class OrderbookImbalanceConfig(StrategyConfig, kw_only=True):
     """Configuration for Orderbook Imbalance Strategy."""
 
     instrument_id: str
     bar_type: str
+    order_id_tag: str = "001"
     imbalance_threshold: float = 0.3  # 30% imbalance threshold
     order_levels: int = 5  # Number of order levels
     spread_multiplier: float = 1.5  # Spread multiplier for orders

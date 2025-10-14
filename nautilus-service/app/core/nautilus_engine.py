@@ -23,6 +23,7 @@ from nautilus_trader.config import (
     MessageBusConfig,
     LoggingConfig,
     DatabaseConfig,
+    InstrumentProviderConfig,
 )
 from nautilus_trader.live.node import TradingNode
 from nautilus_trader.model.identifiers import TraderId, StrategyId, Venue
@@ -115,23 +116,38 @@ class NautilusEngine:
         catalog_path.mkdir(parents=True, exist_ok=True)
 
         # Binance configuration for testnet/spot
-        # Testnet SPOT trading uses the main API endpoint for user data stream
+        # IMPORTANT: Binance Spot Testnet does NOT support WebSocket streams
+        # For testing with WebSocket support, use Futures Testnet instead
+        if testnet:
+            # Use Futures Testnet (supports WebSocket)
+            logger.info("Using Binance FUTURES Testnet (WebSocket supported)")
+            account_type = BinanceAccountType.USDT_FUTURES
+            base_http = "https://testnet.binancefuture.com"
+            base_ws = "wss://stream.binancefuture.com"
+        else:
+            # Use Spot Mainnet
+            logger.info("Using Binance SPOT Mainnet")
+            account_type = BinanceAccountType.SPOT
+            base_http = "https://api.binance.com"
+            base_ws = "wss://stream.binance.com:9443/ws"
+        
         binance_data_config = BinanceDataClientConfig(
             api_key=api_key,
             api_secret=api_secret,
-            account_type=BinanceAccountType.SPOT,  # Use SPOT for testnet
-            base_url_http="https://testnet.binance.vision" if testnet else "https://api.binance.com",
-            base_url_ws="wss://testnet.binance.vision" if testnet else "wss://stream.binance.com:9443",
+            account_type=account_type,
+            base_url_http=base_http,
+            base_url_ws=base_ws,
             us=False,
             testnet=testnet,
+            instrument_provider=InstrumentProviderConfig(load_all=False),  # Don't load all to avoid permission errors
         )
 
         binance_exec_config = BinanceExecClientConfig(
             api_key=api_key,
             api_secret=api_secret,
-            account_type=BinanceAccountType.SPOT,  # Use SPOT for testnet
-            base_url_http="https://testnet.binance.vision" if testnet else "https://api.binance.com",
-            base_url_ws="wss://testnet.binance.vision" if testnet else "wss://stream.binance.com:9443",
+            account_type=account_type,
+            base_url_http=base_http,
+            base_url_ws=base_ws,
             us=False,
             testnet=testnet,
         )
@@ -187,8 +203,8 @@ class NautilusEngine:
 
             # Execution engine configuration - minimal config
             exec_engine=LiveExecEngineConfig(
-                reconciliation=True,
-                load_cache=True,
+                reconciliation=False,  # Disable to avoid account info API calls
+                load_cache=False,
             ),
 
             # Risk engine configuration - minimal config
@@ -594,7 +610,3 @@ class NautilusEngine:
         }
 
         return metrics
-
-
-# Export the new engine class
-NautilusEngine = NautilusEngineV2

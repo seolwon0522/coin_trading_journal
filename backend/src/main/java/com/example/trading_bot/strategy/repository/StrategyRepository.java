@@ -21,27 +21,32 @@ public interface StrategyRepository extends JpaRepository<Strategy, Long> {
     /**
      * 사용자별 전략 목록 조회
      */
-    Page<Strategy> findByUserId(Long userId, Pageable pageable);
+    @Query("SELECT s FROM Strategy s WHERE s.user.id = :userId")
+    Page<Strategy> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
     /**
      * 사용자별 활성화된 전략 목록 조회
      */
-    List<Strategy> findByUserIdAndActive(Long userId, boolean active);
+    @Query("SELECT s FROM Strategy s WHERE s.user.id = :userId AND s.active = :active")
+    List<Strategy> findByUserIdAndActive(@Param("userId") Long userId, @Param("active") boolean active);
 
     /**
      * 특정 사용자의 특정 전략 조회
      */
-    Optional<Strategy> findByIdAndUserId(Long id, Long userId);
+    @Query("SELECT s FROM Strategy s WHERE s.id = :id AND s.user.id = :userId")
+    Optional<Strategy> findByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 
     /**
      * 전략 타입별 조회
      */
-    List<Strategy> findByUserIdAndType(Long userId, StrategyType type);
+    @Query("SELECT s FROM Strategy s WHERE s.user.id = :userId AND s.type = :type")
+    List<Strategy> findByUserIdAndType(@Param("userId") Long userId, @Param("type") StrategyType type);
 
     /**
      * 심볼별 전략 조회
      */
-    List<Strategy> findByUserIdAndSymbol(Long userId, String symbol);
+    @Query("SELECT s FROM Strategy s WHERE s.user.id = :userId AND s.symbol = :symbol")
+    List<Strategy> findByUserIdAndSymbol(@Param("userId") Long userId, @Param("symbol") String symbol);
 
     /**
      * Nautilus Strategy ID로 조회
@@ -57,7 +62,8 @@ public interface StrategyRepository extends JpaRepository<Strategy, Long> {
     /**
      * 활성화된 전략 수 카운트 (Integer 반환)
      */
-    Integer countByUserIdAndActive(Long userId, boolean active);
+    @Query("SELECT COUNT(s) FROM Strategy s WHERE s.user.id = :userId AND s.active = :active")
+    Integer countByUserIdAndActive(@Param("userId") Long userId, @Param("active") boolean active);
 
     /**
      * 전체 전략의 평균 수익률 조회
@@ -68,12 +74,14 @@ public interface StrategyRepository extends JpaRepository<Strategy, Long> {
     /**
      * 사용자별 전략 존재 여부 확인
      */
-    boolean existsByIdAndUserId(Long id, Long userId);
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Strategy s WHERE s.id = :id AND s.user.id = :userId")
+    boolean existsByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 
     /**
      * 중복 전략 확인 (같은 사용자, 같은 이름)
      */
-    boolean existsByUserIdAndName(Long userId, String name);
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Strategy s WHERE s.user.id = :userId AND s.name = :name")
+    boolean existsByUserIdAndName(@Param("userId") Long userId, @Param("name") String name);
 
     /**
      * 모든 활성화된 전략 조회 (시스템 모니터링용)

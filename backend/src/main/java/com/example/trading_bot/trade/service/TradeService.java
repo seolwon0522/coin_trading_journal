@@ -182,12 +182,38 @@ public class TradeService {
      */
     private BigDecimal calculatePnlPercent(Trade trade, BigDecimal pnl) {
         BigDecimal entryValue = trade.getEntryPrice().multiply(trade.getEntryQuantity());
-        
+
         if (entryValue.compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ZERO;
         }
-        
+
         return pnl.divide(entryValue, PNL_DECIMAL_SCALE, RoundingMode.HALF_UP)
                   .multiply(HUNDRED);
+    }
+
+    /**
+     * 특정 전략의 거래 목록 조회
+     */
+    public java.util.List<TradeResponse> getTradesByStrategy(Long userId, Long strategyId) {
+        log.debug("전략 거래 조회: userId={}, strategyId={}", userId, strategyId);
+
+        java.util.List<Trade> trades = tradeRepository.findByUserIdAndStrategyIdOrderByEntryTimeDesc(userId, strategyId);
+
+        return trades.stream()
+                .map(TradeResponse::from)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * 거래 타입별 조회 (MANUAL, AUTO)
+     */
+    public java.util.List<TradeResponse> getTradesByType(Long userId, String type) {
+        log.debug("타입별 거래 조회: userId={}, type={}", userId, type);
+
+        java.util.List<Trade> trades = tradeRepository.findByUserIdAndTypeOrderByEntryTimeDesc(userId, type);
+
+        return trades.stream()
+                .map(TradeResponse::from)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

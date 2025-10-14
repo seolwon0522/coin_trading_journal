@@ -18,11 +18,12 @@ from nautilus_trader.model.instruments import Instrument
 from nautilus_trader.trading.strategy import Strategy
 
 
-class MomentumConfig(StrategyConfig):
+class MomentumConfig(StrategyConfig, kw_only=True):
     """Configuration for Momentum Strategy."""
 
     instrument_id: str
     bar_type: str
+    order_id_tag: str = "001"
     lookback_period: int = 20  # Period for momentum calculation
     momentum_threshold: float = 0.02  # 2% momentum threshold
     trade_size: Decimal = Decimal("0.01")

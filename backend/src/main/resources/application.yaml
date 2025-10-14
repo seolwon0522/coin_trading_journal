@@ -12,14 +12,26 @@ spring:
     username: postgres
     password: 1q2w3e4r!
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    open-in-view: false  # N+1 문제 방지 및 성능 개선
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 20  # 배치 삽입 최적화
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
 
 
 # JWT 설정
@@ -52,7 +64,7 @@ binance:
 # Nautilus Service 설정
 nautilus:
   service:
-    url: http://localhost:8002
+    url: http://localhost:8001
 
 # Redis 설정
   redis:

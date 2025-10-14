@@ -285,8 +285,7 @@ docker-compose logs -f
 2. 과거 데이터 기간 선택
 3. 백테스트 실행 및 결과 분석
 
-### 🔑 인증 플로우
-
+### 🔑 인증 플로우 
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -304,7 +303,6 @@ sequenceDiagram
     Note over F: 토큰 만료 시
     F->>B: POST /api/auth/refresh
     B-->>F: 새 Access Token
-```
 
 ### 📱 API 사용 예제
 

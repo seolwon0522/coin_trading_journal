@@ -1,4 +1,4 @@
-﻿"""
+"""
 API Routes for Nautilus Trading Service
 """
 
@@ -316,7 +316,7 @@ async def close_position(
     position_id: str,
     manager: NodeManager = Depends(get_node_manager)
 ):
-    """Close a specific position"""
+    """Close a specific position"""
     try:
         await manager.close_position(position_id)
         return SuccessResponse(
@@ -342,7 +342,7 @@ async def close_position(
 
 @portfolio_router.post("/positions/close-all", response_model=SuccessResponse)
 async def close_all_positions(manager: NodeManager = Depends(get_node_manager)):
-    """Close all open positions"""
+    """Close all open positions"""
     try:
         count = await manager.close_all_positions()
         return SuccessResponse(
@@ -368,7 +368,29 @@ async def run_backtest(
     request: BacktestRequest,
     manager: NodeManager = Depends(get_node_manager)
 ):
-    """Run a backtest with specified parameters"""
+    """Run a backtest with specified parameters and real-time progress updates via WebSocket"""
+    from app.websocket.manager import ws_manager
+
+    # Progress callback for WebSocket updates
+    async def progress_callback(progress_data: dict):
+        """Send progress updates to WebSocket clients"""
+        try:
+            await ws_manager.broadcast(
+                {
+                    "type": "backtest_progress",
+                    "stage": progress_data.get("stage", "running"),
+                    "progress": progress_data.get("progress", 0),
+                    "message": progress_data.get("message", ""),
+                    "long_trades": progress_data.get("long_trades", 0),
+                    "short_trades": progress_data.get("short_trades", 0),
+                    "total_trades": progress_data.get("total_trades", 0),
+                    "win_rate": progress_data.get("win_rate", 0),
+                },
+                channel="backtest"
+            )
+        except Exception as e:
+            logger.error(f"Failed to send progress update: {e}")
+
     try:
         result = await manager.run_backtest(
             strategy_type=request.strategy_type,
@@ -432,7 +454,7 @@ async def get_backtest_history(
     limit: int = 10,
     manager: NodeManager = Depends(get_node_manager)
 ):
-    """Get history of recent backtests"""
+    """Get history of recent backtests"""
     try:
         return await manager.get_backtest_history(limit=limit)
     except NotImplementedError as e:
@@ -446,15 +468,3 @@ async def get_backtest_history(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
-
-
-
-
-
-
-
-
-
-
-
-

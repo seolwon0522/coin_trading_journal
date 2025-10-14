@@ -84,6 +84,15 @@ public class SecurityConfig {
                 // API 키 관리 - 인증 필수
                 .requestMatchers("/api/api-keys/**").authenticated()
 
+                // Nautilus 관련 API - 인증 필수
+                .requestMatchers("/api/nautilus/**").authenticated()
+
+                // 전략 관리 API - 인증 필수
+                .requestMatchers("/api/strategies/**").authenticated()
+
+                // 백테스트 API - 공개 (테스트 및 데모용)
+                .requestMatchers("/api/backtests/**").permitAll()
+
                 // 그 외 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )

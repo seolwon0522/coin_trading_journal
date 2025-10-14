@@ -67,7 +67,7 @@ public class MarketDataService {
 
         if (quoteAsset != null && !quoteAsset.isEmpty()) {
             return coinRankingRepository.findByQuoteAsset(quoteAsset, pageable).getContent();
-        } else {
+        } else { 
             return coinRankingRepository.findTopByVolume(pageable).getContent();
         }
     }

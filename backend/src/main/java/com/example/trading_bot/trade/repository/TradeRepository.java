@@ -33,7 +33,14 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
     // Binance API 동기화 관련 메서드
     boolean existsByUserIdAndExchangeTradeId(Long userId, String exchangeTradeId);
 
+    Optional<Trade> findByUserIdAndExchangeTradeId(Long userId, String exchangeTradeId);
+
     List<Trade> findByUserIdAndExchangeIsNull(Long userId);
 
     List<Trade> findByUserIdAndExchangeNotNull(Long userId);
+
+    // Nautilus 통합 관련 메서드
+    List<Trade> findByUserIdAndStrategyIdOrderByEntryTimeDesc(Long userId, Long strategyId);
+
+    List<Trade> findByUserIdAndTypeOrderByEntryTimeDesc(Long userId, String type);
 }

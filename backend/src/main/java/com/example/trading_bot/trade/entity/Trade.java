@@ -2,6 +2,7 @@ package com.example.trading_bot.trade.entity;
 
 import com.example.trading_bot.auth.entity.User;
 import com.example.trading_bot.common.entity.BaseTimeEntity;
+import com.example.trading_bot.strategy.entity.Strategy;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +26,11 @@ public class Trade extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-    
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "strategy_id")
+    private Strategy strategy;
+
     @Column(nullable = false, length = 20)
     private String symbol;
     
@@ -77,7 +82,10 @@ public class Trade extends BaseTimeEntity {
     
     @Column(precision = 20, scale = 8)
     private BigDecimal quoteQuantity; // Quote 자산 수량 (USDT 등)
-    
+
     @Column(precision = 20, scale = 8)
     private BigDecimal realizedPnl; // 실현 손익 (Binance 제공)
+
+    @Column(length = 20)
+    private String type; // "MANUAL", "AUTO" (자동매매 여부)
 }

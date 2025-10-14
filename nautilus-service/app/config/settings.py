@@ -12,20 +12,20 @@ class Settings(BaseSettings):
     # API Settings
     app_name: str = "Nautilus Trading Service"
     app_version: str = "1.0.0"
-    api_prefix: str = "/api/v1"
+    api_prefix: str = "/api"
     debug: bool = False
 
     # Server Settings
     host: str = "0.0.0.0"
-    port: int = 8002
+    port: int = 8001
     workers: int = 1
 
     # Binance Settings
     binance_api_key: Optional[str] = None
     binance_api_secret: Optional[str] = None
     binance_testnet: bool = True
-    binance_testnet_url: str = "https://testnet.binancefuture.com"
-    binance_testnet_ws: str = "wss://stream.binancefuture.com"
+    binance_testnet_url: str = "https://testnet.binance.vision"
+    binance_testnet_ws: str = "wss://testnet.binance.vision"
 
     # Database Settings (for strategy persistence)
     database_url: str = "postgresql://trader:password@postgres:5432/trading"

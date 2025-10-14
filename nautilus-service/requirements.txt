@@ -1,9 +1,9 @@
 ﻿# FastAPI and Web Framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0.post1
-python-multipart==0.0.6
-pydantic==2.5.2
-pydantic-settings==2.1.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.6
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
 
 # Nautilus Trader (comment out if not available)
 nautilus-trader==1.220.0
@@ -40,7 +40,6 @@ python-socketio==5.10.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
-httpx  # For test client
 
 # Development Tools
 black==23.11.0

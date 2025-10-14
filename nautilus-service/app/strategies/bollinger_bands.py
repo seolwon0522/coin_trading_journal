@@ -18,11 +18,12 @@ from nautilus_trader.trading.strategy import Strategy
 from nautilus_trader.indicators import BollingerBands
 
 
-class BollingerBandsConfig(StrategyConfig):
+class BollingerBandsConfig(StrategyConfig, kw_only=True):
     """Configuration for Bollinger Bands Strategy."""
 
     instrument_id: str
     bar_type: str
+    order_id_tag: str = "001"
     bb_period: int = 20
     bb_std: float = 2.0
     trade_size: Decimal = Decimal("0.01")

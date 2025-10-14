@@ -15,6 +15,7 @@ import {
   Bot,
   Wallet,
   CandlestickChart,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -96,6 +97,12 @@ export function Sidebar() {
       title: '자동매매 관리',
       href: '/admin/auto-trading',
       icon: Bot,
+      adminOnly: true,
+    },
+    {
+      title: '백테스트',
+      href: '/admin/backtests',
+      icon: Activity,
       adminOnly: true,
     },
   ];

@@ -18,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 자동매매 전략 관리 API 컨트롤러
@@ -178,7 +179,77 @@ public class StrategyController {
     }
 
     /**
-     * 전략 템플릿 조회
+     * 전략 성과 조회
+     */
+    @GetMapping("/{strategyId}/performance")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getStrategyPerformance(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long strategyId) {
+
+        log.info("전략 성과 조회: userId={}, strategyId={}", userPrincipal.getId(), strategyId);
+
+        // 전략 조회 (권한 체크 포함)
+        StrategyResponse strategy = strategyService.getStrategy(userPrincipal.getId(), strategyId);
+
+        // 성과 데이터 구성
+        Map<String, Object> performance = Map.of(
+            "strategyId", strategy.getId(),
+            "totalTrades", strategy.getTotalTrades() != null ? strategy.getTotalTrades() : 0,
+            "winRate", strategy.getWinRate() != null ? strategy.getWinRate().doubleValue() : 0.0,
+            "totalReturn", strategy.getTotalReturn() != null ? strategy.getTotalReturn().doubleValue() : 0.0,
+            "maxDrawdown", strategy.getMaxDrawdown() != null ? strategy.getMaxDrawdown().doubleValue() : 0.0,
+            "sharpeRatio", strategy.getSharpeRatio() != null ? strategy.getSharpeRatio().doubleValue() : 0.0,
+            "realizedPnl", strategy.getRealizedPnl() != null ? strategy.getRealizedPnl().doubleValue() : 0.0,
+            "unrealizedPnl", strategy.getUnrealizedPnl() != null ? strategy.getUnrealizedPnl().doubleValue() : 0.0,
+            "lastUpdated", strategy.getUpdatedAt()
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(performance));
+    }
+
+    /**
+     * 전략 템플릿 목록 조회
+     */
+    @GetMapping("/templates")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getStrategyTemplates() {
+        List<Map<String, Object>> templates = List.of(
+            Map.of(
+                "type", "EMA_CROSS",
+                "name", "EMA Cross",
+                "description", "지수이동평균선 교차 전략",
+                "defaultParams", Map.of(
+                    "fast_period", 12,
+                    "slow_period", 26,
+                    "timeframe", "1m"
+                )
+            ),
+            Map.of(
+                "type", "MARKET_MAKER",
+                "name", "Market Maker",
+                "description", "변동성 기반 마켓 메이킹 전략",
+                "defaultParams", Map.of(
+                    "spread_bps", 10,
+                    "order_size", 100,
+                    "timeframe", "1m"
+                )
+            ),
+            Map.of(
+                "type", "ORDERBOOK_IMBALANCE",
+                "name", "Orderbook Imbalance",
+                "description", "오더북 불균형 기반 고빈도 매매",
+                "defaultParams", Map.of(
+                    "imbalance_threshold", 0.7,
+                    "min_spread_bps", 5,
+                    "timeframe", "1m"
+                )
+            )
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(templates));
+    }
+
+    /**
+     * 전략 템플릿 조회 (개별)
      */
     @GetMapping("/templates/{type}")
     public ResponseEntity<ApiResponse<StrategyRequest>> getStrategyTemplate(

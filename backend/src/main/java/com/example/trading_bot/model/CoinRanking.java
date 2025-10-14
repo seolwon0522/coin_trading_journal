@@ -24,18 +24,18 @@ public class CoinRanking {
     @Column(nullable = false, unique = true, length = 20)
     private String symbol;
 
-    @Column(name = "base_asset", nullable = false, length = 10)
+    @Column(name = "base_asset", nullable = false, length = 20)
     private String baseAsset;
 
-    @Column(name = "quote_asset", nullable = false, length = 10)
+    @Column(name = "quote_asset", nullable = false, length = 20)
     private String quoteAsset;
 
     private Integer rank;
 
-    @Column(name = "volume_24h", precision = 20, scale = 8)
+    @Column(name = "volume_24h", precision = 30, scale = 8)
     private BigDecimal volume24h;
 
-    @Column(name = "quote_volume_24h", precision = 20, scale = 8)
+    @Column(name = "quote_volume_24h", precision = 30, scale = 8)
     private BigDecimal quoteVolume24h;
 
     @Column(name = "price_change_percent_24h", precision = 8, scale = 2)

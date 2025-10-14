@@ -95,7 +95,7 @@ class NautilusEventPersisterTest {
         // Then: Trade가 DB에 저장되었는지 확인
         Optional<Trade> savedTrade = tradeRepository.findByUserIdAndExchangeTradeId(
             testUser.getId(), "ORDER_001"
-        ).stream().findFirst();
+        );
 
         assertThat(savedTrade).isPresent();
         assertThat(savedTrade.get().getSymbol()).isEqualTo("BTCUSDT");
@@ -146,11 +146,11 @@ class NautilusEventPersisterTest {
         eventPersister.persistTradeEvent(eventData);
 
         // Then: Trade가 한 번만 저장되었는지 확인
-        long count = tradeRepository.findByUserIdAndExchangeTradeId(testUser.getId(), "ORDER_003")
-            .stream()
-            .count();
+        boolean exists = tradeRepository.existsByUserIdAndExchangeTradeId(testUser.getId(), "ORDER_003");
+        Optional<Trade> savedTrade = tradeRepository.findByUserIdAndExchangeTradeId(testUser.getId(), "ORDER_003");
 
-        assertThat(count).isEqualTo(1);
+        assertThat(exists).isTrue();
+        assertThat(savedTrade).isPresent();
     }
 
     @Test

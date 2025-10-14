@@ -1,12 +1,13 @@
 """Compatibility entrypoint for Nautilus service."""
 from app.main import app
+from app.config import settings
 
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
         "app.main:app",
-        host="0.0.0.0",
-        port=8002,
+        host=settings.host,
+        port=settings.port,
         reload=True,
     )

@@ -10,7 +10,6 @@ import com.example.trading_bot.portfolio.dto.UpdateBuyPriceRequest;
 import com.example.trading_bot.portfolio.entity.Portfolio;
 import com.example.trading_bot.portfolio.service.PortfolioQueryService;
 import com.example.trading_bot.portfolio.service.PortfolioRealtimeService;
-import com.example.trading_bot.portfolio.service.PortfolioSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,7 +22,7 @@ import java.util.Map;
 
 /**
  * 포트폴리오 컨트롤러
- * - 실시간 조회, DB 조회, 동기화를 명확히 분리
+ * - 실시간 조회와 DB 조회를 명확히 분리
  * - Hybrid Real-time Pattern 구현
  */
 @Slf4j
@@ -31,10 +30,9 @@ import java.util.Map;
 @RequestMapping("/api/portfolio")
 @RequiredArgsConstructor
 public class PortfolioController {
-    
-    private final PortfolioRealtimeService realtimeService;  // 실시간 조회
+
+    private final PortfolioRealtimeService realtimeService;  // 실시간 조회 + 동기화
     private final PortfolioQueryService queryService;        // DB 조회
-    private final PortfolioSyncService syncService;          // DB 동기화
     
     /**
      * 실시간 잔고 조회 (Binance API 직접 호출)
@@ -123,19 +121,18 @@ public class PortfolioController {
     @PostMapping("/sync")
     public ResponseEntity<ApiResponse<Map<String, Object>>> syncPortfolio(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        
-        // UserPrincipal null 체크 추가
+
         if (userPrincipal == null) {
             log.error("인증 실패: UserPrincipal이 null입니다. JWT 토큰을 확인해주세요.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error("인증이 필요합니다. 다시 로그인해주세요."));
         }
-        
+
         Long userId = userPrincipal.getId();
         log.info("수동 포트폴리오 동기화 요청: userId={}", userId);
-        
+
         try {
-            Map<String, Object> result = syncService.syncNow(userId);
+            Map<String, Object> result = realtimeService.syncNow(userId);
             return ResponseEntity.ok(ApiResponse.success(result, "포트폴리오 동기화 완료"));
         } catch (BusinessException e) {
             log.error("포트폴리오 동기화 실패 (비즈니스): userId={}, error={}", userId, e.getMessage());
@@ -147,7 +144,7 @@ public class PortfolioController {
                     .body(ApiResponse.error("포트폴리오 동기화 중 오류가 발생했습니다."));
         }
     }
-    
+
     /**
      * 평균 매수가 업데이트
      * - 사용자가 직접 매수가 입력
@@ -156,15 +153,15 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<Portfolio>> updateBuyPrice(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestBody UpdateBuyPriceRequest request) {
-        
+
         Long userId = userPrincipal.getId();
         log.info("평균 매수가 업데이트: userId={}, symbol={}", userId, request.getSymbol());
-        
-        Portfolio updated = syncService.updateBuyPrice(userId, request);
-        
+
+        Portfolio updated = realtimeService.updateBuyPrice(userId, request);
+
         return ResponseEntity.ok(ApiResponse.success(updated, "평균 매수가 업데이트 성공"));
     }
-    
+
     /**
      * 현재가만 업데이트 (DB의 가격 정보만 갱신)
      * - 잔고는 그대로, 가격만 업데이트
@@ -172,12 +169,12 @@ public class PortfolioController {
     @PostMapping("/update-prices")
     public ResponseEntity<ApiResponse<Void>> updateCurrentPrices(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        
+
         Long userId = userPrincipal.getId();
         log.debug("현재가 업데이트 요청: userId={}", userId);
-        
-        syncService.updatePricesOnly(userId);
-        
+
+        realtimeService.updatePricesOnly(userId);
+
         return ResponseEntity.ok(ApiResponse.success(null, "현재가 업데이트 완료"));
     }
     

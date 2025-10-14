@@ -18,11 +18,12 @@ from nautilus_trader.model.instruments import Instrument
 from nautilus_trader.trading.strategy import Strategy
 
 
-class RSIConfig(StrategyConfig):
+class RSIConfig(StrategyConfig, kw_only=True):
     """Configuration for RSI Strategy."""
 
     instrument_id: str
     bar_type: str
+    order_id_tag: str = "001"
     rsi_period: int = 14
     rsi_overbought: int = 70
     rsi_oversold: int = 30
@@ -171,8 +172,9 @@ class RSIStrategy(Strategy):
         # This would require limit orders or stop orders
         # depending on exchange support
 
+        rsi_val = self.last_rsi_value if self.last_rsi_value is not None else 0.0
         self.log.info(
-            f"Entering LONG position: size={self.trade_size}, RSI={self.last_rsi_value:.2f}",
+            f"Entering LONG position: size={self.trade_size}, RSI={rsi_val:.2f}",
             color=LogColor.BLUE,
         )
 

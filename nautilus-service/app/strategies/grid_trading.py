@@ -13,14 +13,15 @@ from nautilus_trader.model.events import OrderFilled
 from nautilus_trader.model.objects import Price
 from nautilus_trader.model.orders import LimitOrder
 
-from app.strategies.base_strategy import BaseStrategy
+from nautilus_trader.trading.strategy import Strategy
 
 
-class GridTradingConfig(StrategyConfig):
+class GridTradingConfig(StrategyConfig, kw_only=True):
     """Configuration model for grid trading strategy."""
 
     instrument_id: str
     bar_type: str
+    order_id_tag: str = "001"
     upper_price: Decimal = Decimal("70000")
     lower_price: Decimal = Decimal("30000")
     grid_levels: int = 10
@@ -30,13 +31,18 @@ class GridTradingConfig(StrategyConfig):
     post_only: bool = True
 
 
-class GridTradingStrategy(BaseStrategy):
+class GridTradingStrategy(Strategy):
     """그리드 트레이딩 전략."""
 
     _PRICE_QUANTIZE = Decimal("0.01")
 
     def __init__(self, config: GridTradingConfig):
         super().__init__(config)
+        
+        from nautilus_trader.model.identifiers import InstrumentId
+        self.instrument_id = InstrumentId.from_str(config.instrument_id)
+        self._position_size = Decimal(str(config.position_size))
+        self._max_positions = int(config.max_positions)
 
         self.upper_price = Decimal(str(config.upper_price))
         self.lower_price = Decimal(str(config.lower_price))
@@ -61,21 +67,44 @@ class GridTradingStrategy(BaseStrategy):
     # Lifecycle
     # ------------------------------------------------------------------
     def on_start(self):  # type: ignore[override]
-        super().on_start()
+        from nautilus_trader.model.data import BarType
+        
+        # Subscribe to bar data for backtesting
+        bar_type_str = f"{self.instrument_id.symbol.value}.BINANCE-1-MINUTE-LAST-EXTERNAL"
+        bar_type = BarType.from_str(bar_type_str)
+        self.subscribe_bars(bar_type)
+        
+        # Subscribe to ticks for live trading
+        self.subscribe_quote_ticks(self.instrument_id)
+        self.subscribe_trade_ticks(self.instrument_id)
+        
         self.log.info(
-            "Grid Trading Strategy started: range=[%s - %s], levels=%s",
-            self.lower_price,
-            self.upper_price,
-            self.grid_levels,
+            f"Grid Trading Strategy started: range=[{self.lower_price} - {self.upper_price}], levels={self.grid_levels}"
         )
 
     def on_stop(self):  # type: ignore[override]
         self._cancel_all_grid_orders()
-        super().on_stop()
+        
+        # Unsubscribe from data
+        self.unsubscribe_quote_ticks(self.instrument_id)
+        self.unsubscribe_trade_ticks(self.instrument_id)
+        
+        # Close all positions
+        self.close_all_positions(self.instrument_id)
+        
+        self.log.info("Grid Trading Strategy stopped")
 
     # ------------------------------------------------------------------
     # Event handlers
     # ------------------------------------------------------------------
+    def on_bar(self, bar: Bar):
+        """Handle bar data for backtesting."""
+        # Extract price from bar
+        price = Decimal(str(bar.close))
+        self.current_price = price
+        self.log.debug(f"Bar received: price={price}")
+        # Grid trading logic would go here
+    
     def _process_quote_tick(self, tick: QuoteTick):
         mid_price = (float(tick.bid_price) + float(tick.ask_price)) / 2
         self.current_price = Decimal(str(mid_price))

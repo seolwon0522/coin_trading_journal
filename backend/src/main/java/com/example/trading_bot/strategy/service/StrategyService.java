@@ -223,8 +223,22 @@ public class StrategyService {
 
             log.info("전략 비활성화 완료: strategyId={}, nautilusId={}", strategyId, strategy.getNautilusStrategyId());
         } catch (NautilusClientException e) {
-            log.error("Nautilus 전략 중지 실패: strategyId={}, error={}", strategyId, e.getMessage());
-            throw new BusinessException("트레이딩 엔진 중지 실패: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            // Nautilus에서 전략을 찾을 수 없는 경우에도 DB 상태 업데이트
+            String errorMessage = e.getMessage();
+            Throwable cause = e.getCause();
+
+            // 원본 예외 메시지에서 "Strategy not found" 확인
+            boolean isStrategyNotFound = (errorMessage != null && errorMessage.contains("Strategy not found")) ||
+                                        (cause != null && cause.getMessage() != null && cause.getMessage().contains("Strategy not found"));
+
+            if (isStrategyNotFound) {
+                log.warn("Nautilus에서 전략을 찾을 수 없음. DB 상태만 업데이트: strategyId={}", strategyId);
+                strategy.deactivate();
+                strategyRepository.save(strategy);
+            } else {
+                log.error("Nautilus 전략 중지 실패: strategyId={}, error={}", strategyId, e.getMessage());
+                throw new BusinessException("트레이딩 엔진 중지 실패: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
         }
     }
 

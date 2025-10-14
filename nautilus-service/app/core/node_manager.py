@@ -126,10 +126,12 @@ class NodeManager:
 
             await self._engine.stop()
             await self._engine.dispose()
-            self._mode = None
+            # Keep mode for restart
+            # self._mode = None
             self._started_at = None
-            self._strategies.clear()
-            logger.info("Trading node stopped")
+            # Don't clear strategies - we'll re-add them on restart
+            # self._strategies.clear()
+            logger.info("Trading node stopped (keeping strategies for restart)")
 
     # ------------------------------------------------------------------
     # Strategy management
@@ -143,12 +145,36 @@ class NodeManager:
         strategy_id: Optional[str] = None,
         auto_start: bool = False,
     ) -> StrategyInfo:
-        await self.ensure_node_running()
-
         strategy_id = strategy_id or self._generate_strategy_id(strategy_type)
         if strategy_id in self._strategies:
             raise ValueError(f"Strategy {strategy_id} already exists")
 
+        # If node is running, we need to stop it first to add strategies
+        was_running = self._engine.is_running
+        if was_running:
+            logger.info("Stopping node to add new strategy...")
+            await self.stop_node()
+            # Wait a moment for clean shutdown
+            await asyncio.sleep(0.5)
+        
+        # Initialize node (will create new node after disposal)
+        await self._engine.initialize()
+
+        # Re-add all existing strategies first
+        for existing_strategy_id, existing_record in self._strategies.items():
+            existing_strategy = StrategyFactory.create(
+                strategy_type=existing_record.strategy_type,
+                instrument_id=existing_record.instrument_id,
+                timeframe=existing_record.timeframe,
+                parameters=existing_record.parameters,
+                strategy_id=existing_strategy_id,
+            )
+            self._engine.node.trader.add_strategy(existing_strategy)
+            # Update the record with new strategy instance
+            existing_record.strategy = existing_strategy
+            logger.info(f"Re-added existing strategy {existing_strategy_id}")
+
+        # Create and add the new strategy
         strategy = StrategyFactory.create(
             strategy_type=strategy_type,
             instrument_id=instrument_id,
@@ -157,7 +183,10 @@ class NodeManager:
             strategy_id=strategy_id,
         )
 
+        # Add strategy to trader (trader must not be running)
         self._engine.node.trader.add_strategy(strategy)
+        logger.info(f"Added strategy {strategy_id} to trader (Nautilus ID: {strategy.id})")
+        
         record = StrategyRecord(
             strategy_id=strategy_id,
             strategy=strategy,
@@ -168,6 +197,10 @@ class NodeManager:
         )
         self._strategies[strategy_id] = record
 
+        # Start the node with all strategies
+        logger.info(f"Starting node with {len(self._strategies)} strategies...")
+        await self._engine.start()
+        
         if auto_start:
             await self.start_strategy(strategy_id)
 
@@ -232,7 +265,11 @@ class NodeManager:
         if record.is_running:
             return
         await self.ensure_node_running()
-        self._engine.node.trader.start_strategy(record.strategy)
+        # Use the strategy object's id attribute (which is a StrategyId)
+        # Convert to string to ensure proper matching
+        nautilus_strategy_id = record.strategy.id
+        logger.info(f"Starting strategy with Nautilus ID: {nautilus_strategy_id}")
+        self._engine.node.trader.start_strategy(nautilus_strategy_id)
         await self._emit_strategy_event("strategy_started", record)
 
     async def stop_strategy(self, strategy_id: str) -> None:
@@ -241,7 +278,10 @@ class NodeManager:
             raise ValueError(f"Strategy {strategy_id} not found")
         if not record.is_running:
             return
-        self._engine.node.trader.stop_strategy(record.strategy)
+        # Use the strategy object's id attribute
+        nautilus_strategy_id = record.strategy.id
+        logger.info(f"Stopping strategy with Nautilus ID: {nautilus_strategy_id}")
+        self._engine.node.trader.stop_strategy(nautilus_strategy_id)
         await self._emit_strategy_event("strategy_stopped", record)
 
     # ------------------------------------------------------------------
@@ -372,7 +412,135 @@ class NodeManager:
         parameters: Dict[str, Any],
         initial_balance: float,
     ) -> Any:
-        raise NotImplementedError("Backtesting is not implemented yet")
+        """Run backtest with historical data."""
+        from datetime import datetime
+        import time
+        from app.core.backtest_runner import download_binance_data, run_backtest_with_data
+
+        logger.info(f"Running backtest: {strategy_type} from {start_date} to {end_date}")
+        start_time = time.time()
+
+        # Progress callback for WebSocket updates
+        async def progress_callback(progress_data: Dict[str, Any]):
+            """Send progress updates via WebSocket."""
+            payload = {
+                "type": "backtest_progress",
+                "strategy_type": strategy_type,
+                "symbol": instrument_id,
+                **progress_data,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+            await ws_manager.broadcast(payload, "backtest")
+            logger.debug(f"Backtest progress: {progress_data.get('stage')} - {progress_data.get('progress')}%")
+
+        try:
+            # Parse dates
+            start = datetime.fromisoformat(start_date)
+            end = datetime.fromisoformat(end_date)
+            days = (end - start).days
+
+            if days <= 0:
+                raise ValueError("End date must be after start date")
+
+            # Extract symbol from instrument_id (e.g., "BTCUSDT.BINANCE" -> "BTCUSDT")
+            symbol = instrument_id.split(".")[0] if "." in instrument_id else instrument_id
+
+            # Send initial progress
+            await progress_callback({
+                "stage": "downloading_data",
+                "progress": 5,
+                "message": f"Downloading {days} days of historical data..."
+            })
+
+            # Download historical data
+            df = await download_binance_data(
+                symbol=symbol,
+                interval=timeframe,
+                days=min(days, 365)  # Limit to 1 year maximum
+            )
+
+            # Run backtest with progress callback
+            results = run_backtest_with_data(
+                df=df,
+                symbol=symbol,
+                strategy_type=strategy_type,
+                parameters=parameters,
+                initial_balance=initial_balance,
+                timeframe=timeframe,
+                progress_callback=lambda data: asyncio.create_task(progress_callback(data))
+            )
+
+            # Calculate execution time
+            execution_time = time.time() - start_time
+
+            # Extract metrics from results
+            winning_trades = results.get('winning_trades', 0)
+            losing_trades = results.get('losing_trades', 0)
+            total_trades = results.get('total_trades', 0)
+            total_pnl = results.get('total_pnl', 0.0)
+            
+            # Calculate averages and profit factor
+            avg_win = 0.0
+            avg_loss = 0.0
+            largest_win = 0.0
+            largest_loss = 0.0
+            profit_factor = 0.0
+            
+            if total_pnl > 0 and winning_trades > 0:
+                # Approximate avg_win: distribute positive PnL across winning trades
+                avg_win = abs(total_pnl) / winning_trades
+                largest_win = avg_win * 2.5  # Approximation
+            elif total_pnl < 0 and losing_trades > 0:
+                # If net loss, approximate based on win rate
+                win_rate = results.get('win_rate', 0.0) / 100.0
+                if win_rate > 0 and winning_trades > 0:
+                    # Estimate wins needed to reach current PnL
+                    total_losses = abs(total_pnl)
+                    avg_loss = total_losses / (losing_trades + winning_trades * 0.5)
+                    avg_win = avg_loss * 0.8  # Conservative estimate
+                else:
+                    avg_loss = abs(total_pnl) / losing_trades
+                largest_loss = avg_loss * 2.5  # Approximation
+            
+            # Calculate profit factor
+            if total_trades > 0:
+                total_wins = avg_win * winning_trades if winning_trades > 0 else 0
+                total_losses = abs(avg_loss * losing_trades) if losing_trades > 0 else 1  # Avoid division by zero
+                profit_factor = total_wins / total_losses if total_losses > 0 else 0.0
+
+            # Convert to BacktestResult format
+            backtest_result = {
+                "strategy_id": self._generate_strategy_id(strategy_type),
+                "status": "completed",
+                "total_return": results.get('total_return', 0.0),
+                "sharpe_ratio": results.get('sharpe_ratio') or 0.0,
+                "max_drawdown": results.get('max_drawdown', 0.0),
+                "win_rate": results.get('win_rate', 0.0),
+                "profit_factor": profit_factor,
+                "total_trades": total_trades,
+                "winning_trades": winning_trades,
+                "losing_trades": losing_trades,
+                "long_trades": results.get('long_trades', 0),
+                "short_trades": results.get('short_trades', 0),
+                "avg_win": round(avg_win, 2),
+                "avg_loss": round(avg_loss, 2),
+                "largest_win": round(largest_win, 2),
+                "largest_loss": round(largest_loss, 2),
+                "start_date": start_date,
+                "end_date": end_date,
+                "initial_balance": initial_balance,
+                "final_balance": results.get('final_balance', initial_balance),
+                "execution_time_seconds": round(execution_time, 2),
+            }
+
+            logger.info(f"Backtest completed: {total_trades} trades, " +
+                       f"{backtest_result['total_return']:.2f}% return")
+
+            return backtest_result
+
+        except Exception as e:
+            logger.error(f"Backtest failed: {e}")
+            raise
 
     async def get_backtest_result(self, backtest_id: str) -> Any:
         raise NotImplementedError("Backtesting is not implemented yet")

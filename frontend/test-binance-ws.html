@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Binance WebSocket Test</title>
+</head>
+<body>
+    <h1>Binance WebSocket Connection Test</h1>
+    <div id="status">Disconnected</div>
+    <div id="messages"></div>
+
+    <script>
+        const symbol = 'btcusdt';
+        
+        // Test 1: Single stream ticker
+        console.log('=== Test 1: Ticker Stream ===');
+        const tickerUrl = `wss://stream.binance.com:9443/ws/${symbol}@ticker`;
+        console.log('Connecting to:', tickerUrl);
+        
+        const tickerWs = new WebSocket(tickerUrl);
+        
+        tickerWs.onopen = () => {
+            console.log('✅ Ticker WebSocket Connected');
+            document.getElementById('status').textContent = 'Connected to Ticker';
+        };
+        
+        tickerWs.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Ticker data:', data);
+            document.getElementById('messages').innerHTML += `<p>Ticker: ${data.c}</p>`;
+        };
+        
+        tickerWs.onerror = (error) => {
+            console.error('❌ Ticker WebSocket Error:', error);
+            document.getElementById('status').textContent = 'Ticker Error';
+        };
+        
+        tickerWs.onclose = (event) => {
+            console.log('Ticker WebSocket Closed:', event.code, event.reason);
+        };
+        
+        // Test 2: Orderbook stream
+        setTimeout(() => {
+            console.log('=== Test 2: Depth Stream ===');
+            const depthUrl = `wss://stream.binance.com:9443/ws/${symbol}@depth20@100ms`;
+            console.log('Connecting to:', depthUrl);
+            
+            const depthWs = new WebSocket(depthUrl);
+            
+            depthWs.onopen = () => {
+                console.log('✅ Depth WebSocket Connected');
+                document.getElementById('status').textContent = 'Connected to Depth';
+            };
+            
+            depthWs.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Depth data:', data);
+                if (data.bids && data.asks) {
+                    document.getElementById('messages').innerHTML += `<p>Depth: ${data.bids.length} bids, ${data.asks.length} asks</p>`;
+                }
+            };
+            
+            depthWs.onerror = (error) => {
+                console.error('❌ Depth WebSocket Error:', error);
+            };
+            
+            depthWs.onclose = (event) => {
+                console.log('Depth WebSocket Closed:', event.code, event.reason);
+            };
+        }, 3000);
+    </script>
+</body>
+</html>
