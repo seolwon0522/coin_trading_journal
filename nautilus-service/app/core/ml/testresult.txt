@@ -1,0 +1,447 @@
+2025-10-15 12:36:18,912 - __main__ - INFO - ================================================================================
+2025-10-15 12:36:18,912 - __main__ - INFO -   Improved Feature Engineering Pipeline Tests
+2025-10-15 12:36:18,913 - __main__ - INFO - ================================================================================
+2025-10-15 12:36:18,913 - __main__ - INFO -
+📊 Test 1: 1-Hour Data Analysis
+2025-10-15 12:36:18,913 - __main__ - INFO - Testing improved feature engineering pipeline with 1h data...
+2025-10-15 12:36:18,913 - __main__ - INFO - Downloading BTCUSDT 1h data for 60 days...
+2025-10-15 12:36:20,990 - app.core.backtest_runner - INFO - Downloading 60 days of BTCUSDT 1h data from Binance...
+2025-10-15 12:36:21,341 - app.core.backtest_runner - INFO - Downloaded 1440 bars from 2025-08-16 04:00:00+00:00 to 2025-10-15 03:00:00+00:00
+2025-10-15 12:36:21,342 - __main__ - INFO - Downloaded 1440 bars
+2025-10-15 12:36:21,343 - __main__ - INFO - Creating features...
+2025-10-15 12:36:37,688 - __main__ - INFO - Created 69 features
+
+================================================================================
+  Raw Features (Before Normalization)
+================================================================================
+Shape: (1392, 69)
+Features: 69
+Samples: 1392
+Date Range: 2025-08-18 04:00:00+00:00 to 2025-10-15 03:00:00+00:00
+
+--------------------------------------------------------------------------------
+  Basic Statistics
+--------------------------------------------------------------------------------
+                      mean         std         min          max
+tech_ema         -0.033238    0.871734   -0.999998     0.999999
+tech_rsi         -0.002176    0.201325   -0.892507     0.814575
+tech_macd         0.000587    0.204495   -0.600000     0.600000
+tech_bollinger   -0.006806    0.258103   -0.499839     0.497029
+tech_momentum    -0.004050    0.157928   -0.725388     0.447968
+...                    ...         ...         ...          ...
+return_mean_48   -0.000019    0.000543   -0.002158     0.001242
+return_std_48     0.003362    0.001151    0.001038     0.006981
+return_skew_48   -0.004340    1.411323   -4.150631     4.860287
+volume_mean_48  678.025459  333.331451  190.210158  2219.000703
+volume_std_48   585.282061  585.644807   54.566160  3526.422871
+
+[69 rows x 4 columns]
+================================================================================
+
+
+================================================================================
+  Market Regime Detection Analysis
+================================================================================
+
+--------------------------------------------------------------------------------
+  Regime Distribution
+--------------------------------------------------------------------------------
+regime_trending_up          835 (60.0%) #############################
+regime_trending_down         71 ( 5.1%) ##
+regime_ranging              131 ( 9.4%) ####
+regime_high_vol             131 ( 9.4%) ####
+regime_breakout             153 (11.0%) #####
+
+--------------------------------------------------------------------------------
+  Regime Metrics
+--------------------------------------------------------------------------------
+regime_confidence         mean=0.241 std=0.330 range=[0.000, 1.000]
+regime_trend_strength     mean=0.262 std=0.132 range=[0.000, 0.634]
+regime_volatility         mean=0.962 std=0.349 range=[0.000, 2.571]
+regime_mean_reversion     mean=0.726 std=0.172 range=[0.000, 0.857]
+regime_volume_strength    mean=0.987 std=0.828 range=[0.000, 9.326]
+================================================================================
+
+
+================================================================================
+  Signal Component Analysis
+================================================================================
+
+📊 Technical Signals:
+  tech_ema                       mean=-0.0332 std= 0.8717 unique= 1370
+  tech_rsi                       mean=-0.0022 std= 0.2013 unique= 1392
+  tech_macd                      mean= 0.0006 std= 0.2045 unique= 1289
+  tech_bollinger                 mean=-0.0068 std= 0.2581 unique= 1392
+  tech_momentum                  mean=-0.0041 std= 0.1579 unique= 1392
+  tech_trend_strength            mean= 0.5627 std= 0.2244 unique= 1272
+  tech_signal                    mean=-0.0150 std= 0.2442 unique= 1392
+  tech_confidence                mean= 0.0001 std= 0.0016 unique=    6
+
+🔬 Microstructure Signals:
+  micro_volume_delta             mean= 0.0032 std= 0.0027 unique= 1392
+  micro_trade_intensity          mean=-0.0045 std= 0.1135 unique= 1392
+  micro_spread                   mean= 0.0079 std= 0.4224 unique= 1015
+  micro_price_impact             mean=-0.0111 std= 0.2028 unique= 1392
+  micro_signal                   mean=-0.0009 std= 0.0910 unique= 1392
+  micro_buy_pressure             mean= 0.0345 std= 0.0544 unique=  689
+  micro_sell_pressure            mean= 0.0354 std= 0.0536 unique=  705
+  micro_liquidity                mean= 0.8116 std= 0.1232 unique= 1267
+  micro_confidence               mean= 0.0019 std= 0.0102 unique=   75
+================================================================================
+
+2025-10-15 12:36:37,803 - __main__ - INFO - Validating signal quality...
+2025-10-15 12:36:37,810 - app.core.factors.signal_validator - WARNING - Signal 'tech_confidence' validation failed: Low information: only 0.43% unique values
+2025-10-15 12:36:37,827 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,828 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,830 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,831 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,833 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,840 - app.core.factors.signal_validator - WARNING - Signal 'day_sin' validation failed: Low information: only 0.50% unique values
+2025-10-15 12:36:37,841 - app.core.factors.signal_validator - WARNING - Signal 'day_cos' validation failed: Low information: only 0.50% unique values
+2025-10-15 12:36:37,867 - app.core.factors.signal_validator - INFO - Feature validation complete: 61/69 valid features (88.4%)
+2025-10-15 12:36:37,867 - app.core.factors.signal_validator - WARNING - Invalid features detected: tech_confidence, regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout, day_sin, day_cos
+
+================================================================================
+  Feature Quality Report
+================================================================================
+
+✅ Valid Features: 61/69
+❌ Invalid Features: 8/69
+
+--------------------------------------------------------------------------------
+  Invalid Features Details
+--------------------------------------------------------------------------------
+
+tech_confidence:
+  - Low information: only 0.43% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.0015729800921648268), 'mean': np.float64(7.572478912771457e-05), 'variance_ratio': np.float64(20.772327137311642), 'outlier_ratio': np.float64(0.0028735632183908046), 'outlier_threshold': np.float64(0.007864900460824133), 'unique_ratio': 0.004310344827586207}
+
+regime_trending_up:
+  - Low information: only 0.14% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.4901033292835452), 'mean': np.float64(0.5998563218390804), 'variance_ratio': np.float64(0.8170345321708922), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(2.450516646417726), 'unique_ratio': 0.0014367816091954023}
+
+regime_trending_down:
+  - Low information: only 0.14% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.2200885253465817), 'mean': np.float64(0.05100574712643678), 'variance_ratio': np.float64(4.314975032147066), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(1.1004426267329084), 'unique_ratio': 0.0014367816091954023}
+
+regime_ranging:
+  - Low information: only 0.14% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.2920855071644979), 'mean': np.float64(0.09410919540229885), 'variance_ratio': np.float64(3.103687221167794), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(1.4604275358224894), 'unique_ratio': 0.0014367816091954023}
+
+regime_high_vol:
+  - Low information: only 0.14% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.2920855071644979), 'mean': np.float64(0.09410919540229885), 'variance_ratio': np.float64(3.103687221167794), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(1.4604275358224894), 'unique_ratio': 0.0014367816091954023}
+
+regime_breakout:
+  - Low information: only 0.14% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.31289468494087663), 'mean': np.float64(0.10991379310344827), 'variance_ratio': np.float64(2.8467281139718974), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(1.5644734247043832), 'unique_ratio': 0.0014367816091954023}
+
+day_sin:
+  - Low information: only 0.50% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.7043580031070817), 'mean': np.float64(0.016281370135028703), 'variance_ratio': np.float64(43.261592683264674), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(3.5217900155354087), 'unique_ratio': 0.005028735632183908}
+
+day_cos:
+  - Low information: only 0.50% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.7097420823809989), 'mean': np.float64(0.02447821229079332), 'variance_ratio': np.float64(28.994849540051796), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(3.5487104119049944), 'unique_ratio': 0.005028735632183908}
+
+--------------------------------------------------------------------------------
+  Overall Statistics
+--------------------------------------------------------------------------------
+Std Dev Range: [5.43e-04, 6.14e+02]
+NaN Ratio Range: [0.00%, 0.00%]
+Unique Ratio Range: [0.14%, 100.00%]
+================================================================================
+
+2025-10-15 12:36:37,881 - app.core.factors.signal_validator - WARNING - Signal 'tech_confidence' validation failed: Low information: only 0.43% unique values
+2025-10-15 12:36:37,897 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,899 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,900 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,902 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,903 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:37,910 - app.core.factors.signal_validator - WARNING - Signal 'day_sin' validation failed: Low information: only 0.50% unique values
+2025-10-15 12:36:37,911 - app.core.factors.signal_validator - WARNING - Signal 'day_cos' validation failed: Low information: only 0.50% unique values
+2025-10-15 12:36:37,939 - app.core.factors.signal_validator - INFO - Feature validation complete: 61/69 valid features (88.4%)
+2025-10-15 12:36:37,939 - app.core.factors.signal_validator - WARNING - Invalid features detected: tech_confidence, regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout, day_sin, day_cos
+2025-10-15 12:36:37,940 - app.core.factors.signal_validator - INFO - Removing 8 invalid features
+
+================================================================================
+  ❌ Removed 8 Invalid Features
+================================================================================
+  - tech_confidence
+  - regime_trending_up
+  - regime_trending_down
+  - regime_ranging
+  - regime_high_vol
+  - regime_breakout
+  - day_sin
+  - day_cos
+================================================================================
+
+2025-10-15 12:36:37,943 - __main__ - INFO - Testing normalization with cleaned features...
+2025-10-15 12:36:53,732 - app.core.factors.signal_validator - WARNING - Signal 'tech_confidence' validation failed: Low information: only 0.43% unique values
+2025-10-15 12:36:53,747 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:53,748 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:53,749 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:53,751 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:53,752 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.14% unique values
+2025-10-15 12:36:53,761 - app.core.factors.signal_validator - WARNING - Signal 'day_sin' validation failed: Low information: only 0.50% unique values
+2025-10-15 12:36:53,762 - app.core.factors.signal_validator - WARNING - Signal 'day_cos' validation failed: Low information: only 0.50% unique values
+2025-10-15 12:36:53,792 - app.core.factors.signal_validator - INFO - Feature validation complete: 61/69 valid features (88.4%)
+2025-10-15 12:36:53,792 - app.core.factors.signal_validator - WARNING - Invalid features detected: tech_confidence, regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout, day_sin, day_cos
+2025-10-15 12:36:53,793 - app.core.factors.signal_validator - INFO - Removing 8 invalid features
+
+================================================================================
+  Normalized Features (After Cleaning)
+================================================================================
+Shape: (1392, 61)
+Features: 61
+Samples: 1392
+Date Range: 2025-08-18 04:00:00+00:00 to 2025-10-15 03:00:00+00:00
+
+--------------------------------------------------------------------------------
+  Basic Statistics
+--------------------------------------------------------------------------------
+                        mean  std       min       max
+tech_ema       -7.146263e-17  1.0 -1.109009  1.185267
+tech_rsi       -3.573132e-17  1.0 -4.422367  4.056886
+tech_macd       2.233207e-17  1.0 -2.936932  2.931189
+tech_bollinger  3.573132e-17  1.0 -1.910222  1.952074
+tech_momentum   3.573132e-17  1.0 -4.567516  2.862188
+...                      ...  ...       ...       ...
+return_mean_48 -5.104474e-18  1.0 -3.938002  2.321228
+return_std_48  -4.185668e-16  1.0 -2.019572  3.145321
+return_skew_48  2.041789e-17  1.0 -2.937876  3.446856
+volume_mean_48  4.083579e-17  1.0 -1.463454  4.622952
+volume_std_48   0.000000e+00  1.0 -0.906208  5.022056
+
+[61 rows x 4 columns]
+================================================================================
+
+2025-10-15 12:36:53,899 - __main__ - INFO - Testing feature selection...
+
+================================================================================
+  Feature Selection Results
+================================================================================
+Original features: 69
+After validation: 61
+After selection: 61
+Removed by validation: 8
+Removed by selection: 0
+================================================================================
+
+2025-10-15 12:36:53,906 - __main__ - INFO -
+📊 Test 2: Daily Data Analysis
+2025-10-15 12:36:53,906 - __main__ - INFO - Testing improved feature engineering pipeline with daily data...
+2025-10-15 12:36:53,907 - __main__ - INFO - Downloading BTCUSDT 1d data for 365 days...
+2025-10-15 12:36:53,972 - app.core.backtest_runner - INFO - Downloading 365 days of BTCUSDT 1d data from Binance...
+2025-10-15 12:36:54,276 - app.core.backtest_runner - INFO - Downloaded 365 bars from 2024-10-16 00:00:00+00:00 to 2025-10-15 00:00:00+00:00
+2025-10-15 12:36:54,277 - __main__ - INFO - Downloaded 365 bars
+2025-10-15 12:36:54,277 - __main__ - INFO - Creating features...
+2025-10-15 12:36:57,323 - __main__ - INFO - Created 69 features
+
+================================================================================
+  Daily Features (Normalized)
+================================================================================
+Shape: (335, 69)
+Features: 69
+Samples: 335
+Date Range: 2024-11-15 00:00:00+00:00 to 2025-10-15 00:00:00+00:00
+
+--------------------------------------------------------------------------------
+  Basic Statistics
+--------------------------------------------------------------------------------
+                        mean  std       min       max
+tech_ema        4.242046e-17  1.0 -1.761810  1.123001
+tech_rsi        7.953837e-18  1.0 -2.686380  2.936011
+tech_macd       1.590767e-17  1.0 -1.680555  1.896492
+tech_bollinger  0.000000e+00  1.0 -1.842490  2.119946
+tech_momentum   4.242046e-17  1.0 -1.962133  1.544396
+...                      ...  ...       ...       ...
+return_mean_30 -3.181535e-17  1.0 -2.094631  3.011260
+return_std_30   2.545228e-16  1.0 -1.640047  2.326116
+return_skew_30 -5.302558e-18  1.0 -2.910419  2.620328
+volume_mean_30  2.545228e-16  1.0 -1.300929  2.631669
+volume_std_30  -8.484092e-17  1.0 -1.306897  1.994419
+
+[69 rows x 4 columns]
+
+--------------------------------------------------------------------------------
+  ⚠️ Constant Features Detected (3)
+--------------------------------------------------------------------------------
+  - regime_high_vol: std=0.00e+00, unique=1
+  - hour_sin: std=0.00e+00, unique=1
+  - hour_cos: std=0.00e+00, unique=1
+================================================================================
+
+
+================================================================================
+  Market Regime Detection Analysis
+================================================================================
+
+--------------------------------------------------------------------------------
+  Regime Distribution
+--------------------------------------------------------------------------------
+regime_trending_up           -0 (-0.0%) 
+regime_trending_down         -0 (-0.0%)
+regime_ranging                0 ( 0.0%)
+regime_high_vol               0 ( 0.0%)
+regime_breakout               0 ( 0.0%)
+
+--------------------------------------------------------------------------------
+  Regime Metrics
+--------------------------------------------------------------------------------
+regime_confidence         mean=-0.000 std=1.000 range=[-0.998, 1.361]
+regime_trend_strength     mean=-0.000 std=1.000 range=[-1.386, 2.237]
+regime_volatility         mean=-0.000 std=1.000 range=[-1.600, 1.896]
+regime_mean_reversion     mean=0.000 std=1.000 range=[-1.652, 0.838]
+regime_volume_strength    mean=0.000 std=1.000 range=[-1.141, 4.304]
+================================================================================
+
+
+================================================================================
+  Signal Component Analysis
+================================================================================
+
+📊 Technical Signals:
+  tech_ema                       mean= 0.0000 std= 1.0000 unique=  324
+  tech_rsi                       mean= 0.0000 std= 1.0000 unique=  335
+  tech_macd                      mean= 0.0000 std= 1.0000 unique=  306
+  tech_bollinger                 mean= 0.0000 std= 1.0000 unique=  335
+  tech_momentum                  mean= 0.0000 std= 1.0000 unique=  335
+  tech_trend_strength            mean= 0.0000 std= 1.0000 unique=  316
+  tech_signal                    mean= 0.0000 std= 1.0000 unique=  335
+  tech_confidence                mean=-0.0000 std= 1.0000 unique=   75
+
+🔬 Microstructure Signals:
+  micro_volume_delta             mean= 0.0000 std= 1.0000 unique=  335
+  micro_trade_intensity          mean= 0.0000 std= 1.0000 unique=  335
+  micro_spread                   mean= 0.0000 std= 1.0000 unique=  237
+  micro_price_impact             mean=-0.0000 std= 1.0000 unique=  335
+  micro_signal                   mean=-0.0000 std= 1.0000 unique=  335
+  micro_buy_pressure             mean= 0.0000 std= 1.0000 unique=  194
+  micro_sell_pressure            mean= 0.0000 std= 1.0000 unique=  143
+  micro_liquidity                mean= 0.0000 std= 1.0000 unique=  315
+  micro_confidence               mean=-0.0000 std= 1.0000 unique=   62
+================================================================================
+
+2025-10-15 12:36:57,456 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,460 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,462 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,463 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Constant signal: std=0.00e+00 < 1.00e-06, Low information: only 0.30% unique values
+2025-10-15 12:36:57,465 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,469 - app.core.factors.signal_validator - WARNING - Signal 'hour_sin' validation failed: Constant signal: std=0.00e+00 < 1.00e-06, Low information: only 0.30% unique values
+2025-10-15 12:36:57,471 - app.core.factors.signal_validator - WARNING - Signal 'hour_cos' validation failed: Constant signal: std=0.00e+00 < 1.00e-06, Low variance: CV=0.00e+00 < 1.00e-04, Low information: only 0.30% unique values
+2025-10-15 12:36:57,497 - app.core.factors.signal_validator - INFO - Feature validation complete: 62/69 valid features (89.9%)
+2025-10-15 12:36:57,497 - app.core.factors.signal_validator - WARNING - Invalid features detected: regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout, hour_sin, hour_cos
+
+================================================================================
+  Feature Quality Report
+================================================================================
+
+✅ Valid Features: 62/69
+❌ Invalid Features: 7/69
+
+--------------------------------------------------------------------------------
+  Invalid Features Details
+--------------------------------------------------------------------------------
+
+regime_trending_up:
+  - Low information: only 0.60% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.9999999999999999), 'mean': np.float64(-1.2726138550927168e-16), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(4.999999999999999), 'unique_ratio': 0.005970149253731343}
+
+regime_trending_down:
+  - Low information: only 0.60% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.9999999999999999), 'mean': np.float64(-2.1210230918211946e-17), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(4.999999999999999), 'unique_ratio': 0.005970149253731343}
+
+regime_ranging:
+  - Low information: only 0.60% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(1.0), 'mean': np.float64(2.1210230918211946e-17), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(5.0), 'unique_ratio': 0.005970149253731343}
+
+regime_high_vol:
+  - Constant signal: std=0.00e+00 < 1.00e-06
+  - Low information: only 0.30% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.0), 'mean': np.float64(0.0), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(0.0), 'unique_ratio': 0.0029850746268656717}
+
+regime_breakout:
+  - Low information: only 0.60% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(1.0), 'mean': np.float64(7.423580821374181e-17), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(5.0), 'unique_ratio': 0.005970149253731343}
+
+hour_sin:
+  - Constant signal: std=0.00e+00 < 1.00e-06
+  - Low information: only 0.30% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.0), 'mean': np.float64(0.0), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(0.0), 'unique_ratio': 0.0029850746268656717}
+
+hour_cos:
+  - Constant signal: std=0.00e+00 < 1.00e-06
+  - Low variance: CV=0.00e+00 < 1.00e-04
+  - Low information: only 0.30% unique values
+  Metrics: {'nan_ratio': np.float64(0.0), 'inf_ratio': np.float64(0.0), 'std': np.float64(0.0), 'mean': np.float64(1.0), 'variance_ratio': np.float64(0.0), 'outlier_ratio': np.float64(0.0), 'outlier_threshold': np.float64(0.0), 'unique_ratio': 0.0029850746268656717}   
+
+--------------------------------------------------------------------------------
+  Overall Statistics
+--------------------------------------------------------------------------------
+Std Dev Range: [0.00e+00, 1.00e+00]
+NaN Ratio Range: [0.00%, 0.00%]
+Unique Ratio Range: [0.30%, 100.00%]
+================================================================================
+
+2025-10-15 12:36:57,528 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,529 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,530 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,531 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Constant signal: std=0.00e+00 < 1.00e-06, Low information: only 0.30% unique values
+2025-10-15 12:36:57,532 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.60% unique values
+2025-10-15 12:36:57,537 - app.core.factors.signal_validator - WARNING - Signal 'hour_sin' validation failed: Constant signal: std=0.00e+00 < 1.00e-06, Low information: only 0.30% unique values
+2025-10-15 12:36:57,538 - app.core.factors.signal_validator - WARNING - Signal 'hour_cos' validation failed: Constant signal: std=0.00e+00 < 1.00e-06, Low variance: CV=0.00e+00 < 1.00e-04, Low information: only 0.30% unique values
+2025-10-15 12:36:57,566 - app.core.factors.signal_validator - INFO - Feature validation complete: 62/69 valid features (89.9%)
+2025-10-15 12:36:57,567 - app.core.factors.signal_validator - WARNING - Invalid features detected: regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout, hour_sin, hour_cos
+2025-10-15 12:36:57,567 - app.core.factors.signal_validator - INFO - Removing 7 invalid features
+
+================================================================================
+  Summary
+================================================================================
+Total features: 69
+Valid features: 62
+Invalid features: 7
+Quality rate: 89.9%
+================================================================================
+
+2025-10-15 12:36:57,571 - __main__ - INFO -
+📊 Test 3: Before vs After Comparison
+
+================================================================================
+  BEFORE vs AFTER Comparison
+================================================================================
+2025-10-15 12:36:57,649 - app.core.backtest_runner - INFO - Downloading 30 days of BTCUSDT 1h data from Binance...
+2025-10-15 12:36:57,860 - app.core.backtest_runner - INFO - Downloaded 720 bars from 2025-09-15 04:00:00+00:00 to 2025-10-15 03:00:00+00:00
+2025-10-15 12:37:12,697 - app.core.factors.signal_validator - WARNING - Signal 'tech_confidence' validation failed: Low information: only 0.57% unique values
+2025-10-15 12:37:12,713 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.29% unique values
+2025-10-15 12:37:12,714 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.29% unique values
+2025-10-15 12:37:12,716 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.29% unique values
+2025-10-15 12:37:12,717 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Low information: only 0.29% unique values
+2025-10-15 12:37:12,722 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.29% unique values
+2025-10-15 12:37:12,763 - app.core.factors.signal_validator - INFO - Feature validation complete: 58/64 valid features (90.6%)
+2025-10-15 12:37:12,763 - app.core.factors.signal_validator - WARNING - Invalid features detected: tech_confidence, regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout
+2025-10-15 12:37:12,777 - app.core.factors.signal_validator - WARNING - Signal 'tech_confidence' validation failed: Low information: only 0.74% unique values
+2025-10-15 12:37:12,807 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_up' validation failed: Low information: only 0.30% unique values
+2025-10-15 12:37:12,808 - app.core.factors.signal_validator - WARNING - Signal 'regime_trending_down' validation failed: Low information: only 0.30% unique values
+2025-10-15 12:37:12,810 - app.core.factors.signal_validator - WARNING - Signal 'regime_ranging' validation failed: Low information: only 0.30% unique values
+2025-10-15 12:37:12,811 - app.core.factors.signal_validator - WARNING - Signal 'regime_high_vol' validation failed: Low information: only 0.30% unique values
+2025-10-15 12:37:12,812 - app.core.factors.signal_validator - WARNING - Signal 'regime_breakout' validation failed: Low information: only 0.30% unique values
+2025-10-15 12:37:12,860 - app.core.factors.signal_validator - INFO - Feature validation complete: 63/69 valid features (91.3%)
+2025-10-15 12:37:12,860 - app.core.factors.signal_validator - WARNING - Invalid features detected: tech_confidence, regime_trending_up, regime_trending_down, regime_ranging, regime_high_vol, regime_breakout
+
+📊 Feature Quality:
+  BEFORE: 58/64 valid (90.6%)
+  AFTER:  63/69 valid (91.3%)
+  Improvement: +5 features
+
+🎯 Regime Detection:
+  BEFORE ranging count: 0
+  AFTER ranging count:  0
+  ✅ regime_trending_up: 0 → 0 (+0)
+================================================================================
+
+2025-10-15 12:37:12,865 - __main__ - INFO -
+================================================================================
+2025-10-15 12:37:12,865 - __main__ - INFO -   ✅ All tests completed successfully!
+2025-10-15 12:37:12,865 - __main__ - INFO - ================================================================================
